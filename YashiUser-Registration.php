@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>YashiUser-Registration</title>
 <link href="YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<script type="text/ecmascript" src="md5.js"></script>
 <script language="JavaScript" src="YashiUser-Registration.js"></script>
 </head>
 
@@ -123,7 +124,7 @@
       </tr>
       <tr>
         <td align="right">用户上次登录使用的应用*(text)：</td>
-        <td><input type="text" name="userloginapp" id="userloginapp" value="testunit" disabled></td>
+        <td><input type="text" name="userloginapp" id="userloginapp" value="test-dev"></td>
       </tr>
       <tr>
         <td></td>
