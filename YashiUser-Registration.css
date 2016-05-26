@@ -1,0 +1,25 @@
+body {
+	background-color: #ffccff;
+	text-shadow: 2px 2px 2px #FFF;
+}
+
+td {
+    height: 40px;
+}
+
+input {
+    height: 30px;
+	border:10 solid #FFFFFF;
+    border-style:groove;
+	border-radius:10px;
+	font-size:15px;
+	text-shadow: 2px 2px 2px #ffccff;
+    width: 288px;
+    cursor:pointer;
+}
+
+img {
+	border-radius:10px;
+    box-shadow: 2px 2px 2px #ff66ff;
+    cursor:pointer;
+}
