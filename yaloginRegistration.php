@@ -19,6 +19,24 @@
             if(is_array($_GET)&&count($_GET)>0) {
                 return 10201;
             }
+            
+            //vcode
+            session_start();
+            $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
+            $v = $this->test_input($v);
+            if($v != null){
+                if(!isset($_SESSION["authnum_session"])) {
+                    return 11201;
+                }
+                $va = strtoupper($v);
+                $vb = strtoupper($_SESSION["authnum_session"]);
+                if($va!=$vb){
+                    return 11202;
+                }
+            } else {
+                return 11203;
+            }
+            
             //id
             
             //userversion
@@ -64,7 +82,7 @@
             $pattern = "/^[a-z0-9]+([\+_\-\.]?[a-z0-9]+)*/i"; ///^([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,3}(\\.[a-z]{2})?)$/i
             if ( !preg_match( $pattern, $email_address ) )
             {
-                return 10601;
+                return 10503;
             }
             $this->userobj->useremail = $v;
             
@@ -72,25 +90,19 @@
             $v = isset($_POST["userpassword"]) ? $_POST["userpassword"] : null;
             $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
-                return 10701;
-            }
-            if (strlen($v) < 6 || strlen($v) > 64) {
-                return 10702;
+                return 10601;
             }
             if (!$this->is_md5($v)) {
-                return 10703;
+                return 10603;
             }
             $this->userobj->userpassword = $v;
             
             //userpassword2
             $v = isset($_POST["userpassword2"]) ? $_POST["userpassword2"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 10801;
-            }
             if (strlen($v) > 0) {
-                if (strlen($v) < 6 || strlen($v) > 64) {
-                    return 10802;
+                if (!$this->is_md5($v)) {
+                    return 10703;
                 }
             }
             $this->userobj->userpassword2 = $v;
@@ -107,56 +119,38 @@
             //userpasswordquestion & userpasswordanswer
             $v = isset($_POST["userpasswordquestion1"]) ? $_POST["userpasswordquestion1"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 10901;
-            }
             if (strlen($v) > 64) {
-                return 10902;
+                return 10801;
             }
             $this->userobj->userpasswordquestion1 = $v;
             $v = isset($_POST["userpasswordanswer1"]) ? $_POST["userpasswordanswer1"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11001;
-            }
             if (strlen($v) > 64) {
-                return 11002;
+                return 10802;
             }
             $this->userobj->userpasswordanswer1 = $v;
             $v = isset($_POST["userpasswordquestion2"]) ? $_POST["userpasswordquestion2"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11101;
-            }
             if (strlen($v) > 64) {
-                return 11102;
+                return 10803;
             }
             $this->userobj->userpasswordquestion2 = $v;
             $v = isset($_POST["userpasswordanswer2"]) ? $_POST["userpasswordanswer2"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11201;
-            }
             if (strlen($v) > 64) {
-                return 11202;
+                return 10804;
             }
             $this->userobj->userpasswordanswer2 = $v;
             $v = isset($_POST["userpasswordquestion3"]) ? $_POST["userpasswordquestion3"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11301;
-            }
             if (strlen($v) > 64) {
-                return 11302;
+                return 10805;
             }
             $this->userobj->userpasswordquestion3 = $v;
             $v = isset($_POST["userpasswordanswer3"]) ? $_POST["userpasswordanswer3"] : null;
             $v = $this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11401;
-            }
             if (strlen($v) > 64) {
-                return 11402;
+                return 10806;
             }
             $this->userobj->userpasswordanswer3 = $v;
             
@@ -164,10 +158,10 @@
             $v = isset($_POST["usersex"]) ? $_POST["usersex"] : null;
             $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
-                return 11501;
+                return 10901;
             }
             if (strlen($v) < 1 || strlen($v) > 2) {
-                return 11502;
+                return 10902;
             }
             $this->userobj->usersex = $v;
             
@@ -175,10 +169,10 @@
             $v = isset($_POST["userbirthday"]) ? $_POST["userbirthday"] : null;
             $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
-                return 11601;
+                return 11001;
             }
             if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {
-                return 11602;
+                return 11002;
             }
             $this->userobj->userbirthday = $v;
             
@@ -197,29 +191,12 @@
             $v = isset($_POST["userloginapp"]) ? $_POST["userloginapp"] : null;
             $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
-                return 11701;
+                return 11101;
             }
             if (strlen($v) < 1 || strlen($v) > 64) {
-                return 11702;
+                return 11102;
             }
             $this->userobj->userloginapp = $v;
-            
-            //vcode
-            session_start();
-            $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
-            $v = $this->test_input($v);
-            if($v != null){
-                if(!isset($_SESSION["authnum_session"])) {
-                    return 11801;
-                }
-                $va = strtoupper($v);
-                $vb = strtoupper($_SESSION["authnum_session"]);
-                if($va!=$vb){
-                    return 11802;
-                }
-            } else {
-                return 11803;
-            }
             
             return 0;
         }
@@ -456,16 +433,16 @@ $registration = new yaloginRegistration();
 $registration->init();
 $errid = $registration->vaild();
 if ($errid > 0) {
-    echo("error");
-    echo(strval($errid));
+    //<script type='text/javascript'>alert('请返回首页登陆');window.location='index';</script>
+    //<meta http-equiv=\"refresh\" content=\"5;url=hello.html\">
+    echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">");
 } else {
     //chkequser
     $errid2 = $registration->gensql();
     if ($errid2 > 0) {
-        echo("error");
-        echo(strval($errid2));
+        echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">");
     } else {
-        echo("用户注册成功。");
+        echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">");
     }
 }
 ?>

@@ -5,9 +5,10 @@
 class YaloginSQLSetting
 {
 	public $db_host = "";
+	public $db_port = "";
 	public $db_name = "";
 	public $db_user = "";
-	public $db_password = ""; //
+	public $db_password = "";
 
 	public $user_table = "";
 	public $jurisdiction_table = "";
