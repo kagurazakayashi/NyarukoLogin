@@ -20,6 +20,7 @@ function showerr() {
     } else if (isset($_POST["errid"])) {
         $errid = test_input($_POST["errid"]);
     }
+    $backurl = null;
     if (isset($_GET["backurl"])) {
         $backurl = test_input($_GET["backurl"]);
     } else if (isset($_POST["backurl"])) {
@@ -45,12 +46,9 @@ function showerr() {
     }
     echo "<h3>".$alerttitle."</h3><p>";
     echo $showinfo;
-    $backurl = null;
-    $onclick = "";
-    if ($backurl == null) {
-        $onclick = "history.back(-1);";
-    } else {
-        $onclick = "window.location.href='YashiUser-Error.php?errid=".$backurl."';";
+    $onclick = "history.back(-1);";
+    if ($backurl != null) {
+        $onclick = "window.location.href='".$backurl."';";
     }
     echo "</p><p><input type=\"button\" name=\"submitbutton\" id=\"submitbutton\" value=\"".$alertbtntxt."\"  onclick=\"".$onclick."\" ></p>";
 }

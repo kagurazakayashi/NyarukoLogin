@@ -12,6 +12,9 @@ function toVaild(path) {
     if (!englishnum.test(v)) {
         wrni++; wrn = wrn + wrni + ". 「用户名」只能由小写字母和数字组成。\n";
     }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「用户名」不能包含特殊字符。\n";
+    }
     document.getElementById("username").value = v.toLowerCase();
 
     var v = document.getElementById("usernickname").value;
@@ -20,6 +23,9 @@ function toVaild(path) {
     }
     if (v.length > 16) {
         wrni++; wrn = wrn + wrni + ". 「昵称」必须在 3 到 16 个字之间。\n";
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「昵称」不能包含一些特定字符。\n";
     }
 
     var v = document.getElementById("useremail").value;
@@ -30,6 +36,9 @@ function toVaild(path) {
         dotpos = v.lastIndexOf(".")
         if (apos < 1 || dotpos - apos < 2)
         { wrni++; wrn = wrn + wrni + ". 「电子邮件」必须是一个有效的邮箱地址。\n"; }
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「电子邮件」不能包含特殊字符。\n";
     }
 
     var v = document.getElementById("userpassword").value;
@@ -54,35 +63,59 @@ function toVaild(path) {
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示问题1」不能超过 64 个字。\n";
     }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示问题1」不能包含特殊字符。\n";
+    }
     var v = document.getElementById("userpasswordanswer1").value;
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示答案1」不能超过 64 个字。\n";
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示答案1」不能包含特殊字符。\n";
     }
     var v = document.getElementById("userpasswordquestion2").value;
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示问题2」不能超过 64 个字。\n";
     }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示问题2」不能包含特殊字符。\n";
+    }
     var v = document.getElementById("userpasswordanswer2").value;
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示答案2」不能超过 64 个字。\n";
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示答案2」不能包含特殊字符。\n";
     }
     var v = document.getElementById("userpasswordquestion3").value;
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示问题3」不能超过 64 个字。\n";
     }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示问题3」不能包含特殊字符。\n";
+    }
     var v = document.getElementById("userpasswordanswer3").value;
     if (v.length > 64) {
         wrni++; wrn = wrn + wrni + ". 「密码提示答案3」不能超过 64 个字。\n";
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「密码提示答案3」不能包含特殊字符。\n";
     }
 
     var v = document.getElementById("userbirthday").value;
     if (!datecheck(v)) {
         wrni++; wrn = wrn + wrni + ". 「生日」需要按照「YYYY-MM-DD」格式来输入日期。\n";
     }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「生日」不能包含特殊字符。\n";
+    }
 
     var v = document.getElementById("vcode").value;
     if (v.length != 4) {
         wrni++; wrn = wrn + wrni + ". 「验证码」不正确。\n";
+    }
+    if (!inputcheck(v)) {
+        wrni++; wrn = wrn + wrni + ". 「验证码」不能包含特殊字符。\n";
     }
 
     if (wrni > 0) {
@@ -94,6 +127,12 @@ function toVaild(path) {
         form1.action = path;
         form1.submit();
     }
+}
+
+function inputcheck(str) {
+    var myReg = /^[^\/\'\\\"#$%&\^\*]+$/;
+    if (myReg.test(str)) return true;
+    return false;
 }
 
 function datecheck(date) {

@@ -128,7 +128,7 @@
       </tr>
       <tr>
         <td></td>
-        <td><img id="vcodeimg" title="点击刷新" src="./validate_image.php" align="absbottom" onclick="this.src='./validate_image.php?'+Math.random();" alt="点击刷新"></img> ←点击可以刷新</td>
+        <td><img id="vcodeimg" title="点击刷新" src="./getvalidateimage.gif" align="absbottom" onclick="this.src='./validate_image.php?'+Math.random();" alt="点击刷新"></img> ←点击可以刷新</td>
       </tr>
       <tr>
         <td align="right">验证码*(text)：</td>

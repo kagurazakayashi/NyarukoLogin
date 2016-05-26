@@ -1,15 +1,19 @@
 <?php 
     require 'yaloginUserInfo.php';
     require 'yaloginSQLSetting.php';
+    require "yaloginGlobal.php";
     class yaloginRegistration {
         
         public $userobj;
         private $datetime, $ip;
         private $sqlset;
+        private $inputmatch;
         
         function init() { //__constrct()
             $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
+            $globalsett = new YaloginGlobal();
+            $this->inputmatch = $globalsett->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");
             $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
@@ -23,8 +27,10 @@
             //vcode
             session_start();
             $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
-            $v = $this->test_input($v);
             if($v != null){
+                if ($this->test_input($v) != 0) {
+                    return 11204;
+                }
                 if(!isset($_SESSION["authnum_session"])) {
                     return 11201;
                 }
@@ -44,9 +50,11 @@
             
             //username
             $v = isset($_POST["username"]) ? $_POST["username"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 10301;
+            }
+            if ($this->test_input($v) != 0) {
+                return 10304;
             }
             if (strlen($v) < 3 || strlen($v) > 16) {
                 return 10302;
@@ -60,9 +68,11 @@
             
             //usernickname
             $v = isset($_POST["usernickname"]) ? $_POST["usernickname"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 10401;
+            }
+            if ($this->test_input($v) != 0) {
+                return 10404;
             }
             if (strlen($v) < 3 || strlen($v) > 16) {
                 return 10402;
@@ -71,9 +81,11 @@
             
             //useremail
             $v = isset($_POST["useremail"]) ? $_POST["useremail"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 10501;
+            }
+            if ($this->test_input($v) != 0) {
+                return 10404;
             }
             if (strlen($v) < 5 || strlen($v) > 64) {
                 return 10502;
@@ -88,7 +100,6 @@
             
             //userpassword
             $v = isset($_POST["userpassword"]) ? $_POST["userpassword"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 10601;
             }
@@ -99,7 +110,6 @@
             
             //userpassword2
             $v = isset($_POST["userpassword2"]) ? $_POST["userpassword2"] : null;
-            $v = $this->test_input($v);
             if (strlen($v) > 0) {
                 if (!$this->is_md5($v)) {
                     return 10703;
@@ -118,47 +128,61 @@
             
             //userpasswordquestion & userpasswordanswer
             $v = isset($_POST["userpasswordquestion1"]) ? $_POST["userpasswordquestion1"] : null;
-            $v = $this->test_input($v);
-            if (strlen($v) > 64) {
+            if ($this->test_input($v) != 0) {
                 return 10801;
             }
-            $this->userobj->userpasswordquestion1 = $v;
-            $v = isset($_POST["userpasswordanswer1"]) ? $_POST["userpasswordanswer1"] : null;
-            $v = $this->test_input($v);
             if (strlen($v) > 64) {
                 return 10802;
             }
-            $this->userobj->userpasswordanswer1 = $v;
-            $v = isset($_POST["userpasswordquestion2"]) ? $_POST["userpasswordquestion2"] : null;
-            $v = $this->test_input($v);
-            if (strlen($v) > 64) {
+            $this->userobj->userpasswordquestion1 = $v;
+            $v = isset($_POST["userpasswordanswer1"]) ? $_POST["userpasswordanswer1"] : null;
+            if ($this->test_input($v) != 0) {
                 return 10803;
             }
-            $this->userobj->userpasswordquestion2 = $v;
-            $v = isset($_POST["userpasswordanswer2"]) ? $_POST["userpasswordanswer2"] : null;
-            $v = $this->test_input($v);
             if (strlen($v) > 64) {
                 return 10804;
             }
+            $this->userobj->userpasswordanswer1 = $v;
+            $v = isset($_POST["userpasswordquestion2"]) ? $_POST["userpasswordquestion2"] : null;
+            if ($this->test_input($v) != 0) {
+                return 10805;
+            }
+            if (strlen($v) > 64) {
+                return 10806;
+            }
+            $this->userobj->userpasswordquestion2 = $v;
+            $v = isset($_POST["userpasswordanswer2"]) ? $_POST["userpasswordanswer2"] : null;
+            if ($this->test_input($v) != 0) {
+                return 10807;
+            }
+            if (strlen($v) > 64) {
+                return 10808;
+            }
             $this->userobj->userpasswordanswer2 = $v;
             $v = isset($_POST["userpasswordquestion3"]) ? $_POST["userpasswordquestion3"] : null;
-            $v = $this->test_input($v);
+            if ($this->test_input($v) != 0) {
+                return 10809;
+            }
             if (strlen($v) > 64) {
-                return 10805;
+                return 10810;
             }
             $this->userobj->userpasswordquestion3 = $v;
             $v = isset($_POST["userpasswordanswer3"]) ? $_POST["userpasswordanswer3"] : null;
-            $v = $this->test_input($v);
+            if ($this->test_input($v) != 0) {
+                return 10811;
+            }
             if (strlen($v) > 64) {
-                return 10806;
+                return 10812;
             }
             $this->userobj->userpasswordanswer3 = $v;
             
             //usersex
             $v = isset($_POST["usersex"]) ? $_POST["usersex"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 10901;
+            }
+            if ($this->test_input($v) != 0) {
+                return 10904;
             }
             if (strlen($v) < 1 || strlen($v) > 2) {
                 return 10902;
@@ -167,9 +191,11 @@
             
             //userbirthday
             $v = isset($_POST["userbirthday"]) ? $_POST["userbirthday"] : null;
-            $v = $this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 11001;
+            }
+            if ($this->test_input($v) != 0) {
+                return 11004;
             }
             if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {
                 return 11002;
@@ -189,9 +215,12 @@
             
             //userregisterapp //& userloginapp
             $v = isset($_POST["userloginapp"]) ? $_POST["userloginapp"] : null;
-            $v = $this->test_input($v);
+            $v = $this->$this->test_input($v);
             if($v == null || !is_string($v)) {
                 return 11101;
+            }
+            if ($this->test_input($v) != 0) {
+                return 11104;
             }
             if (strlen($v) < 1 || strlen($v) > 64) {
                 return 11102;
@@ -423,10 +452,23 @@
         }
         
         function test_input($data) {
-            $data = trim($data);
-            $data = stripslashes($data);
-            $data = htmlspecialchars($data);
-            return $data;
+            if (is_string($data) == false) {
+                return 1;
+            }
+            if ($data == null || strlen($data) == 0) {
+                return 0;
+            }
+            $edata = trim($data);
+            $edata = stripslashes($edata);
+            $edata = htmlspecialchars($edata);
+            if (strcmp($data,$edata) != 0) {
+                return 2;
+            }
+            $pattern = $this->inputmatch;
+            if (!preg_match($pattern,$data)) {
+                return 3;
+            }
+            return 0;
         }
 }
 $registration = new yaloginRegistration();
