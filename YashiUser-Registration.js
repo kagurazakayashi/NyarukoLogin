@@ -123,6 +123,10 @@ function toVaild(path) {
         document.getElementById("vcodeimg").src = './validate_image.php?' + Math.random();
         document.getElementById("vcode").value = "";
     } else {
+        document.getElementById("userpassword").value = hex_md5(document.getElementById("userpassword").value);
+        if (document.getElementById("userpassword2").value.length > 0) {
+            document.getElementById("userpassword2").value = hex_md5(document.getElementById("userpassword2").value);
+        }
         var form1 = document.getElementById("form1");
         form1.action = path;
         form1.submit();

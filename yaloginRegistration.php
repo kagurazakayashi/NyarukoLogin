@@ -8,7 +8,9 @@
         private $datetime, $ip;
         private $sqlset;
         private $inputmatch;
+        private $app;
         
+        //创建变量
         function init() { //__constrct()
             $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
@@ -19,6 +21,7 @@
             $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
         }
         
+        //验证输入
         function vaild() { // -> int
             if(is_array($_GET)&&count($_GET)>0) {
                 return 10201;
@@ -214,18 +217,19 @@
             //$this->userobj->userloginip = $ip;
             
             //userregisterapp //& userloginapp
-            $v = isset($_POST["userloginapp"]) ? $_POST["userloginapp"] : null;
-            $v = $this->$this->test_input($v);
-            if($v == null || !is_string($v)) {
-                return 11101;
-            }
-            if ($this->test_input($v) != 0) {
-                return 11104;
-            }
-            if (strlen($v) < 1 || strlen($v) > 64) {
-                return 11102;
-            }
-            $this->userobj->userloginapp = $v;
+            $this->userobj->userregisterapp = $this->sqlset->db_app;
+            // $v = isset($_POST["userregisterapp"]) ? $_POST["userregisterapp"] : null;
+            // $v = $this->$this->test_input($v);
+            // if($v == null || !is_string($v)) {
+            //     return 11101;
+            // }
+            // if ($this->test_input($v) != 0) {
+            //     return 11104;
+            // }
+            // if (strlen($v) < 1 || strlen($v) > 64) {
+            //     return 11102;
+            // }
+            // $this->userobj->userregisterapp = $v;
             
             return 0;
         }
@@ -234,6 +238,7 @@
             return preg_match("/^[a-z0-9]{32}$/", $password);
         }
         
+        //检查日期格式
         function checkDateIsValid($date, $formats) { // = array("Y-m-d", "Y/m/d"
             $unixTime = strtotime($date);
             if (!$unixTime) {
@@ -247,6 +252,7 @@
             return false;
         }
         
+        //创建SQL语句
         function gensql() {
             $key = "";
             $val = "";
@@ -369,31 +375,31 @@
                 $val = $val."'".$v."',";
             }
             
-            $v = $this->userobj->userlogintime;
-            if ($v != null) {
-                $key = $key."`userlogintime`,";
-                $val = $val."'".$v."',";
-            }
+            // $v = $this->userobj->userlogintime;
+            // if ($v != null) {
+            //     $key = $key."`userlogintime`,";
+            //     $val = $val."'".$v."',";
+            // }
             
-            $v = $this->userobj->userloginip;
-            if ($v != null) {
-                $key = $key."`userloginip`,";
-                $val = $val."'".$v."',";
-            }
+            // $v = $this->userobj->userloginip;
+            // if ($v != null) {
+            //     $key = $key."`userloginip`,";
+            //     $val = $val."'".$v."',";
+            // }
             
             $v = $this->userobj->userregisterapp;
             if ($v != null) {
-                $key = $key."`userregisterapp`,";
-                $val = $val."'".$v."',";
-            }
-            
-            $v = $this->userobj->userloginapp;
-            if ($v != null) {
-                $key = $key."`userloginapp`";
+                $key = $key."`userregisterapp`";
                 $val = $val."'".$v."'";
             }
             
-            $sqlcmd = "insert `userdb`.`yalogin_user`(".$key.") values(".$val.");";
+            // $v = $this->userobj->userloginapp;
+            // if ($v != null) {
+            //     $key = $key."`userloginapp`";
+            //     $val = $val."'".$v."'";
+            // }
+
+            $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."`(".$key.") values(".$val.");";
             $result_array = $this->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return $result_array; //err
@@ -402,9 +408,12 @@
             }
         }
         
+        //执行SQL连接
         function sqlc($sqlcmd) {
             $con=mysqli_connect($this->sqlset->db_host,$this->sqlset->db_user,$this->sqlset->db_password,$this->sqlset->db_name,$this->sqlset->db_port);
-            if (mysqli_connect_errno($con)) {
+            $sqlerrno = mysqli_connect_errno($con);
+            if ($sqlerrno) {
+                //die($sqlerrno);
                 return 90000;
                 //echo "Failed to connect to MySQL: " . mysqli_connect_error();
             }
@@ -429,14 +438,16 @@
                     return 0; // 0 / 90102;
                 }
             } else {
+                //die($sqlcmd);
                 return 90101;
             }
             return 90100;
         }
         
+        //查询用户名是否重复
         function chkrep($key,$val) {
             //sqlset
-            $sqlcmd = "SELECT count(0) FROM `yalogin_user` WHERE `".$key."`='".$val."';";
+            $sqlcmd = "SELECT count(0) FROM `".$this->sqlset->db_user_table."` WHERE `".$key."`='".$val."';";
             $result_array = $this->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return $result_array;
@@ -450,7 +461,28 @@
             }
             //if ($result_array[count(0)] == 0)
         }
+
+        //记录日志
+        function savereg($userlogininfoid) {
+            if ($userlogininfoid == null || is_int($userlogininfoid) == false) {
+                $userlogininfoid = 0;
+            }
+            $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$this->datetime."','".$this->ip."','".$this->sqlset->db_app."',".$userlogininfoid.",2);";
+            $result_array = $this->sqlc($sqlcmd);
+            if (is_int($result_array)) {
+                return 0;
+            } else {
+                //print_r($result_array);
+                $userrep = $result_array["count(0)"];
+                if ($userrep > 0) {
+                    return 1;
+                }
+                return 0;
+            }
+        }
+
         
+        //过滤特殊字符
         function test_input($data) {
             if (is_string($data) == false) {
                 return 1;
@@ -471,20 +503,28 @@
             return 0;
         }
 }
+
+//入口
+//echo $_POST["userpassword"];
 $registration = new yaloginRegistration();
 $registration->init();
 $errid = $registration->vaild();
+$html = "";
 if ($errid > 0) {
     //<script type='text/javascript'>alert('请返回首页登陆');window.location='index';</script>
     //<meta http-equiv=\"refresh\" content=\"5;url=hello.html\">
-    echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">");
+    $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">";
+    if ($errid < 11200 || $errid > 11299) {
+        $saved = $registration->savereg($errid);
+    }
 } else {
-    //chkequser
     $errid2 = $registration->gensql();
     if ($errid2 > 0) {
-        echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">");
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">";
     } else {
-        echo("<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">");
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">";
     }
+    $saved = $registration->savereg($errid2);
 }
+echo $html;
 ?>

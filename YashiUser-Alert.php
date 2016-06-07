@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>YashiUser-Error</title>
+<title>YashiUser-Alert</title>
 <link href="YashiUser-Registration.css" rel="stylesheet" type="text/css">
 <script type="text/ecmascript" src="md5.js"></script>
 <script language="JavaScript" src="YashiUser-Registration.js"></script>
