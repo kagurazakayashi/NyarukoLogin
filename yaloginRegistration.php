@@ -230,8 +230,29 @@
             //     return 11102;
             // }
             // $this->userobj->userregisterapp = $v;
+
+            //邮件验证码
+            $time = date('Y-m-d H:i:s',strtotime('+1 day'));
+            $mailv0 = $this->datetime.$this->userobj->username.$this->userobj->useremail.$this->userobj->userpassword;
+            $mailv1 = $this->randstr(16).$mailv0;
+            $mailv2 = $this->randstr(16).$mailv0;
+            $this->userobj->verifymailcode = md5($mailv1.$mailv2);
+            $this->userobj->verifymail = date('Y-m-d H:i:s',strtotime('+1 hour')); //有效期1小时
             
             return 0;
+        }
+
+        //随机文本生成
+        function randstr($len=6) { 
+            $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
+            abcdefghijklmnopqrstuvwxyz0123456789';
+            // characters to build the password from
+            mt_srand((double)microtime()*1000000*getmypid()); 
+            // seed the random number generater (must be done)
+            $password='';
+            while(strlen($password)<$len) 
+            $password.=substr($chars,(mt_rand()%strlen($chars)),1); 
+            return $password; 
         }
         
         function is_md5($password) {
@@ -389,8 +410,8 @@
             
             $v = $this->userobj->userregisterapp;
             if ($v != null) {
-                $key = $key."`userregisterapp`";
-                $val = $val."'".$v."'";
+                $key = $key."`userregisterapp`,";
+                $val = $val."'".$v."',";
             }
             
             // $v = $this->userobj->userloginapp;
@@ -398,6 +419,17 @@
             //     $key = $key."`userloginapp`";
             //     $val = $val."'".$v."'";
             // }
+
+            $v = $this->userobj->verifymail;
+            if ($v != null) {
+                $key = $key."`verifymail`,";
+                $val = $val."'".$v."',";
+            }
+            $v = $this->userobj->verifymailcode;
+            if ($v != null) {
+                $key = $key."`verifymailcode`";
+                $val = $val."'".$v."'";
+            }
 
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."`(".$key.") values(".$val.");";
             $result_array = $this->sqlc($sqlcmd);

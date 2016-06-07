@@ -21,6 +21,7 @@ class YaloginUserInfo
 	public $jurisdictiontext; //text 权限描述
 	public $jurisdictioninherit; //text 拥有其它权限
 	public $jurisdictionenable; //tinyint-bool 是否允许
+	public $verifymail, $verifymailcode; //datetime 邮箱验证截止时间,空为通过, text 邮件验证码
 }
 
 class YaloginLoginHistoryInfo
