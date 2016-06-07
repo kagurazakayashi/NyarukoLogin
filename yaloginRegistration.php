@@ -1,7 +1,8 @@
 <?php 
     require 'yaloginUserInfo.php';
     require 'yaloginSQLSetting.php';
-    require "yaloginGlobal.php";
+    require 'yaloginGlobal.php';
+    require 'sendmail.php';
     class yaloginRegistration {
         
         public $userobj;
@@ -534,6 +535,13 @@
             }
             return 0;
         }
+
+        //发送激活码邮件
+        function sendvcodemail() {
+            $sendmail = new Sendmail();
+            $sendmail->init();
+            $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
+        }
 }
 
 //入口
@@ -555,6 +563,7 @@ if ($errid > 0) {
         $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">";
     } else {
         $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">";
+        $registration->sendvcodemail();
     }
     $saved = $registration->savereg($errid2);
 }

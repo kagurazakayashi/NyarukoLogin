@@ -15,7 +15,7 @@ class YaloginUserInfo
 	public $userpasswordanswer1, $userpasswordanswer2, $userpasswordanswer3; //text 密码提示答案
 	public $usersex, $userbirthday; //int 性别 0=未知 1=男 2=女 3... , date 生日
 	public $userpasserr; //int 密码尝试错误次数
-	public $userregistertime, $userregisterip，$userregisterapp; //datetime 用户注册时间,  text 用户注册IP, text 用户注册应用
+	public $userregistertime, $userregisterip, $userregisterapp; //datetime 用户注册时间,  text 用户注册IP, text 用户注册应用
 	public $userlogintime, $userloginip, $userloginapp; //datetime 用户上次登录时间, text 用户上次登录IP，text 上次登录使用的应用
 	//权限
 	public $jurisdictiontext; //text 权限描述
