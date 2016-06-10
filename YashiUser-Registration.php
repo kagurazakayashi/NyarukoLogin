@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <title>YashiUser-Registration</title>
 <link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
-<script src="js/require.js" data-main="js/YashiUser-Registration.js"></script>
+<script type="text/javascript" src="js/md5.js"></script>
+<script type="text/javascript" src="js/md6.js"></script>
+<script type="text/javascript" src="js/YashiUser-Registration.js"></script>
+<!--<script src="js/require.js" data-main="js/YashiUser-Registration.js"></script>-->
 </head>
 
 <body>

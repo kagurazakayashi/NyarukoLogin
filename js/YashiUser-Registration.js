@@ -4,8 +4,8 @@ function toVaild(path) {
     var intnum = /^[1-9]+[0-9]*]*$/;
     var floatnum = /^[0-9]+.?[0-9]*$/;
     var englishnum = /^[A-Za-z0-9]+$/;
-    var md5hash = require("js/md5.js").md5hash;
-    var md6hash = require("js/md6.js").md6hash;
+    //var md5hash = require(["js/md5.js"]).md5hash;
+    //var md6hash = require(["js/md6.js"]).md6hash;
 
     var v = document.getElementById("username").value;
     if (v.length < 3 || v.length > 16) {
@@ -132,14 +132,16 @@ function toVaild(path) {
         var form1 = document.getElementById("form1");
         //form1.action = path;
         //form1.submit();
-        document.getElementById("vcode").value = document.getElementById("userpassword").value;
     }
     
 }
 
 function hash(str) {
-    var md6 = md6hash.hex(str, 512);
-    return md5hash.hex_md5(md6);
+    var md5hash = new emd5hash();
+    var md6hash = new emd6hash();
+    var md6v = md6hash.hex(str, parseInt(128,10));
+    var md5v = md5hash.hex_md5(md6v);
+    return md5v;
 }
 
 function inputcheck(str) {

@@ -13,7 +13,7 @@
  *      var md6 = new md6hash();
  *
  */
-var md6hash = function() { 
+function emd6hash() { 
 	function to_word(input) {
 		var i, length = input.length, output = [];
 	 
