@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Registration</title>
-<link href="YashiUser-Registration.css" rel="stylesheet" type="text/css">
-<script type="text/ecmascript" src="md5.js"></script>
-<script language="JavaScript" src="YashiUser-Registration.js"></script>
+<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<script src="js/require.js" data-main="js/YashiUser-Registration.js"></script>
 </head>
 
 <body>
@@ -90,7 +89,7 @@
         <td align="right">性别*(int2)：</td>
         <td><select name="usersex" id="usersex">
           <?php
-          require "yaloginGlobal.php";          
+          require "php/yaloginGlobal.php";          
           $globalsett = new YaloginGlobal();
           $sexArrin = $globalsett->sexArr;
           for ($i=0; $i < count($sexArrin); $i++) { 
@@ -128,7 +127,7 @@
       </tr>
       <tr>
         <td></td>
-        <td><img id="vcodeimg" title="点击刷新" src="./getvalidateimage.gif" align="absbottom" onclick="this.src='./validate_image.php?'+Math.random();" alt="点击刷新"></img> ←点击可以刷新</td>
+        <td><img id="vcodeimg" title="点击刷新" src="image/getvalidateimage.gif" align="absbottom" onclick="this.src='php/validate_image.php?'+Math.random();" alt="点击刷新"></img> ←点击可以刷新</td>
       </tr>
       <tr>
         <td align="right">验证码*(text)：</td>
@@ -140,7 +139,7 @@
       </tr>
       <tr>
         <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户"  onclick="toVaild('yaloginRegistration.php')"></td>
+        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户"  onclick="toVaild('php/yaloginRegistration.php')"></td>
       </tr>
     </tbody>
   </table>

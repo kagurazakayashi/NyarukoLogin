@@ -4,6 +4,8 @@ function toVaild(path) {
     var intnum = /^[1-9]+[0-9]*]*$/;
     var floatnum = /^[0-9]+.?[0-9]*$/;
     var englishnum = /^[A-Za-z0-9]+$/;
+    var md5hash = require("js/md5.js").md5hash;
+    var md6hash = require("js/md6.js").md6hash;
 
     var v = document.getElementById("username").value;
     if (v.length < 3 || v.length > 16) {
@@ -120,17 +122,24 @@ function toVaild(path) {
 
     if (wrni > 0) {
         alert("抱歉，你输入的内容有误：\n" + wrn);
-        document.getElementById("vcodeimg").src = './validate_image.php?' + Math.random();
+        document.getElementById("vcodeimg").src = 'php/validate_image.php?' + Math.random();
         document.getElementById("vcode").value = "";
     } else {
-        document.getElementById("userpassword").value = hex_md5(document.getElementById("userpassword").value);
+        document.getElementById("userpassword").value = hash(document.getElementById("userpassword").value);
         if (document.getElementById("userpassword2").value.length > 0) {
-            document.getElementById("userpassword2").value = hex_md5(document.getElementById("userpassword2").value);
+            document.getElementById("userpassword2").value = hash(document.getElementById("userpassword2").value);
         }
         var form1 = document.getElementById("form1");
-        form1.action = path;
-        form1.submit();
+        //form1.action = path;
+        //form1.submit();
+        document.getElementById("vcode").value = document.getElementById("userpassword").value;
     }
+    
+}
+
+function hash(str) {
+    var md6 = md6hash.hex(str, 512);
+    return md5hash.hex_md5(md6);
 }
 
 function inputcheck(str) {
