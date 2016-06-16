@@ -2,7 +2,7 @@
     require 'yaloginUserInfo.php';
     require 'yaloginSQLSetting.php';
     require 'yaloginGlobal.php';
-    require 'sendmail.php';
+    require 'yaloginSendmail.php';
     require 'md6.php';
     class yaloginRegistration {
         
@@ -12,13 +12,14 @@
         private $inputmatch;
         private $app;
         private $md6;
+        private $errinfo = "";
         
         //创建变量
         function init() { //__constrct()
             $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
             $globalsett = new YaloginGlobal();
-            $md6 = new md6hash;
+            $this->md6 = new md6hash();
             $this->inputmatch = $globalsett->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");
@@ -247,8 +248,8 @@
         }
 
         function userhash() {
-            $data = $this->userobj->username.$this->userobj->useremail.date().$this->randstr(32);
-            $result = $md6->hex($data);
+            $data = $this->userobj->username.$this->userobj->useremail.date('YmdHis').$this->randstr(32);
+            $result = $this->md6->hex($data);
             return $result;
         }
 
@@ -437,8 +438,8 @@
             }
             $v = $this->userobj->verifymailcode;
             if ($v != null) {
-                $key = $key."`verifymailcode`";
-                $val = $val."'".$v."'";
+                $key = $key."`verifymailcode`,";
+                $val = $val."'".$v."',";
             }
 
             $v = $this->userobj->hash;
@@ -516,6 +517,7 @@
                 $userlogininfoid = 0;
             }
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userhash`,`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$this->userobj->hash."','".$this->datetime."','".$this->ip."','".$this->sqlset->db_app."',".$userlogininfoid.",2);";
+            $this->errinfo = "";
             $result_array = $this->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return 0;
@@ -553,9 +555,11 @@
 
         //发送激活码邮件
         function sendvcodemail() {
-            $sendmail = new Sendmail();
-            $sendmail->init();
-            $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
+            if ($this->userobj->useremail != "test@test.test") {
+                $sendmail = new Sendmail();
+                $sendmail->init();
+                $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
+            }
         }
 }
 
@@ -568,16 +572,16 @@ $html = "";
 if ($errid > 0) {
     //<script type='text/javascript'>alert('请返回首页登陆');window.location='index';</script>
     //<meta http-equiv=\"refresh\" content=\"5;url=hello.html\">
-    $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">";
+    $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">";
     if ($errid < 11200 || $errid > 11299) {
         $saved = $registration->savereg($errid);
     }
 } else {
     $errid2 = $registration->gensql();
     if ($errid2 > 0) {
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">";
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">";
     } else {
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">";
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">";
         $registration->sendvcodemail();
     }
     $saved = $registration->savereg($errid2);

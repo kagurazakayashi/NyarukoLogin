@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Alert</title>
-<link href="YashiUser-Registration.css" rel="stylesheet" type="text/css">
-<script type="text/ecmascript" src="md5.js"></script>
-<script language="JavaScript" src="YashiUser-Registration.js"></script>
+<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<script type="text/ecmascript" src="js/md5.js"></script>
+<script language="JavaScript" src="js/YashiUser-Registration.js"></script>
 </head>
 
 <body>
 <center><h2>雅诗通用用户后台测试接口</h2>
 <?php 
 function showerr() {
-    require "yaloginGlobal.php";
+    require "php/yaloginGlobal.php";
     $showdetailedinformation = true;
     $errid = -2;
     if (isset($_GET["errid"])) {
