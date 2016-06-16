@@ -130,17 +130,19 @@ function toVaild(path) {
             document.getElementById("userpassword2").value = hash(document.getElementById("userpassword2").value);
         }
         var form1 = document.getElementById("form1");
-        //form1.action = path;
-        //form1.submit();
+        form1.action = path;
+        form1.submit();
     }
     
 }
 
 function hash(str) {
-    var md5hash = new emd5hash();
+    //var md5hash = new emd5hash();
     var md6hash = new emd6hash();
     var md6v = md6hash.hex(str, parseInt(128,10));
-    var md5v = md5hash.hex_md5(md6v);
+    console.log(typeof(md5hash));
+    //var md5v = md5hash.hex_md5(md6v);
+    var md5v = hex_md5(md6v);
     return md5v;
 }
 

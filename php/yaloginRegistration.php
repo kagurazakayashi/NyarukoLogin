@@ -3,6 +3,7 @@
     require 'yaloginSQLSetting.php';
     require 'yaloginGlobal.php';
     require 'sendmail.php';
+    require 'md6.php';
     class yaloginRegistration {
         
         public $userobj;
@@ -10,12 +11,14 @@
         private $sqlset;
         private $inputmatch;
         private $app;
+        private $md6;
         
         //创建变量
         function init() { //__constrct()
             $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
             $globalsett = new YaloginGlobal();
+            $md6 = new md6hash;
             $this->inputmatch = $globalsett->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");
@@ -233,14 +236,20 @@
             // $this->userobj->userregisterapp = $v;
 
             //邮件验证码
-            $time = date('Y-m-d H:i:s',strtotime('+1 day'));
-            $mailv0 = $this->datetime.$this->userobj->username.$this->userobj->useremail.$this->userobj->userpassword;
-            $mailv1 = $this->randstr(16).$mailv0;
-            $mailv2 = $this->randstr(16).$mailv0;
-            $this->userobj->verifymailcode = md5($mailv1.$mailv2);
+            //$time = date('Y-m-d H:i:s',strtotime('+1 day'));
+            $this->userobj->verifymailcode = $this->userhash();
             $this->userobj->verifymail = date('Y-m-d H:i:s',strtotime('+1 hour')); //有效期1小时
+
+            //唯一哈希码
+            $this->userobj->hash = $this->userhash();
             
             return 0;
+        }
+
+        function userhash() {
+            $data = $this->userobj->username.$this->userobj->useremail.date().$this->randstr(32);
+            $result = $md6->hex($data);
+            return $result;
         }
 
         //随机文本生成
@@ -432,6 +441,12 @@
                 $val = $val."'".$v."'";
             }
 
+            $v = $this->userobj->hash;
+            if ($v != null) {
+                $key = $key."`hash`";
+                $val = $val."'".$v."'";
+            }
+
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."`(".$key.") values(".$val.");";
             $result_array = $this->sqlc($sqlcmd);
             if (is_int($result_array)) {
@@ -500,7 +515,7 @@
             if ($userlogininfoid == null || is_int($userlogininfoid) == false) {
                 $userlogininfoid = 0;
             }
-            $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$this->datetime."','".$this->ip."','".$this->sqlset->db_app."',".$userlogininfoid.",2);";
+            $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userhash`,`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$this->userobj->hash."','".$this->datetime."','".$this->ip."','".$this->sqlset->db_app."',".$userlogininfoid.",2);";
             $result_array = $this->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return 0;

@@ -6,6 +6,7 @@ class YaloginUserInfo
 {
 	public $id; //int11 用户ID
 	public $userversion; //int5 用户记录版本
+	public $hash; //用户唯一哈希码
 	public $username, $usernickname, $useremail; //text 用户名, 昵称, 用户邮箱
 	public $userpassword, $userpassword2; //textMD5 密码, 二级密码
 	public $userpasswordenabled; //tinyint-bool 密码是否有效

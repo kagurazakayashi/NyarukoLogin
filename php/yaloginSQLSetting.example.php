@@ -31,6 +31,10 @@ class YaloginSQLSetting
 	public $mail_Password = "";
 	public $mail_CharSet = "UTF-8";
 	public $mail_Encoding = "base64";
+
+	//历史记录设置
+	public $log_Registration_OK = true;
+	public $log_Registration_Fail = true;
 }
 
 ?>
