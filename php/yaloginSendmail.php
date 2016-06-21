@@ -43,6 +43,9 @@ class Sendmail {
 
     //发送注册验证邮件
     function sendverifymail($address, $username, $vcode, $timeout) {
+        if ($address == "test@test.test") {
+            return -2;
+        }
         $this->mail->Subject = $this->appname." 用户注册确认邮件";
         $this->mail->AddAddress($address, $username);
         $this->mail->IsHTML(true);

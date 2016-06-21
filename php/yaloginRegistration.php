@@ -4,6 +4,7 @@
     require 'yaloginGlobal.php';
     require 'yaloginSendmail.php';
     require 'md6.php';
+    require 'yaloginSQLC.php';
     class yaloginRegistration {
         
         public $userobj;
@@ -13,6 +14,7 @@
         private $app;
         private $md6;
         private $errinfo = "";
+        private $ysqlc;
         
         //创建变量
         function init() { //__constrct()
@@ -20,6 +22,8 @@
             $this->userobj = new YaloginUserInfo();
             $globalsett = new YaloginGlobal();
             $this->md6 = new md6hash();
+            $this->ysqlc = new yaloginSQLC();
+            $this->ysqlc->init();
             $this->inputmatch = $globalsett->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");
@@ -449,7 +453,7 @@
             }
 
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."`(".$key.") values(".$val.");";
-            $result_array = $this->sqlc($sqlcmd);
+            $result_array = $this->ysqlc->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return $result_array; //err
             } else {
@@ -457,47 +461,11 @@
             }
         }
         
-        //执行SQL连接
-        function sqlc($sqlcmd) {
-            $con=mysqli_connect($this->sqlset->db_host,$this->sqlset->db_user,$this->sqlset->db_password,$this->sqlset->db_name,$this->sqlset->db_port);
-            $sqlerrno = mysqli_connect_errno($con);
-            if ($sqlerrno) {
-                //die($sqlerrno);
-                return 90000;
-                //echo "Failed to connect to MySQL: " . mysqli_connect_error();
-            }
-            $result = mysqli_query($con,$sqlcmd);
-            mysqli_close($con);
-            if ($result) {
-                    if(@mysqli_num_rows($result)) {
-                    $result_array = mysqli_fetch_array($result); //err
-                    if($result_array) {
-                        if (count($result_array) > 0) {
-                            return $result_array;
-                        } else {
-                            return 90104;
-                        }
-                        //foreach($result_array as $result_row) {
-                            //print_r($result_array);
-                        //}
-                    } else {
-                        return 90103;
-                    }
-                } else {
-                    return 0; // 0 / 90102;
-                }
-            } else {
-                //die($sqlcmd);
-                return 90101;
-            }
-            return 90100;
-        }
-        
         //查询用户名是否重复
         function chkrep($key,$val) {
             //sqlset
             $sqlcmd = "SELECT count(0) FROM `".$this->sqlset->db_user_table."` WHERE `".$key."`='".$val."';";
-            $result_array = $this->sqlc($sqlcmd);
+            $result_array = $this->ysqlc->sqlc($sqlcmd);
             if (is_int($result_array)) {
                 return $result_array;
             } else {
@@ -513,24 +481,10 @@
 
         //记录日志
         function savereg($userlogininfoid) {
-            if ($userlogininfoid == null || is_int($userlogininfoid) == false) {
-                $userlogininfoid = 0;
-            }
-            $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userhash`,`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$this->userobj->hash."','".$this->datetime."','".$this->ip."','".$this->sqlset->db_app."',".$userlogininfoid.",2);";
+            $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$this->datetime,$this->ip,2);
             $this->errinfo = "";
-            $result_array = $this->sqlc($sqlcmd);
-            if (is_int($result_array)) {
-                return 0;
-            } else {
-                //print_r($result_array);
-                $userrep = $result_array["count(0)"];
-                if ($userrep > 0) {
-                    return 1;
-                }
-                return 0;
-            }
+            return $saveregr;
         }
-
         
         //过滤特殊字符
         function test_input($data) {
@@ -555,11 +509,9 @@
 
         //发送激活码邮件
         function sendvcodemail() {
-            if ($this->userobj->useremail != "test@test.test") {
-                $sendmail = new Sendmail();
-                $sendmail->init();
-                $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
-            }
+            $sendmail = new Sendmail();
+            $sendmail->init();
+            $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
         }
 }
 
