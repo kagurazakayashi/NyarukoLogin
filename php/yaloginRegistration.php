@@ -3,8 +3,8 @@
     require 'yaloginSQLSetting.php';
     require 'yaloginGlobal.php';
     require 'yaloginSendmail.php';
-    require 'md6.php';
     require 'yaloginSQLC.php';
+    require 'yaloginSafe.php';
     class yaloginRegistration {
         
         public $userobj;
@@ -12,7 +12,7 @@
         private $sqlset;
         private $inputmatch;
         private $app;
-        private $md6;
+        private $safe;
         private $errinfo = "";
         private $ysqlc;
         
@@ -21,10 +21,10 @@
             $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
             $globalsett = new YaloginGlobal();
-            $this->md6 = new md6hash();
+            $this->safe = new yaloginSafe();
             $this->ysqlc = new yaloginSQLC();
             $this->ysqlc->init();
-            $this->inputmatch = $globalsett->inputmatch;
+            $this->inputmatch = $this->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");
             $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
@@ -40,7 +40,7 @@
             session_start();
             $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
             if($v != null){
-                if ($this->test_input($v) != 0) {
+                if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                     return 11204;
                 }
                 if(!isset($_SESSION["authnum_session"])) {
@@ -65,7 +65,7 @@
             if($v == null || !is_string($v)) {
                 return 10301;
             }
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10304;
             }
             if (strlen($v) < 3 || strlen($v) > 16) {
@@ -83,7 +83,7 @@
             if($v == null || !is_string($v)) {
                 return 10401;
             }
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10404;
             }
             if (strlen($v) < 3 || strlen($v) > 16) {
@@ -96,7 +96,7 @@
             if($v == null || !is_string($v)) {
                 return 10501;
             }
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10404;
             }
             if (strlen($v) < 5 || strlen($v) > 64) {
@@ -140,7 +140,7 @@
             
             //userpasswordquestion & userpasswordanswer
             $v = isset($_POST["userpasswordquestion1"]) ? $_POST["userpasswordquestion1"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10801;
             }
             if (strlen($v) > 64) {
@@ -148,7 +148,7 @@
             }
             $this->userobj->userpasswordquestion1 = $v;
             $v = isset($_POST["userpasswordanswer1"]) ? $_POST["userpasswordanswer1"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10803;
             }
             if (strlen($v) > 64) {
@@ -156,7 +156,7 @@
             }
             $this->userobj->userpasswordanswer1 = $v;
             $v = isset($_POST["userpasswordquestion2"]) ? $_POST["userpasswordquestion2"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10805;
             }
             if (strlen($v) > 64) {
@@ -164,7 +164,7 @@
             }
             $this->userobj->userpasswordquestion2 = $v;
             $v = isset($_POST["userpasswordanswer2"]) ? $_POST["userpasswordanswer2"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10807;
             }
             if (strlen($v) > 64) {
@@ -172,7 +172,7 @@
             }
             $this->userobj->userpasswordanswer2 = $v;
             $v = isset($_POST["userpasswordquestion3"]) ? $_POST["userpasswordquestion3"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10809;
             }
             if (strlen($v) > 64) {
@@ -180,7 +180,7 @@
             }
             $this->userobj->userpasswordquestion3 = $v;
             $v = isset($_POST["userpasswordanswer3"]) ? $_POST["userpasswordanswer3"] : null;
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10811;
             }
             if (strlen($v) > 64) {
@@ -193,7 +193,7 @@
             if($v == null || !is_string($v)) {
                 return 10901;
             }
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10904;
             }
             if (strlen($v) < 1 || strlen($v) > 2) {
@@ -206,7 +206,7 @@
             if($v == null || !is_string($v)) {
                 return 11001;
             }
-            if ($this->test_input($v) != 0) {
+            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 11004;
             }
             if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {
@@ -228,11 +228,11 @@
             //userregisterapp //& userloginapp
             $this->userobj->userregisterapp = $this->sqlset->db_app;
             // $v = isset($_POST["userregisterapp"]) ? $_POST["userregisterapp"] : null;
-            // $v = $this->$this->test_input($v);
+            // $v = $this->$this->safe->containsSpecialCharacters($v,$this->inputmatch);
             // if($v == null || !is_string($v)) {
             //     return 11101;
             // }
-            // if ($this->test_input($v) != 0) {
+            // if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
             //     return 11104;
             // }
             // if (strlen($v) < 1 || strlen($v) > 64) {
@@ -252,22 +252,9 @@
         }
 
         function userhash() {
-            $data = $this->userobj->username.$this->userobj->useremail.date('YmdHis').$this->randstr(32);
-            $result = $this->md6->hex($data);
+            $data = $this->userobj->username.$this->userobj->useremail.date('YmdHis').$this->safe->randstr(32);
+            $result = $this->safe->md6hash($data);
             return $result;
-        }
-
-        //随机文本生成
-        function randstr($len=6) { 
-            $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
-            abcdefghijklmnopqrstuvwxyz0123456789';
-            // characters to build the password from
-            mt_srand((double)microtime()*1000000*getmypid()); 
-            // seed the random number generater (must be done)
-            $password='';
-            while(strlen($password)<$len) 
-            $password.=substr($chars,(mt_rand()%strlen($chars)),1); 
-            return $password; 
         }
         
         function is_md5($password) {
@@ -484,27 +471,6 @@
             $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$this->datetime,$this->ip,2);
             $this->errinfo = "";
             return $saveregr;
-        }
-        
-        //过滤特殊字符
-        function test_input($data) {
-            if (is_string($data) == false) {
-                return 1;
-            }
-            if ($data == null || strlen($data) == 0) {
-                return 0;
-            }
-            $edata = trim($data);
-            $edata = stripslashes($edata);
-            $edata = htmlspecialchars($edata);
-            if (strcmp($data,$edata) != 0) {
-                return 2;
-            }
-            $pattern = $this->inputmatch;
-            if (!preg_match($pattern,$data)) {
-                return 3;
-            }
-            return 0;
         }
 
         //发送激活码邮件

@@ -37,6 +37,7 @@ class Sendmail {
             echo "错误。"; 
             return $this->mail->ErrorInfo;
         } else { 
+            echo "完成。"; 
             return "完成。"; 
         }
     }
