@@ -14,6 +14,7 @@
         private $safe;
         private $errinfo = "";
         private $ysqlc;
+        public $echomode = "json";
         
         //创建变量
         function init() { //__constrct()
@@ -34,6 +35,9 @@
             if(is_array($_GET)&&count($_GET)>0) {
                 return 10201;
             }
+
+            //echomode
+            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : $this->echomode;
             
             //vcode
             session_start();
@@ -485,23 +489,32 @@
 $registration = new yaloginRegistration();
 $registration->init();
 $errid = $registration->vaild();
+$backurl = "YashiUser-Registration.php";
 $html = "";
+$jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 if ($errid > 0) {
     //<script type='text/javascript'>alert('请返回首页登陆');window.location='index';</script>
     //<meta http-equiv=\"refresh\" content=\"5;url=hello.html\">
-    $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=YashiUser-Registration.php\">";
+    $jsonarr['result'] = strval($errid);
+    $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=".$backurl."\">";
     if ($errid < 11200 || $errid > 11299) {
         $saved = $registration->savereg($errid);
     }
 } else {
     $errid2 = $registration->gensql();
     if ($errid2 > 0) {
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=YashiUser-Registration.php\">";
+        $jsonarr['result'] = strval($errid);
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=".$backurl."\">";
     } else {
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=YashiUser-Registration.php\">";
+        $jsonarr['result'] = "1001";
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=".$backurl."\">";
         $registration->sendvcodemail();
     }
     $saved = $registration->savereg($errid2);
 }
-echo $html;
+if ($registration->echomode == "json") {
+    echo json_encode($jsonarr);
+} else if ($registration->echomode == "html") {
+    echo $html;
+}
 ?>
