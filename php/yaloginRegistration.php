@@ -1,6 +1,5 @@
 <?php 
     require 'yaloginUserInfo.php';
-    require 'yaloginSQLSetting.php';
     require 'yaloginGlobal.php';
     require 'yaloginSendmail.php';
     require 'yaloginSQLC.php';
@@ -18,12 +17,12 @@
         
         //创建变量
         function init() { //__constrct()
-            $this->sqlset = new YaloginSQLSetting();
             $this->userobj = new YaloginUserInfo();
             $globalsett = new YaloginGlobal();
             $this->safe = new yaloginSafe();
             $this->ysqlc = new yaloginSQLC();
             $this->ysqlc->init();
+            $this->sqlset = $this->ysqlc->sqlset;
             $this->inputmatch = $this->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d h:i:s");

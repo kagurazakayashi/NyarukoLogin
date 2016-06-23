@@ -1,8 +1,8 @@
 <?php 
-    //require 'yaloginSQLSetting.php';
+    require 'yaloginSQLSetting.php';
 
     class yaloginSQLC {
-        private $sqlset;
+        public $sqlset;
 
         function init() {
             $this->sqlset = new YaloginSQLSetting();
