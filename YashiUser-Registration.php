@@ -12,7 +12,7 @@
 
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
-<h3>用户注册</h3><?php echo $_SERVER['SERVER_PROTOCOL']." HTTPS=".$_SERVER['HTTPS']; ?></center>
+<h3>用户注册</h3></center>
 <form action="?" id="form1" name="form1" method="post">
   <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tbody>
