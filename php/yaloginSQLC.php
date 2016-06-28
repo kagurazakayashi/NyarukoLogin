@@ -9,7 +9,7 @@
         }
 
         //执行SQL连接
-        function sqlc($sqlcmd,$voidiserr = false) {
+        function sqlc($sqlcmd,$voidiserr = false,$onedata = false) {
             $con=mysqli_connect($this->sqlset->db_host,$this->sqlset->db_user,$this->sqlset->db_password,$this->sqlset->db_name,$this->sqlset->db_port);
             $sqlerrno = mysqli_connect_errno($con);
             if ($sqlerrno) {
@@ -20,8 +20,17 @@
             $result = mysqli_query($con,$sqlcmd);
             mysqli_close($con);
             if ($result) {
-                    if(@mysqli_num_rows($result)) {
-                    $result_array = mysqli_fetch_array($result); //err
+                if(@mysqli_num_rows($result)) {
+                    $result_array = array();
+                    if ($onedata == true) {
+                        $result_array = mysqli_fetch_array($result);
+                    } else {
+                        $rowi = 0;
+                        while ($row = mysqli_fetch_array($result)) {
+                            $result_array[$rowi] = $row;
+                            $rowi++;
+                        }
+                    }
                     if($result_array) {
                         if (count($result_array) > 0) {
                             return $result_array;
