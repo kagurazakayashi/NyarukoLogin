@@ -12,6 +12,11 @@
 <center><h2>雅诗通用用户后台测试接口</h2>
 <?php 
 function showerr() {
+    <?php 
+/*
+前端：信息提示
+输入：errid，backurl
+*/
     require "php/yaloginGlobal.php";
     $showdetailedinformation = true;
     $errid = -2;
@@ -21,10 +26,12 @@ function showerr() {
         $errid = test_input($_POST["errid"]);
     }
     $backurl = null;
-    if (isset($_GET["backurl"])) {
+    if (isset($_GET["backurl"]) || $_GET["backurl"] != "") {
         $backurl = test_input($_GET["backurl"]);
-    } else if (isset($_POST["backurl"])) {
+    } else if (isset($_POST["backurl"]) || $_POST["backurl"] != "") {
         $backurl = test_input($_POST["backurl"]);
+    } else {
+        $backurl = "javascript:window.opener=null;window.open('','_self');window.close();";
     }
     if (!is_numeric($errid)) {
         $errid = -1;

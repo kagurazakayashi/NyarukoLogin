@@ -101,10 +101,11 @@
         <td align="right">&nbsp;</td>
         <td>&nbsp;</td>
         <input type="hidden" name="echomode" id="echomode" value="html">
+        <input type="hidden" name="backurl" id="backurl" value="YashiUser-Registration.php">
       </tr>
       <tr>
         <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户" onclick="toVaild('php/yaloginRegistration.php')"></td>
+        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户" onclick="toVaild('php/yaloginRegistrationC.php')"></td>
       </tr>
     </tbody>
   </table>
