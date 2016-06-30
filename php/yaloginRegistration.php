@@ -1,4 +1,9 @@
 <?php 
+/*
+后端：用户注册
+输入：username，usernickname，useremail，userpassword
+可选输入：userpassword2，userpasswordquestion1，userpasswordanswer1，userpasswordquestion2，userpasswordanswer2，userpasswordquestion3，userpasswordanswer3，userbirthday，usersex
+*/
     require 'yaloginUserInfo.php';
     require 'yaloginGlobal.php';
     require 'yaloginSendmail.php';
@@ -14,7 +19,7 @@
         private $safe;
         private $errinfo = "";
         private $ysqlc;
-        public $echomode = "json";
+        public $echomode;
         
         //创建变量
         function init() { //__constrct()
@@ -37,7 +42,7 @@
             }
 
             //echomode
-            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : $this->echomode;
+            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "json";
             
             //vcode
             session_start();
@@ -84,7 +89,7 @@
             //usernickname
             $v = isset($_POST["usernickname"]) ? $_POST["usernickname"] : null;
             if($v == null || !is_string($v)) {
-                return 10401;
+                $v = $_POST["username"]; //return 10401;
             }
             if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10404;
@@ -194,7 +199,7 @@
             //usersex
             $v = isset($_POST["usersex"]) ? $_POST["usersex"] : null;
             if($v == null || !is_string($v)) {
-                return 10901;
+                $v = "0";//return 10901;
             }
             if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10904;
@@ -207,14 +212,16 @@
             //userbirthday
             $v = isset($_POST["userbirthday"]) ? $_POST["userbirthday"] : null;
             if($v == null || !is_string($v)) {
-                return 11001;
+                $v == null; //return 11001;
+            } else {
+                if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+                    return 11004;
+                }
+                if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {
+                    return 11002;
+                }
             }
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
-                return 11004;
-            }
-            if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {
-                return 11002;
-            }
+            
             $this->userobj->userbirthday = $v;
             
             //userpasserr
