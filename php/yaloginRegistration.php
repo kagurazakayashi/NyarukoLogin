@@ -443,7 +443,7 @@
             }
 
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."`(".$key.") values(".$val.");";
-            $result_array = $this->ysqlc->sqlc($sqlcmd);
+            $result_array = $this->ysqlc->sqlc($sqlcmd,false,true);
             if (is_int($result_array)) {
                 return $result_array; //err
             } else {
@@ -455,7 +455,7 @@
         function chkrep($key,$val) {
             //sqlset
             $sqlcmd = "SELECT count(0) FROM `".$this->sqlset->db_user_table."` WHERE `".$key."`='".$val."';";
-            $result_array = $this->ysqlc->sqlc($sqlcmd);
+            $result_array = $this->ysqlc->sqlc($sqlcmd,true,true);
             if (is_int($result_array)) {
                 return $result_array;
             } else {
