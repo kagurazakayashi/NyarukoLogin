@@ -38,15 +38,12 @@
 功能：
 
 - MD6：md6hash
-
 - randstr：随机文本生成
 - 输入：len：长度，chars：字符库
 - 输出：string：随机文本
-
 - containsSpecialCharacters：识别是否有特殊字符
 - 输入：data：文字数据，inputmatch：特殊字符库
 - 输出：bool：返回值代码，0 为正常。
-
 - clearSpecialCharacters：清除特殊字符
 - 输入：data：文字数据
 - 输出：string：过滤后文字，null 为错误。
@@ -65,7 +62,6 @@
 - sendtestmail：发送测试邮件
 - 输入：接收方邮箱
 - 输出：HTML
-
 - sendverifymail：发送注册验证邮件
 - 输入：address：接收方邮箱，username：请求注册的用户名，vcode：激活码，timeout：超时时间。
 - 输出：错误信息，null 为成功。
