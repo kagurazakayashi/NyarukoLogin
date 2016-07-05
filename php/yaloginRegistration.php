@@ -20,11 +20,12 @@
         private $errinfo = "";
         private $ysqlc;
         public $echomode;
+        public $globalsett;
         
         //创建变量
         function init() { //__constrct()
             $this->userobj = new YaloginUserInfo();
-            $globalsett = new YaloginGlobal();
+            $this->globalsett = new YaloginGlobal();
             $this->safe = new yaloginSafe();
             $this->ysqlc = new yaloginSQLC();
             $this->ysqlc->init();
