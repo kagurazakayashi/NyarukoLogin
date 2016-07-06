@@ -32,7 +32,7 @@
             $this->sqlset = $this->ysqlc->sqlset;
             $this->inputmatch = $this->inputmatch;
             date_default_timezone_set("PRC");
-            $this->datetime = date("Y-m-d h:i:s");
+            $this->datetime = date("Y-m-d H:i:s");
             $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
         }
         
