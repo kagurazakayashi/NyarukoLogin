@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>YashiUser-Activation</title>
+<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="js/YashiUser-Activation.js"></script>
+</head>
+<body>
+<center><h2>雅诗通用用户登录后台测试接口</h2>
+<h3>激活用户</h3></center>
+<form action="?" id="form1" name="form1" method="post">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tbody>
+        <tr>
+            <td align="right" width="50%">激活码*(text)：</td>
+            <td><?php
+                $inacode = isset($_GET["acode"]) ? $_GET["acode"] : (isset($_POST["acode"]) ? $_POST["acode"] : "");
+                echo "<input type=\"text\" name=\"acode\" id=\"acode\" value=\"".$inacode."\">";
+            ?></td>
+            
+        </tr>
+        <tr>
+            <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" value="激活用户" onclick="toVaild('php/yaloginActivation.php')"></td>
+        </tr>
+    </tbody>
+  </table>
+</form>
+<center><p>© Kagurazaka Yashi</p></center>
+</body>
+</html>

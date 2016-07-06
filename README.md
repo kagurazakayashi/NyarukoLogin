@@ -12,7 +12,7 @@
 - php/validate_image.php：验证码创建
 
 ###YashiUser-Alert.php
-**前端：信息提示页面。**
+**[View]前端：信息提示页面。**
 
 依赖：
 
@@ -29,7 +29,7 @@
 输出：HTML
 
 ###php/yaloginSafe.php
-**后端：安全相关类**
+**[Model]后端：安全相关类**
 
 依赖：
 
@@ -49,7 +49,7 @@
 - 输出：string：过滤后文字，null 为错误。
 
 ###php/yaloginSendmail.php
-**后端：邮件模板和发送邮件**
+**[Model]后端：邮件模板和发送邮件**
 
 依赖：
 
@@ -69,7 +69,7 @@
 
 ##用户注册流程
 ###YashiUser-Registration.php
-**前端：用户注册测试页面。**
+**[View]前端：用户注册测试页面。**
 
 依赖：
 
@@ -88,7 +88,7 @@
 - 发送数据到：php/yaloginRegistrationC.php
 
 ###php/yaloginRegistrationC.php
-**后端：用户注册程序连接器。**
+**[Controller]后端：用户注册程序连接器。**
 
 依赖：
 
@@ -107,7 +107,7 @@
 - 默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。
 
 ###php/yaloginRegistration.php
-**后端：用户注册程序。**
+**[Model]后端：用户注册程序。**
 查询用户名是否重复、记录日志、发送激活码邮件。
 
 依赖：
@@ -137,3 +137,21 @@
 输出：
 
 - vaild() -> int ：返回结果代码
+
+###YashiUser-Activation.php
+**[View]前端：输入激活码激活用户**
+提供激活码输入表单。
+
+依赖：
+
+- css/YashiUser-Registration.css
+- js/YashiUser-Activation.js
+- php/yaloginActivation.php
+
+输入（GET/POST）：
+
+- acode：要自动键入的激活码（可选）
+
+输出：
+
+- 将 acode 提交到 yaloginActivation.php 。
