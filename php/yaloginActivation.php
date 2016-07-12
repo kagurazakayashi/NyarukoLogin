@@ -85,7 +85,11 @@
                     if (isset($resultdata["verifymail"]) == true && $resultdata["verifymail"] == $nowtime) {
                         //激活账户（清除verifymail）
                         $aresult = $this->actusersql($hash);
-                        //记录日志和返回值
+                        if (isset($aresult) && is_int($aresult)) {
+                            return 11405;
+                        }
+                        //记录日志和返回值(在上一层继续)
+                        return 1003;
                     } else {
                         return 11404;
                     }
@@ -113,9 +117,6 @@ mysql>SELECT `hash`,`verifymail`,`useremail` FROM `userdb`.`yalogin_user` WHERE 
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,true);
             return $result_array;
         }
-
-
-        
 
         //记录日志
         function savereg($userlogininfoid) {
