@@ -19,18 +19,20 @@ if ($errid > 0) {
     $errid2 = $c->gensql();
     if ($errid2 > 0) {
         $jsonarr['result'] = strval($errid);
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=".$backurl."\">";
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=".$backurl."\">";
     } else {
         if ($c->ysqlc->sqlset->mail_Enable == true) {
             $errid2 = 1001;
-            $c->sendvcodemail();
+            $erridmail = $c->sendvcodemail();
+            if ($erridmail != null && $erridmail != -2) {
+                $errid2 = $erridmail; //90300;
+            }
         } else {
             $errid2 = 1002;
             //提示已发送电子邮件
         }
         $jsonarr['result'] = strval($errid2);
-        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=".$backurl."\">";
-        
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=".$backurl."\">";
     }
     $saved = $c->savereg($errid2);
 }

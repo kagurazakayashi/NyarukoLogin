@@ -1,6 +1,6 @@
 <?php
 /**
-* 公共设置存储类
+* 公共常量存储类
 */
 class YaloginGlobal
 {
@@ -77,6 +77,20 @@ class YaloginGlobal
 		'90203' => "字符串中包含特殊符号。",
 		'90210' => "非法字符串。",
 		'90233' => "字符串中包含敏感字符。",
+		'90300' => "电子邮件发送失败。", //邮件处理
+		'90301' => "邮件模块内部错误：没有找到SMTP命令。", //Called command without being connected
+		'90302' => "邮件模块内部错误：SMTP命令中断。", //Command 'command' contained line breaks
+		'90303' => "邮件模块内部错误：SMTP命令执行失败。", //command command failed
+		'90304' => "SMTP已连接到服务器。", //Already connected to a server
+		'90305' => "邮件模块内部错误：SMTP无法连接到服务器。", //Failed to connect to server
+		'90306' => "邮件模块内部错误：SMTP身份验证失败。", //Authentication is not allowed before HELO/EHLO
+		'90307' => "邮件模块内部错误：无法进行SMTP身份验证。", //Authentication is not allowed at this stage
+		'90308' => "邮件模块内部错误：SMTP身份验证方式没有找到。", //No supported authentication methods found
+		'90309' => "邮件模块内部错误：SMTP身份验证方式不支持。", //Authentication method \"authtype\" is not supported
+		'90310' => "邮件模块内部错误：SMTP命令未实现。", //The SMTP TURN command is not implemented
+		'90311' => "邮件模块内部错误：SMTP相关指令未能发送。", //No HELO/EHLO was sent
+		'90312' => "使用HELO握手。", //HELO handshake was used. Client knows nothing about server extensions
+		'90313' => "邮件模块内部错误：SMTP服务器不支持所请求的验证方法。", //The requested authentication method \"authtype\" is not supported by the server
 		'1001' => "用户注册成功。", //成功
 		'1002' => "用户注册成功，向您发送了一封激活电子邮件。",
 		'1003' => "用户激活成功。"

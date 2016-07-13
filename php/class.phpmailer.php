@@ -3163,16 +3163,19 @@ class PHPMailer
         if ($this->Mailer == 'smtp' and !is_null($this->smtp)) {
             $lasterror = $this->smtp->getError();
             if (!empty($lasterror['error'])) {
-                $msg .= $this->lang('smtp_error') . $lasterror['error'];
                 if (!empty($lasterror['detail'])) {
-                    $msg .= ' Detail: '. $lasterror['detail'];
+                    $msg = $lasterror['detail'];
                 }
-                if (!empty($lasterror['smtp_code'])) {
-                    $msg .= ' SMTP code: ' . $lasterror['smtp_code'];
-                }
-                if (!empty($lasterror['smtp_code_ex'])) {
-                    $msg .= ' Additional SMTP info: ' . $lasterror['smtp_code_ex'];
-                }
+                // $msg .= $this->lang('smtp_error') . $lasterror['error'];
+                // if (!empty($lasterror['detail'])) {
+                //     $msg .= ' Detail: '. $lasterror['detail'];
+                // }
+                // if (!empty($lasterror['smtp_code'])) {
+                //     $msg .= ' SMTP code: ' . $lasterror['smtp_code'];
+                // }
+                // if (!empty($lasterror['smtp_code_ex'])) {
+                //     $msg .= ' Additional SMTP info: ' . $lasterror['smtp_code_ex'];
+                // }
             }
         }
         $this->ErrorInfo = $msg;

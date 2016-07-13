@@ -488,7 +488,7 @@
         function sendvcodemail() {
             $sendmail = new Sendmail();
             $sendmail->init();
-            $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
+            return $sendmail->sendverifymail($this->userobj->useremail, $this->userobj->username, $this->userobj->verifymailcode, $this->userobj->verifymail);
         }
 }
 ?>
