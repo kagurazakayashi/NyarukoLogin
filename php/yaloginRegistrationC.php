@@ -1,6 +1,6 @@
 <?php
 require 'yaloginRegistration.php';
-$c = new yalogine();
+$c = new yaloginRegistration();
 $c->init();
 $errid = $c->vaild();
 $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : null;
@@ -22,14 +22,13 @@ if ($errid > 0) {
         $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=".$backurl."\">";
     } else {
         if ($c->ysqlc->sqlset->mail_Enable == true) {
-            $errid2 = 1001;
+            $errid2 = 1002;
             $erridmail = $c->sendvcodemail();
             if ($erridmail != null && $erridmail != -2) {
                 $errid2 = $erridmail; //90300;
             }
         } else {
-            $errid2 = 1002;
-            //提示已发送电子邮件
+            $errid2 = 1001;
         }
         $jsonarr['result'] = strval($errid2);
         $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=".$backurl."\">";

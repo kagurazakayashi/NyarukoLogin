@@ -92,7 +92,7 @@ class YaloginGlobal
 		'90312' => "使用HELO握手。", //HELO handshake was used. Client knows nothing about server extensions
 		'90313' => "邮件模块内部错误：SMTP服务器不支持所请求的验证方法。", //The requested authentication method \"authtype\" is not supported by the server
 		'1001' => "用户注册成功。", //成功
-		'1002' => "用户注册成功，向您发送了一封激活电子邮件。",
+		'1002' => "用户注册成功。向您发送了一封激活电子邮件，请按电子邮件中说明的步骤激活。如果没有收到，请检查输入的邮箱是否正确，或是否在垃圾邮件中。",
 		'1003' => "用户激活成功。"
 		);
 		

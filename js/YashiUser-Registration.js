@@ -8,8 +8,8 @@ function toVaild(path) {
     //var md6hash = require(["js/md6.js"]).md6hash;
 
     var v = document.getElementById("username").value;
-    if (v.length < 3 || v.length > 16) {
-        wrni++; wrn = wrn + wrni + ". 「用户名」必须在 3 到 16 个字之间。\n";
+    if (v.length < 3 || v.length > 32) {
+        wrni++; wrn = wrn + wrni + ". 「用户名」必须在 3 到 32 个字之间。\n";
     }
     if (!englishnum.test(v)) {
         wrni++; wrn = wrn + wrni + ". 「用户名」只能由小写字母和数字组成。\n";
@@ -24,8 +24,8 @@ function toVaild(path) {
     //     document.getElementById("usernickname").value = document.getElementById("username").value;
     // }
     if (v.length > 0) {
-        if (v.length > 16) {
-            wrni++; wrn = wrn + wrni + ". 「昵称」必须在 3 到 16 个字之间。\n";
+        if (v.length > 32) {
+            wrni++; wrn = wrn + wrni + ". 「昵称」必须在 3 到 32 个字之间。\n";
         }
         if (!inputcheck(v)) {
             wrni++; wrn = wrn + wrni + ". 「昵称」不能包含一些特定字符。\n";

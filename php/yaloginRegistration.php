@@ -18,7 +18,7 @@
         private $app;
         private $safe;
         private $errinfo = "";
-        private $ysqlc;
+        public $ysqlc;
         public $echomode;
         public $globalsett;
         
@@ -77,7 +77,7 @@
             if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10304;
             }
-            if (strlen($v) < 3 || strlen($v) > 16) {
+            if (strlen($v) < 3 || strlen($v) > 32) {
                 return 10302;
             }
             $v = strtolower($v);
@@ -95,7 +95,7 @@
             if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
                 return 10404;
             }
-            if (strlen($v) < 3 || strlen($v) > 16) {
+            if (strlen($v) < 3 || strlen($v) > 32) {
                 return 10402;
             }
             $this->userobj->usernickname = $v;

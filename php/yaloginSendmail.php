@@ -54,10 +54,10 @@ class Sendmail {
         $this->mail->IsHTML(true);
         $mvurl = $this->sqlset->www_root."YashiUser-Activation.php";
         $ovurl = $mvurl."?acode=".$vcode;
-        $html = $this->mailhtmlhand."<h1>&nbsp;</h1><h1>您好， ".$username." 。</h1><p>&nbsp;</p><p>您收到了这封邮件说明这个邮件地址已经请求在 ".$this->appname." 中注册。</p><p>这封邮件用于确认是否是您本人邮箱申请，</p><p>如果您没有使用这个邮箱请求注册，可能是有人冒用您的邮箱，</p><p>请不要点邮件里的任何链接并直接删除这封邮件。</p><p>&nbsp;</p><p>这封邮件中的激活码有效期至 ".$timeout." 。</p><p>&nbsp;</p><p>&nbsp;</p><p>你的激活码是</p><h2>".$vcode."</h2><p>&nbsp;</p><p>你可以点击下面的链接一键激活</p><h2><a href=\"".$ovurl."\">".$ovurl."</a></h2><p>&nbsp;</p><p>也可以点击下面的链接输入你的激活码</p><h2><a href=\"".$mvurl."\">".$mvurl."</a></h2><p>&nbsp;</p><p id=\"navigation\">".$this->appname."</p></div></div></div></body></html>";
+        $html = $this->mailhtmlhand."<h1>&nbsp;</h1><h1>您好， ".$username." 。</h1><p>&nbsp;</p><p>您收到了这封邮件说明这个邮件地址已经请求在 ".$this->appname." 中注册。</p><p>这封邮件用于确认是否是您本人邮箱申请，</p><p>如果您没有使用这个邮箱请求注册，可能是有人冒用您的邮箱，</p><p>请不要点邮件里的任何链接并直接删除这封邮件。</p><p>&nbsp;</p><p>这封邮件中的激活码有效期至 ".$timeout." 。</p><p>&nbsp;</p><p>&nbsp;</p><p>你的激活码是</p><p>".$vcode."</p><p>&nbsp;</p><p>你可以点击下面的链接一键激活</p><p><a href=\"".$ovurl."\">".$ovurl."</a></p><p>&nbsp;</p><p>也可以点击下面的链接输入你的激活码</p><p><a href=\"".$mvurl."\">".$mvurl."</a></p><p>&nbsp;</p><p id=\"navigation\">".$this->appname."</p></div></div></div></body></html>";
         $this->mail->Body = $html;
         if(!$this->mail->Send()) { 
-            return seerrinfo($this->mail->ErrorInfo);
+            return $this->seerrinfo($this->mail->ErrorInfo);
         } else { 
             return null;
         }

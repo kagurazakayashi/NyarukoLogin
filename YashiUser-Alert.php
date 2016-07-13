@@ -12,7 +12,6 @@
 <center><h2>雅诗通用用户后台测试接口</h2>
 <?php 
 function showerr() {
-    <?php 
 /*
 前端：信息提示
 输入：errid，backurl

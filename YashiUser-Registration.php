@@ -22,7 +22,10 @@
       </tr>
       <tr>
         <td align="right">用户名*(text)：</td>
-        <td><input type="text" name="username" id="username" value="testuser"></td>
+        <?php
+        echo "<td><input type=\"text\" name=\"username\" id=\"username\" value=\"testuser".
+date("YmdHis")."\"></td>";
+        ?>
       </tr>
       <tr>
         <td align="right">昵称(text)：</td>
