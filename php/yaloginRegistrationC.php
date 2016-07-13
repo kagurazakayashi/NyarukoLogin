@@ -1,8 +1,8 @@
 <?php
 require 'yaloginRegistration.php';
-$registration = new yaloginRegistration();
-$registration->init();
-$errid = $registration->vaild();
+$c = new yalogine();
+$c->init();
+$errid = $c->vaild();
 $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : null;
 $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
@@ -12,31 +12,31 @@ if ($errid > 0) {
     //<meta http-equiv=\"refresh\" content=\"5;url=hello.html\">
     $jsonarr['result'] = strval($errid);
     $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=".$backurl."\">";
-    if ($errid < 11200 || $errid > 11299) {
-        $saved = $registration->savereg($errid);
+    if ($errid >= 10000) {
+        $saved = $c->savereg($errid);
     }
 } else {
-    $errid2 = $registration->gensql();
+    $errid2 = $c->gensql();
     if ($errid2 > 0) {
         $jsonarr['result'] = strval($errid);
         $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid2)."&backurl=".$backurl."\">";
     } else {
-        if ($registration->ysqlc->sqlset->mail_Enable == true) {
-            $jsonarr['result'] = "1001";
-            $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=".$backurl."\">";
-            $registration->sendvcodemail();
+        if ($c->ysqlc->sqlset->mail_Enable == true) {
+            $errid2 = 1001;
+            $c->sendvcodemail();
         } else {
-            $jsonarr['result'] = "1002";
+            $errid2 = 1002;
             //提示已发送电子邮件
-            
         }
+        $jsonarr['result'] = strval($errid2);
+        $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=1001&backurl=".$backurl."\">";
         
     }
-    $saved = $registration->savereg($errid2);
+    $saved = $c->savereg($errid2);
 }
-if ($registration->echomode == "json") {
+if ($c->echomode == "json") {
     echo json_encode($jsonarr);
-} else if ($registration->echomode == "html") {
+} else if ($c->echomode == "html") {
     echo $html;
 }
 ?>

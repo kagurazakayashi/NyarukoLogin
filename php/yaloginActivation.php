@@ -20,6 +20,7 @@
         private $ysqlc;
         // public $echomode;
         // public $globalsett;
+        public $hash;
         
         //创建变量
         function init() { //__constrct()
@@ -42,10 +43,10 @@
             }
 
             //echomode
-            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "json";
+            $this->echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "json";
             
             //acode
-            $v = isset($_POST["acode"]) ? $_POST["acode"] : null;
+            $v = isset($_GET["acode"]) ? $_GET["acode"] : null;
             if($v != null){
                 if (strlen($v) == 32) {
                     if (preg_match('/^[0-9a-z]*$/g',$v)) {
@@ -83,13 +84,19 @@
                     //检查是否过期（verifymail）
                     $nowtime = date("Y-m-d H:i:s");
                     if (isset($resultdata["verifymail"]) == true && $resultdata["verifymail"] == $nowtime) {
-                        //激活账户（清除verifymail）
-                        $aresult = $this->actusersql($hash);
-                        if (isset($aresult) && is_int($aresult)) {
-                            return 11405;
+                        $this->hash = "";
+                        if (isset($resultdata["hash"]) == true && $resultdata["hash"] == $nowtime) {
+                            $this->hash = $resultdata["hash"];
+                            //激活账户（清除verifymail）
+                            $aresult = $this->actusersql();
+                            if (isset($aresult) && is_int($aresult)) {
+                                return 11405;
+                            }
+                            //记录日志和返回值(在上一层继续)
+                            return 1003;
+                        } else {
+                            return 11406;
                         }
-                        //记录日志和返回值(在上一层继续)
-                        return 1003;
                     } else {
                         return 11404;
                     }
@@ -112,15 +119,17 @@ mysql>SELECT `hash`,`verifymail`,`useremail` FROM `userdb`.`yalogin_user` WHERE 
             return $result_array;
         }
         //激活用户
-        function actusersql($hash) {
-            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `verifymail`=null where `hash`='".$hash."'";
+        function actusersql() {
+            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `verifymail`=null where `hash`='".$this->hash."'";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,true);
             return $result_array;
         }
 
         //记录日志
-        function savereg($userlogininfoid) {
-            $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$this->datetime,$this->ip,2);
+        function savereg($infoid) {
+            $datetime = date("Y-m-d H:i:s");
+            $ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
+            $saveregr = $this->ysqlc->savereg($infoid,$this->hash,$datetime,$ip,3);
             $this->errinfo = "";
             return $saveregr;
         }
