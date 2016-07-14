@@ -5,7 +5,7 @@ function toVaild(path) {
     var wrni = 0;
 
     var v = document.getElementById("acode").value;
-    if (v.length != 32) {
+    if (v.length != 64) {
         wrni++; wrn = wrn + wrni + ". 激活码的长度不正确。\n";
     }
     if (acodeformat.test(v) == false) {

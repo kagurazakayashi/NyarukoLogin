@@ -9,7 +9,7 @@
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
 <h3>激活用户</h3></center>
-<form action="?" id="form1" name="form1" method="post">
+<form action="?" id="form1" name="form1" method="get">
   <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tbody>
         <tr>
@@ -22,7 +22,7 @@
         </tr>
         <tr>
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-            <td><input type="button" name="submitbutton" id="submitbutton" value="激活用户" onclick="toVaild('php/yaloginActivation.php')"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" value="激活用户" onclick="toVaild('php/yaloginActivationC.php')"></td>
         </tr>
     </tbody>
   </table>

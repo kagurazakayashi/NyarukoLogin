@@ -3,7 +3,8 @@ require 'yaloginRegistration.php';
 $c = new yaloginRegistration();
 $c->init();
 $errid = $c->vaild();
-$backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : null;
+$backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
+$echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "html";
 $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 
@@ -35,9 +36,9 @@ if ($errid > 0) {
     }
     $saved = $c->savereg($errid2);
 }
-if ($c->echomode == "json") {
+if ($echomode == "json") {
     echo json_encode($jsonarr);
-} else if ($c->echomode == "html") {
+} else if ($echomode == "html") {
     echo $html;
 }
 ?>

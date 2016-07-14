@@ -19,7 +19,6 @@
         private $safe;
         private $errinfo = "";
         public $ysqlc;
-        public $echomode;
         public $globalsett;
         
         //创建变量
@@ -41,9 +40,6 @@
             if(is_array($_GET)&&count($_GET)>0) {
                 return 10201;
             }
-
-            //echomode
-            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "json";
             
             //vcode
             @session_start();

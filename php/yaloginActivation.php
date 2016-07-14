@@ -1,46 +1,26 @@
 <?php 
 /*
-后端：用户注册
-输入：
+后端：用户激活
 */
-    require 'yaloginUserInfo.php';
     require 'yaloginGlobal.php';
-    require 'yaloginSendmail.php';
     require 'yaloginSQLC.php';
-    require 'yaloginSafe.php';
     class yaloginRegistration {
-        
-        // public $userobj;
-        // private $datetime, $ip;
-        // private $sqlset;
-        // private $inputmatch;
-        // private $app;
-        // private $safe;
-        // private $errinfo = "";
         private $ysqlc;
-        // public $echomode;
-        // public $globalsett;
         public $hash;
+        private $sqlset;
         
         //创建变量
         function init() { //__constrct()
-            // $this->userobj = new YaloginUserInfo();
-            // $this->globalsett = new YaloginGlobal();
-            // $this->safe = new yaloginSafe();
             $this->ysqlc = new yaloginSQLC();
             $this->ysqlc->init();
-            // $this->sqlset = $this->ysqlc->sqlset;
-            // $this->inputmatch = $this->inputmatch;
-            // date_default_timezone_set("PRC");
-            // $this->datetime = date("Y-m-d h:i:s");
-            // $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
+            $this->sqlset = $this->ysqlc->sqlset;
         }
         
         //验证输入
         function vaild() { // -> int
-            if(is_array($_GET)&&count($_GET)>0) {
-                return 10201;
-            }
+            // if(is_array($_GET)&&count($_GET)>0) {
+            //     return 10201;
+            // }
 
             //echomode
             $this->echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "json";
@@ -48,13 +28,13 @@
             //acode
             $v = isset($_GET["acode"]) ? $_GET["acode"] : null;
             if($v != null){
-                if (strlen($v) == 32) {
-                    if (preg_match('/^[0-9a-z]*$/g',$v)) {
+                if (strlen($v) == 64) {
+                    if (preg_match('/^[0-9a-z]*$/',$v)) {
                         $result_array = $this->gensql($v);
                         if (is_int($result_array)) {
                             return $result_array; //errID
                         } else {
-                            return vailda($result_array);
+                            return $this->vailda($result_array);
                         }
                     } else {
                         return 11304;
@@ -82,8 +62,10 @@
                     return 11403;
                 } else {
                     //检查是否过期（verifymail）
-                    $nowtime = date("Y-m-d H:i:s");
-                    if (isset($resultdata["verifymail"]) == true && $resultdata["verifymail"] == $nowtime) {
+                    $dateformat = "Y-m-d H:i:s";
+                    $nowstrtotime = strtotime(date($dateformat));
+                    $dbstrtotime = strtotime($resultdata["verifymail"]);
+                    if ($nowstrtotime < $dbstrtotime) {
                         $this->hash = "";
                         if (isset($resultdata["hash"]) == true && $resultdata["hash"] == $nowtime) {
                             $this->hash = $resultdata["hash"];
