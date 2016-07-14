@@ -12,9 +12,7 @@
         //随机文本生成 $this->safe->randstr(32);
         function randstr($len=6, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
             abcdefghijklmnopqrstuvwxyz0123456789') { 
-            // characters to build the password from
             mt_srand((double)microtime()*1000000*getmypid()); 
-            // seed the random number generater (must be done)
             $password='';
             while(strlen($password)<$len) 
             $password.=substr($chars,(mt_rand()%strlen($chars)),1); 

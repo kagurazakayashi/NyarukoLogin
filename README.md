@@ -24,7 +24,7 @@
 输入（POST / GET）：
 
 - errid：返回值ID。
-- backurl：要返回的网页（可选，默认为JS关闭窗口）。
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 
 输出：HTML
 
@@ -93,18 +93,18 @@
 依赖：
 
 - php/yaloginRegistration.php
+- echomode：返回值格式（HTML/JSON）（可选，默认HTML）。
 - YashiUser-Alert.php（echomode=HTML）
 
 输入（POST）：
 
-- 来自 YashiUser-Registration.php 的表单数据，调用 yaloginRegistration.php 处理。
-- backurl：完成后要返回的页面。（可选）
+- 来自 YashiUser-Registration.php 的表单数据，调用 php/yaloginRegistration.php 处理。
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 
-输出（JSON/HTML）：
+输出（JSON/HTML，默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
 
-- result：注册程序返回的结果代码。
+- result：返回的结果代码。
 - backurl：要返回的页面。
-- 默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。
 
 ###php/yaloginRegistration.php
 **[Model]后端：用户注册程序。**
@@ -154,4 +154,58 @@
 
 输出：
 
-- 将 acode 提交到 yaloginActivation.php 。
+- 将 acode 提交到 php/yaloginActivationC.php 。
+
+###php/yaloginActivationC.php
+**[Controller]后端：用户激活程序连接器。**
+
+依赖：
+
+- php/yaloginActivation.php
+- YashiUser-Alert.php（echomode=HTML）
+
+输入（GET）：
+
+- 来自 YashiUser-Activation.php 的表单数据，调用 php/yaloginActivation.php 处理。
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
+- echomode：返回值格式（HTML/JSON）（可选，默认HTML）。
+
+输出（JSON/HTML，默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+
+- result：返回的结果代码。
+- backurl：要返回的页面。
+
+###php/YashiUserActivation.php
+**[Model]后端：用户激活程序**
+判断输入的激活码正确、未过期、目标用户未激活，然后激活用户。
+
+依赖：
+
+- php/yaloginGlobal.php
+- php/yaloginSQLC.php
+
+输入（GET/POST）：
+
+- acode：要使用的激活码
+- vaild() -> int ：返回结果代码
+
+##用户登录流程
+
+###开发计划
+
+- 输入 用户名、密码、记住密码时长、验证码。
+- 校验验证码。
+- 校验输入是否有特殊符号，与注册时校验方式匹配。
+- 取 username(text) 校验用户名是否存在。
+- 如果存在读取用户信息。
+- 取 userpasserr(int) 检查密码尝试错误次数，超过一定量设密码无效，并重置为0。
+- 取 verifymail(datetime) 激活有效时间，空为已激活，已超过时间询问是否重发邮件（重发限制时间）。
+- 取 userpasswordenabled(tinyint) 检查密码是否有效，无效要求强制改密码。
+- 取 userenable(datetime) 校验用户是否过期，未达启用时间为封禁期。
+- 取 userjurisdiction(int) 权限等级，1直接视为封禁。
+- 取 userpassword(text) 与输入的 MD6 进行校验密码。
+- 取 userpassword2(text) ，如果需要返回输入页面增加二级密码输入框。与输入的 MD6 进行校验二级密码。
+- 取 authenticatorid/authenticatortoken ：校验密保令牌，暂时不做。
+- 写入登录状态，将登录操作记录到日志。
+- 进行一次登录状态查询，确认已登录。
+- 将用户信息返回，由后续程序校验权限和显示等。

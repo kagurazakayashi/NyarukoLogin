@@ -475,6 +475,9 @@
 
         //记录日志
         function savereg($userlogininfoid) {
+            if (!($userlogininfoid >= 1000 && $userlogininfoid < 10000 && $this->ysqlc->sqlset->log_Registration_OK == true) || !($userlogininfoid >= 10000 && $userlogininfoid < 100000 && $this->ysqlc->sqlset->log_Registration_Fail == true)) {
+                return -1;
+            }
             $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$this->datetime,$this->ip,2);
             $this->errinfo = "";
             return $saveregr;

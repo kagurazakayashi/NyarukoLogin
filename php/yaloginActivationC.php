@@ -1,6 +1,6 @@
 <?php
 require 'yaloginActivation.php';
-$c = new yaloginRegistration();
+$c = new yaloginActivation();
 $c->init();
 $errid = $c->vaild();
 $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "";
@@ -10,7 +10,7 @@ $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 
 $jsonarr['result'] = strval($errid);
 $html = "<meta http-equiv=\"refresh\" content=\"1;url=../YashiUser-Alert.php?errid=".strval($errid)."&backurl=".$backurl."\">";
-if ($errid >= 10000) {
+if ($errid >= 0) {
     $saved = $c->savereg($errid);
 }
 

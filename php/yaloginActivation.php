@@ -4,7 +4,7 @@
 */
     require 'yaloginGlobal.php';
     require 'yaloginSQLC.php';
-    class yaloginRegistration {
+    class yaloginActivation {
         private $ysqlc;
         public $hash;
         private $sqlset;
@@ -21,9 +21,6 @@
             // if(is_array($_GET)&&count($_GET)>0) {
             //     return 10201;
             // }
-
-            //echomode
-            $this->echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "json";
             
             //acode
             $v = isset($_GET["acode"]) ? $_GET["acode"] : null;
@@ -67,11 +64,11 @@
                     $dbstrtotime = strtotime($resultdata["verifymail"]);
                     if ($nowstrtotime < $dbstrtotime) {
                         $this->hash = "";
-                        if (isset($resultdata["hash"]) == true && $resultdata["hash"] == $nowtime) {
+                        if (isset($resultdata["hash"]) == true) {
                             $this->hash = $resultdata["hash"];
                             //激活账户（清除verifymail）
                             $aresult = $this->actusersql();
-                            if (isset($aresult) && is_int($aresult)) {
+                            if (!isset($aresult) && is_int($aresult)) {
                                 return 11405;
                             }
                             //记录日志和返回值(在上一层继续)
@@ -109,6 +106,9 @@ mysql>SELECT `hash`,`verifymail`,`useremail` FROM `userdb`.`yalogin_user` WHERE 
 
         //记录日志
         function savereg($infoid) {
+            if (!($infoid >= 1000 && $infoid < 10000 && $this->ysqlc->sqlset->log_Activation_OK == true) || !($infoid >= 10000 && $infoid < 100000 && $this->ysqlc->sqlset->log_Activation_Fail == true)) {
+                return -1;
+            }
             $datetime = date("Y-m-d H:i:s");
             $ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
             $saveregr = $this->ysqlc->savereg($infoid,$this->hash,$datetime,$ip,3);
