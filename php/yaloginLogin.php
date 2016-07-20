@@ -6,6 +6,7 @@
     require 'yaloginGlobal.php';
     require 'yaloginSQLC.php';
     require 'yaloginUserInfo.php';
+    require 'yaloginSendmail.php';
     class yaloginLogin {
         private $ysqlc;
         public $hash;
@@ -97,10 +98,116 @@
                 return 12103;
             }
 
+            $this->getseruser(); //检索用户信息
+            $errid = $this->verifypassword(); //验证是否可用
+            if ($errid != 0) {
+                return $errid;
+            }
+            //记录登录token和日志
+
             return 0;
         }
 
         //检索用户信息
+        //SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin` FROM `userdb`.`yalogin_user` WHERE `username` = 'testuser';
+        function getseruser() {
+            $sqlcmd = "SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin`,`useremail`,`verifymailcode` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$this->inpuser->username."';";
+            $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
+            if (is_int($result_array)) {
+                return $result_array; //err
+            }
+            if (count($result_array) == 0) {
+                return 12104;
+            } else if (count($result_array) > 1) {
+                return 12105;
+            }
+            $this->seruser->username = $this->inpuser->username;
+            $seruser = $result_array[0];
+            $this->seruser->userpasserr = isset($result_array["userpasserr"]) ? $result_array["userpasserr"] : "0";
+            $this->seruser->verifymail = isset($result_array["verifymail"]) ? $result_array["verifymail"] : null;
+            $this->seruser->userpasswordenabled = isset($result_array["userpasswordenabled"]) ? $result_array["userpasswordenabled"] : "0";
+            $this->seruser->userenable = isset($result_array["userenable"]) ? $result_array["userenable"] : null;
+            $this->seruser->userjurisdiction = isset($result_array["userjurisdiction"]) ? $result_array["userjurisdiction"] : null;
+            $this->seruser->userpassword = isset($result_array["userpassword"]) ? $result_array["userpassword"] : null;
+            $this->seruser->userpassword2 = isset($result_array["userpassword2"]) ? $result_array["userpassword2"] : null;
+            $this->seruser->autologin = isset($result_array["autologin"]) ? $result_array["autologin"] : null;
+            $this->seruser->useremail = isset($result_array["useremail"]) ? $result_array["useremail"] : null;
+            $this->seruser->verifymailcode = isset($result_array["verifymailcode"]) ? $result_array["verifymailcode"] : null;
+            return 0;
+        }
+
+        //校验密码是否可用
+        function verifypassword() {
+            //取 userpasserr(int) 检查密码尝试错误次数，超过一定量设密码无效，并重置为0。
+            $userpasserr = intval($this->seruser->userpasserr)
+            if ($userpasserr > 10) {
+                return 12106;
+            }
+            //取 verifymail(datetime) 激活有效时间，空为已激活，已超过时间否重发邮件。verifymailcode(text)
+            if ($this->seruser->verifymail != null) {
+                //-过期再发：
+                // $dateformat = "Y-m-d H:i:s";
+                // $nowstrtotime = strtotime(date($dateformat));
+                // $dbstrtotime = strtotime($this->seruser->verifymail);
+                // if ($nowstrtotime >= $dbstrtotime) {
+                //     //激活码已经过期，执行下面的代码
+                // }
+                //-无论是否过期直接发：
+                $mailerr = $this->resendverifymail();
+                if ($mailerr != null) {
+                    return intval($mailerr);
+                } else {
+                    return 12107;
+                }
+            }
+            //取 userpasswordenabled(tinyint) 检查密码是否有效，无效要求强制改密码。
+            $userpasswordenabledint = intval($this->seruser->userpasswordenabled);
+            if ($userpasswordenabledint == 0) {
+                return 12108;
+            }
+            //取 userenable(datetime) 校验用户是否过期，未达启用时间为封禁期。
+            //userenable 是启用时间
+            $dateformat = "Y-m-d H:i:s";
+            $nowstrtotime = strtotime(date($dateformat));
+            $dbstrtotime = strtotime($this->seruser->verifymail);
+            if ($nowstrtotime < $dbstrtotime) {
+                return 12109; //用户未启用
+            }
+            //取 userjurisdiction(int) 权限等级，1直接视为封禁。
+            if ($this->seruser->userenable == null) {
+                return 12110;
+            } else if (intval($this->seruser->userenable) == 1) {
+                return 12111;
+            }
+            //取 userpassword(text) 与输入的 MD6 进行校验密码。
+            if ($this->seruser->userpassword == null || $this->inpuser->userpassword == null) {
+                return 12112;
+            }
+            if ($this->seruser->userpassword != $this->inpuser->userpassword) {
+                return 12113;
+            }
+            //取 userpassword2(text) ，如果需要返回输入页面增加二级密码输入框。与输入的 MD6 进行校验二级密码。
+            if ($this->seruser->userpassword2 != null) {
+                if ($this->inpuser->userpassword2 == null) {
+                    return 12114;
+                } else if ($this->seruser->userpassword2 != $this->inpuser->userpassword2) {
+                    return 12115;
+                }
+            }
+            //取 authenticatorid/authenticatortoken ：校验密保令牌，暂时不做。
+            //
+            //
+            //
+
+            return 0;
+        }
+
+        //重新发送激活邮件
+        function resendverifymail() {
+            $sendmail = new Sendmail();
+            $timeout = date('Y-m-d H:i:s',strtotime('+1 hour'));
+            return $sendmail->sendverifymail($this->seruser->useremail, $this->seruser->username, $this->seruser->verifymailcode, $timeout);
+        }
 
         //记录日志
         function savereg($infoid) {
