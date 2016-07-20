@@ -26,7 +26,7 @@
       </tr>
       <tr>
         <td align="right">自动登录时长*(text)：</td>
-        <td><select name="usersex" id="usersex">
+        <td><select name="autologin" id="autologin">
         <option value="0">不自动登录</option>
         <option value="3600">1小时</option>
         <option value="86400">1天</option>

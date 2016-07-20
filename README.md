@@ -37,16 +37,30 @@
 
 功能：
 
-- MD6：md6hash
-- randstr：随机文本生成
-- 输入：len：长度，chars：字符库
-- 输出：string：随机文本
-- containsSpecialCharacters：识别是否有特殊字符
-- 输入：data：文字数据，inputmatch：特殊字符库
+- ***md6hash**
+- MD6 哈希值。
+- 输入：data：输入要哈希的字符串。
+- 输出：string：该字符串的哈希值。
+- **randstr**
+- 随机文本生成。
+- 输入：len：长度，chars：字符库。
+- 输出：string：随机文本。
+- **randhash**
+- 生成一个随机哈希值，用于创建临时会话等标记。
+- 输入：userinfo：要混入的用户固定信息文本。
+- 输出：string：随机 MD6 哈希值。
+- **containsSpecialCharacters**
+- 识别是否有特殊字符。
+- 输入：data：文字数据，inputmatch：特殊字符库。
 - 输出：bool：返回值代码，0 为正常。
-- clearSpecialCharacters：清除特殊字符
-- 输入：data：文字数据
+- **clearSpecialCharacters**
+- 清除特殊字符。
+- 输入：data：文字数据。
 - 输出：string：过滤后文字，null 为错误。
+- **is_md5**
+- 确认是否符合32位MD5格式。
+- 输入：md5str：MD5文字。
+- 输出：bool：是否符合。
 
 ###php/yaloginSendmail.php
 **[Model]后端：邮件模板和发送邮件**

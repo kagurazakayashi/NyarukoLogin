@@ -155,7 +155,7 @@ function toVaild(path) {
 function hash(str) {
     //var md5hash = new emd5hash();
     var md6hash = new emd6hash();
-    var md6v = md6hash.hex(str, parseInt(128,10));
+    var md6v = md6hash._hex(str);
     //var md5v = md5hash.hex_md5(md6v);
     var md5v = hex_md5(md6v);
     return md5v;

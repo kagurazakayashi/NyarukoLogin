@@ -19,6 +19,13 @@
             return $password;
         }
 
+        //随机哈希值生成
+        function randhash($userinfo) {
+            $data = date('YmdHis').$userinfo.$this->randstr(32);
+            $result = $this->md6hash($data);
+            return $result;
+        }
+
         //识别是否有特殊字符 $this->safe->containsSpecialCharacters($data);
         function containsSpecialCharacters($data,$inputmatch = "/^[^\/\'\\\"#$%&\^\*]+$/") {
             if (is_string($data) == false) {
@@ -50,6 +57,10 @@
             $edata = stripslashes($edata);
             $edata = htmlspecialchars($edata);
             return $edata;
+        }
+
+        function is_md5($md5str) {
+            return preg_match("/^[a-z0-9]{32}$/", $password);
         }
     }
 ?>

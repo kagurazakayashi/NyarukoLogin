@@ -41,23 +41,23 @@
                 return 10201;
             }
             
-            //vcode
+             //vcode
             @session_start();
             $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
             if($v != null){
                 if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
-                    return 11204;
+                    return 90404;
                 }
                 if(!isset($_SESSION["authnum_session"])) {
-                    return 11201;
+                    return 90401;
                 }
                 $va = strtoupper($v);
                 $vb = strtoupper($_SESSION["authnum_session"]);
                 if($va!=$vb){
-                    return 11202;
+                    return 90402;
                 }
             } else {
-                return 11203;
+                return 90403;
             }
             
             //id
@@ -120,7 +120,7 @@
             if($v == null || !is_string($v)) {
                 return 10601;
             }
-            if (!$this->is_md5($v)) {
+            if (!$this->safe->is_md5($v)) {
                 return 10603;
             }
             $this->userobj->userpassword = $v;
@@ -128,7 +128,7 @@
             //userpassword2
             $v = isset($_POST["userpassword2"]) ? $_POST["userpassword2"] : null;
             if (strlen($v) > 0) {
-                if (!$this->is_md5($v)) {
+                if (!$this->safe->is_md5($v)) {
                     return 10703;
                 }
             }
@@ -259,13 +259,7 @@
         }
 
         function userhash() {
-            $data = $this->userobj->username.$this->userobj->useremail.date('YmdHis').$this->safe->randstr(32);
-            $result = $this->safe->md6hash($data);
-            return $result;
-        }
-        
-        function is_md5($password) {
-            return preg_match("/^[a-z0-9]{32}$/", $password);
+            return $this->safe->randhash($this->userobj->username.$this->userobj->useremail);
         }
         
         //检查日期格式
