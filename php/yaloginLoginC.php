@@ -1,6 +1,6 @@
 <?php
-require 'yaloginActivation.php';
-$c = new yaloginActivation();
+require 'yaloginLogin.php';
+$c = new yaloginLogin();
 $c->init();
 $errid = $c->vaild();
 $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "";
@@ -15,7 +15,7 @@ if ($errid >= 0) {
 }
 
 if ($echomode == "json") {
-    echo json_encode($jsonarr);
+    echo json_encode(array_merge($jsonarr,$c->cookiejsonarr));
 } else if ($echomode == "html") {
     echo $html;
 }

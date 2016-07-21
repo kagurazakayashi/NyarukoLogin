@@ -1,3 +1,10 @@
+##已完成功能
+
+- 用户注册：支持设置 用户名、昵称、邮箱、密码、二级密码、密码提示问题、生日、性别 。
+- 用户激活：发送包含激活码的电子邮件，第二次登录未激活时重新发送。输入或通过邮件输入激活码激活。
+- 历史记录：记录用户 注册、激活、登录 的失败与成功时的信息，提供开关进行单独项的历史记录开关。
+- 用户登录：支持检查密码尝试错误次数、激活有效时间、密码是否过期、用户是否过期、权限等级、校验密码、二级密码。
+
 ##通用类
 
 - php/yaloginGlobal.php：通用设置，在这里进行程序配置
@@ -93,9 +100,9 @@
 - js/YashiUser-Registration.js
 - php/validate_image.php
 
-输入：
+输入（GET）：
 
-- 内嵌表单数据
+- backurl：要返回的页面，默认值「YashiUser-Login.php」。
 
 输出：
 
@@ -162,9 +169,10 @@
 - js/YashiUser-Activation.js
 - php/yaloginActivation.php
 
-输入（GET/POST）：
+输入（GET）：
 
-- acode：要自动键入的激活码（可选）
+- acode：要自动键入的激活码（可选）。
+- backurl：要返回的页面，默认值「YashiUser-Login.php」。
 
 输出：
 
@@ -205,21 +213,4 @@
 
 ##用户登录流程
 
-###开发计划
-
-- 输入 用户名、密码、记住密码时长、验证码。
-- 校验验证码。
-- 校验输入是否有特殊符号，与注册时校验方式匹配。
-- 取 username(text) 校验用户名是否存在。
-- 如果存在读取用户信息。
-- 取 userpasserr(int) 检查密码尝试错误次数，超过一定量设密码无效，并重置为0。
-- 取 verifymail(datetime) 激活有效时间，空为已激活，已超过时间询问是否重发邮件（重发限制时间）。
-- 取 userpasswordenabled(tinyint) 检查密码是否有效，无效要求强制改密码。
-- 取 userenable(datetime) 校验用户是否过期，未达启用时间为封禁期。
-- 取 userjurisdiction(int) 权限等级，1直接视为封禁。
-- 取 userpassword(text) 与输入的 MD6 进行校验密码。
-- 取 userpassword2(text) ，如果需要返回输入页面增加二级密码输入框。与输入的 MD6 进行校验二级密码。
-- 取 authenticatorid/authenticatortoken ：校验密保令牌，暂时不做。
-- 写入登录状态，将登录操作记录到日志。
-- 进行一次登录状态查询，确认已登录。
-- 将用户信息返回，由后续程序校验权限和显示等。
+###开发中

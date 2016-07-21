@@ -14,6 +14,7 @@
         private $sqlset;
         private $inpuser;
         private $seruser;
+        public $cookiejsonarr;
         
         //创建变量
         function init() { //__constrct()
@@ -21,6 +22,7 @@
             $this->inpuser = new YaloginUserInfo();
             $this->seruser = new YaloginUserInfo();
             $this->safe = new yaloginSafe();
+            $this->cookiejsonarr = null;
             $this->ysqlc->init();
             $this->sqlset = $this->ysqlc->sqlset;
         }
@@ -116,10 +118,21 @@
             return 0;
         }
 
+        //密码错误计数器+1
+        //update `yalogin_user` set `userpasserr`=1 where `id`=35;
+        function passworderror() {
+            $userpasserr = intval($this->seruser->userpasserr) + 1;
+            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `userpasserr`='".strval($userpasserr)."' where `hash`='".$this->seruser->hash."';";
+            if (is_int($result_array)) {
+                return $result_array; //err
+            }
+            return 0;
+        }
+
         function savesession($sessiontoken) {
             //update `yalogin_user` set `autologin`='789' where `id`=35;
             //记录sessiontoken到数据库
-            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `autologin`='".$sessiontoken."' where `username`='".$this->seruser->username."';";
+            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `autologin`='".$sessiontoken."' where `hash`='".$this->seruser->hash."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
             if (is_int($result_array)) {
                 return $result_array; //err
@@ -129,7 +142,7 @@
             //$this->inpuser->autologin
             session_start();
             $lifeTime = time() + intval($this->inpuser->autologin);
-            $cookiejsonarr = array(
+            $this->cookiejsonarr = array(
                 'sessiontoken'=>$sessiontoken,
                 'sessionname'=>session_name(),
                 'sessionid'=>session_id(),
@@ -137,7 +150,7 @@
                 'userhash'=>$this->seruser->hash,
                 'lifetime'=>$lifeTime
                 );
-            $cookiejson = json_encode($cookiejsonarr);
+            $cookiejson = json_encode($this->cookiejsonarr);
             $_SESSION["logininfo"] = $cookiejson;
             setcookie($this->cookiename, $cookiejson, $lifeTime, "/");
             return 0;
@@ -233,6 +246,10 @@
                 return 12112;
             }
             if ($this->seruser->userpassword != $this->inpuser->userpassword) {
+                $pwderrerr = $this->passworderror();
+                if ($pwderrerr != 0) {
+                    return $pwderrerr;
+                }
                 return 12113;
             }
             //取 userpassword2(text) ，如果需要返回输入页面增加二级密码输入框。与输入的 MD6 进行校验二级密码。
@@ -240,6 +257,10 @@
                 if ($this->inpuser->userpassword2 == null) {
                     return 12114;
                 } else if ($this->seruser->userpassword2 != $this->inpuser->userpassword2) {
+                    $this->passworderror();
+                    if ($pwderrerr != 0) {
+                        return $pwderrerr;
+                    }
                     return 12115;
                 }
             }
@@ -260,7 +281,7 @@
 
         //记录日志
         function savereg($infoid) {
-            if (!($infoid >= 1000 && $infoid < 10000 && $this->ysqlc->sqlset->log_Activation_OK == true) || !($infoid >= 10000 && $infoid < 100000 && $this->ysqlc->sqlset->log_Activation_Fail == true)) {
+            if (!($infoid >= 1000 && $infoid < 10000 && $this->ysqlc->sqlset->log_Login_OK == true) || !($infoid >= 10000 && $infoid < 100000 && $this->ysqlc->sqlset->log_Login_Fail == true)) {
                 return -1;
             }
             $datetime = date("Y-m-d H:i:s");

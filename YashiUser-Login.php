@@ -45,6 +45,11 @@
         <td><input type="text" name="vcode" id="vcode"></td>
       </tr>
         <tr>
+        <input type="hidden" name="echomode" id="echomode" value="html">
+        <?php
+          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
+          echo "<input type=\"hidden\" name=\"backurl\" id=\"backurl\" value=\"".$backurl."\">";
+        ?>
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
             <td><input type="button" name="submitbutton" id="submitbutton" value="用户登录" onclick="toVaild('php/yaloginLoginC.php')"></td>
         </tr>

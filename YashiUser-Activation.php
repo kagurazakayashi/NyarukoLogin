@@ -15,12 +15,17 @@
         <tr>
             <td align="right" width="50%">激活码*(text)：</td>
             <td><?php
-                $inacode = isset($_GET["acode"]) ? $_GET["acode"] : (isset($_POST["acode"]) ? $_POST["acode"] : "");
+                $inacode = isset($_GET["acode"]) ? $_GET["acode"] : "";
                 echo "<input type=\"text\" name=\"acode\" id=\"acode\" value=\"".$inacode."\">";
             ?></td>
             
         </tr>
         <tr>
+        <input type="hidden" name="echomode" id="echomode" value="html">
+        <?php
+          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
+          echo "<input type=\"hidden\" name=\"backurl\" id=\"backurl\" value=\"".$backurl."\">";
+        ?>
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
             <td><input type="button" name="submitbutton" id="submitbutton" value="激活用户" onclick="toVaild('php/yaloginActivationC.php')"></td>
         </tr>

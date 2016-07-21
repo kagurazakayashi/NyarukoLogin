@@ -104,7 +104,10 @@ date("YmdHis")."\"></td>";
         <td align="right">&nbsp;</td>
         <td>&nbsp;</td>
         <input type="hidden" name="echomode" id="echomode" value="html">
-        <input type="hidden" name="backurl" id="backurl" value="YashiUser-Registration.php">
+        <?php
+          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
+          echo "<input type=\"hidden\" name=\"backurl\" id=\"backurl\" value=\"".$backurl."\">";
+        ?>
       </tr>
       <tr>
         <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
