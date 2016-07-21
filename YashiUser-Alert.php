@@ -46,7 +46,7 @@ function showerr() {
     $alerttitle = "发生错误";
     $alertbtntxt = "返回";
     $erridnum = intval($errid);
-    if ($erridnum > 1000 && $erridnum < 10000) {
+    if ($erridnum >= 1000 && $erridnum < 10000) {
         $alerttitle = "提示";
         $alertbtntxt = "确定";
     }

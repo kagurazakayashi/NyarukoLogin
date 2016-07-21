@@ -14,7 +14,6 @@
         public $userobj;
         private $datetime, $ip;
         private $sqlset;
-        private $inputmatch;
         private $app;
         private $safe;
         private $errinfo = "";
@@ -29,7 +28,6 @@
             $this->ysqlc = new yaloginSQLC();
             $this->ysqlc->init();
             $this->sqlset = $this->ysqlc->sqlset;
-            $this->inputmatch = $this->inputmatch;
             date_default_timezone_set("PRC");
             $this->datetime = date("Y-m-d H:i:s");
             $this->ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
@@ -45,7 +43,7 @@
             @session_start();
             $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
             if($v != null){
-                if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+                if ($this->safe->containsSpecialCharacters($v) != 0) {
                     return 90404;
                 }
                 if(!isset($_SESSION["authnum_session"])) {
@@ -70,7 +68,7 @@
             if($v == null || !is_string($v)) {
                 return 10301;
             }
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10304;
             }
             if (strlen($v) < 3 || strlen($v) > 32) {
@@ -88,7 +86,7 @@
             if($v == null || !is_string($v)) {
                 $v = $_POST["username"]; //return 10401;
             }
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10404;
             }
             if (strlen($v) < 3 || strlen($v) > 32) {
@@ -101,7 +99,7 @@
             if($v == null || !is_string($v)) {
                 return 10501;
             }
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10404;
             }
             if (strlen($v) < 5 || strlen($v) > 64) {
@@ -145,7 +143,7 @@
             
             //userpasswordquestion & userpasswordanswer
             $v = isset($_POST["userpasswordquestion1"]) ? $_POST["userpasswordquestion1"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10801;
             }
             if (strlen($v) > 64) {
@@ -153,7 +151,7 @@
             }
             $this->userobj->userpasswordquestion1 = $v;
             $v = isset($_POST["userpasswordanswer1"]) ? $_POST["userpasswordanswer1"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10803;
             }
             if (strlen($v) > 64) {
@@ -161,7 +159,7 @@
             }
             $this->userobj->userpasswordanswer1 = $v;
             $v = isset($_POST["userpasswordquestion2"]) ? $_POST["userpasswordquestion2"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10805;
             }
             if (strlen($v) > 64) {
@@ -169,7 +167,7 @@
             }
             $this->userobj->userpasswordquestion2 = $v;
             $v = isset($_POST["userpasswordanswer2"]) ? $_POST["userpasswordanswer2"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10807;
             }
             if (strlen($v) > 64) {
@@ -177,7 +175,7 @@
             }
             $this->userobj->userpasswordanswer2 = $v;
             $v = isset($_POST["userpasswordquestion3"]) ? $_POST["userpasswordquestion3"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10809;
             }
             if (strlen($v) > 64) {
@@ -185,7 +183,7 @@
             }
             $this->userobj->userpasswordquestion3 = $v;
             $v = isset($_POST["userpasswordanswer3"]) ? $_POST["userpasswordanswer3"] : null;
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10811;
             }
             if (strlen($v) > 64) {
@@ -198,7 +196,7 @@
             if($v == null || !is_string($v)) {
                 $v = "0";//return 10901;
             }
-            if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+            if ($this->safe->containsSpecialCharacters($v) != 0) {
                 return 10904;
             }
             if (strlen($v) < 1 || strlen($v) > 2) {
@@ -211,7 +209,7 @@
             if($v == null || !is_string($v)) {
                 $v == null; //return 11001;
             } else {
-                if ($this->safe->containsSpecialCharacters($v,$this->inputmatch) != 0) {
+                if ($this->safe->containsSpecialCharacters($v) != 0) {
                     return 11004;
                 }
                 if ($this->checkDateIsValid($v, array("Y-m-d")) == false) {

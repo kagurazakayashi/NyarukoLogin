@@ -3,8 +3,8 @@ require 'yaloginLogin.php';
 $c = new yaloginLogin();
 $c->init();
 $errid = $c->vaild();
-$backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "";
-$echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "";
+$backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
+$echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
 $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 

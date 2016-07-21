@@ -5,6 +5,8 @@
 <title>YashiUser-Login</title>
 <link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="js/YashiUser-Login.js"></script>
+<script type="text/javascript" src="js/md5.js"></script>
+<script type="text/javascript" src="js/md6.js"></script>
 </head>
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
@@ -50,6 +52,7 @@
           $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
           echo "<input type=\"hidden\" name=\"backurl\" id=\"backurl\" value=\"".$backurl."\">";
         ?>
+        <input type="hidden" name="userversion" id="userversion" value="1">
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
             <td><input type="button" name="submitbutton" id="submitbutton" value="用户登录" onclick="toVaild('php/yaloginLoginC.php')"></td>
         </tr>

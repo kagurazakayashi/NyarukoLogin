@@ -60,7 +60,7 @@
         }
 
         function is_md5($md5str) {
-            return preg_match("/^[a-z0-9]{32}$/", $password);
+            return preg_match("/^[a-z0-9]{32}$/", $md5str);
         }
     }
 ?>
