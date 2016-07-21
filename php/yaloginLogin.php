@@ -7,6 +7,7 @@
     require 'yaloginSQLC.php';
     require 'yaloginUserInfo.php';
     require 'yaloginSendmail.php';
+    require 'yaloginSafe.php';
     class yaloginLogin {
         private $ysqlc;
         public $hash;
@@ -19,6 +20,7 @@
             $this->ysqlc = new yaloginSQLC();
             $this->inpuser = new YaloginUserInfo();
             $this->seruser = new YaloginUserInfo();
+            $this->safe = new yaloginSafe();
             $this->ysqlc->init();
             $this->sqlset = $this->ysqlc->sqlset;
         }
@@ -103,15 +105,61 @@
             if ($errid != 0) {
                 return $errid;
             }
+
             //记录登录token和日志
+            $sessiontoken = $this->safe->randhash($this->seruser->username);
+            $errid = $this->savesession($sessiontoken);
+            if ($errid != 0) {
+                return $errid;
+            }
 
             return 0;
+        }
+
+        function savesession($sessiontoken) {
+            //update `yalogin_user` set `autologin`='789' where `id`=35;
+            //记录sessiontoken到数据库
+            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `autologin`='".$sessiontoken."' where `username`='".$this->seruser->username."';";
+            $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
+            if (is_int($result_array)) {
+                return $result_array; //err
+            }
+
+            $this->logout(); //注销之前的登录
+            //$this->inpuser->autologin
+            session_start();
+            $lifeTime = time() + intval($this->inpuser->autologin);
+            $cookiejsonarr = array(
+                'sessiontoken'=>$sessiontoken,
+                'sessionname'=>session_name(),
+                'sessionid'=>session_id(),
+                'username'=>$this->seruser->username,
+                'userhash'=>$this->seruser->hash,
+                'lifetime'=>$lifeTime
+                );
+            $cookiejson = json_encode($cookiejsonarr);
+            $_SESSION["logininfo"] = $cookiejson;
+            setcookie($this->cookiename, $cookiejson, $lifeTime, "/");
+            return 0;
+        }
+
+        function logout() {
+            session_unset(); //内存登出
+            session_destroy(); //文件登出
+            setcookie($this->cookiename()); //cookie登出
+        }
+
+        function cookiename($key = "") {
+            if (strlen($key) > 0) {
+                $key = "_".$key;
+            }
+            return "yalogin_".$this->sqlset->db_app.$key;
         }
 
         //检索用户信息
         //SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin` FROM `userdb`.`yalogin_user` WHERE `username` = 'testuser';
         function getseruser() {
-            $sqlcmd = "SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin`,`useremail`,`verifymailcode` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$this->inpuser->username."';";
+            $sqlcmd = "SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin`,`useremail`,`verifymailcode`,`hash` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$this->inpuser->username."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
             if (is_int($result_array)) {
                 return $result_array; //err
@@ -133,6 +181,7 @@
             $this->seruser->autologin = isset($result_array["autologin"]) ? $result_array["autologin"] : null;
             $this->seruser->useremail = isset($result_array["useremail"]) ? $result_array["useremail"] : null;
             $this->seruser->verifymailcode = isset($result_array["verifymailcode"]) ? $result_array["verifymailcode"] : null;
+            $this->seruser->hash = isset($result_array["hash"]) ? $result_array["hash"] : "";
             return 0;
         }
 

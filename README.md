@@ -37,7 +37,7 @@
 
 功能：
 
-- ***md6hash**
+- **md6hash**
 - MD6 哈希值。
 - 输入：data：输入要哈希的字符串。
 - 输出：string：该字符串的哈希值。
@@ -73,10 +73,10 @@
 
 功能：
 
-- sendtestmail：发送测试邮件
+- **sendtestmail：发送测试邮件**
 - 输入：接收方邮箱
 - 输出：HTML
-- sendverifymail：发送注册验证邮件
+- **sendverifymail：发送注册验证邮件**
 - 输入：address：接收方邮箱，username：请求注册的用户名，vcode：激活码，timeout：超时时间。
 - 输出：错误信息，null 为成功。
 
