@@ -2,9 +2,22 @@
 require 'yaloginLogin.php';
 $c = new yaloginLogin();
 $c->init();
-$errid = $c->vaild();
-$backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
-$echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
+$errid = 0;
+$backurl = "";
+$echomode = "";
+
+if (isset($_GET["logout"])) {
+    $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "";
+    $echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "";
+    session_start();
+    $c->logout();
+    $errid = 1004;
+} else {
+    $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
+    $echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
+    $errid = $c->vaild();
+}
+
 $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 
