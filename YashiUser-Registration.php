@@ -23,8 +23,8 @@
       <tr>
         <td align="right">用户名*(text)：</td>
         <?php
-        echo "<td><input type=\"text\" name=\"username\" id=\"username\" value=\"testuser".
-date("YmdHis")."\"></td>";
+        echo '<td><input type="text" name="username" id="username" value="testuser'.
+date("YmdHis").'"></td>';
         ?>
       </tr>
       <tr>
@@ -106,7 +106,7 @@ date("YmdHis")."\"></td>";
         <input type="hidden" name="echomode" id="echomode" value="html">
         <?php
           $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
-          echo "<input type=\"hidden\" name=\"backurl\" id=\"backurl\" value=\"".$backurl."\">";
+          echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
         ?>
       </tr>
       <tr>

@@ -56,7 +56,7 @@ function showerr() {
     if ($backurl != null) {
         $onclick = "window.location.href='".$backurl."';";
     }
-    echo "</p><p><input type=\"button\" name=\"submitbutton\" id=\"submitbutton\" value=\"".$alertbtntxt."\"  onclick=\"".$onclick."\" ></p>";
+    echo '</p><p><input type="button" name="submitbutton" id="submitbutton" value="'.$alertbtntxt.'"  onclick="'.$onclick.'" ></p>';
 }
 function test_input($data) {
     $data = trim($data);
