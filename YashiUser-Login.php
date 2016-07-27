@@ -50,7 +50,7 @@
         <input type="hidden" name="echomode" id="echomode" value="html">
         <?php
           $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Status.php";
-          echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
+          echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'">';
         ?>
         <input type="hidden" name="userversion" id="userversion" value="1">
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>

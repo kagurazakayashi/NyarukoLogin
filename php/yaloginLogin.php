@@ -110,7 +110,6 @@
             if ($errid != 0) {
                 return $errid;
             }
-
             //记录登录token和日志
             $sessiontoken = $this->safe->randhash($this->seruser->username);
             $errid = $this->savesession($sessiontoken);
@@ -127,7 +126,7 @@
             $userpasserr = intval($this->seruser->userpasserr) + 1;
             $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `userpasserr`='".strval($userpasserr)."' where `hash`='".$this->seruser->hash."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
-            if (is_int($result_array)) {
+            if (is_int($result_array) && $result_array != 0) {
                 return $result_array; //err
             }
             return 0;
@@ -138,13 +137,14 @@
             //记录sessiontoken到数据库
             $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `autologin`='".$sessiontoken."' where `hash`='".$this->seruser->hash."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
-            if (is_int($result_array)) {
+
+            if (is_int($result_array) && $result_array != 0) {
+
                 return $result_array; //err
             }
 
-            session_start();
+            //session_start();
             $this->logout(); //注销之前的登录
-            //$this->inpuser->autologin
             $lifeTime = time() + intval($this->inpuser->autologin);
             $this->cookiejsonarr = array(
                 'sessiontoken'=>$sessiontoken,
@@ -156,7 +156,17 @@
                 );
             $cookiejson = json_encode($this->cookiejsonarr);
             $_SESSION["logininfo"] = $cookiejson;
-            setcookie($this->cookiename, $cookiejson, $lifeTime, "/");
+            $cookiename = $this->cookiename();
+            setcookie($cookiename, $cookiejson, $lifeTime);
+
+            //验证登录
+            if (isset($_SESSION["logininfo"]) == false) {
+                return 12118;
+            }
+            if (isset($_COOKIE[$cookiename]) == false) {
+                return 12119;
+            }
+
             return 0;
         }
 

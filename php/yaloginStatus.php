@@ -17,9 +17,10 @@ class YaloginStatus
 
 	//登录状态
 	function loginuser() {
+		session_start();
 		//检查登录 SESSION
 		$cookiejson = isset($_SESSION["logininfo"]) ? $_SESSION["logininfo"] : null;
-		$sesinfoarr = array('session'=>false, 'cookie'=>false);
+		$sesinfoarr = array('autologinby'=>"fail");
 		if ($cookiejson == null) {
 			//检查登录 COOKIE
 			$cookiename = $this->cookiename();
@@ -27,11 +28,11 @@ class YaloginStatus
 			if ($cookiejson == null) {
 				//return null;
 			} else {
-				$sesinfoarr["cookie"] = true;
+				$sesinfoarr["autologinby"] = "cookie";
 				$_SESSION["logininfo"] = $cookiejson;
 			}
 		} else {
-			$sesinfoarr["session"] = true;
+			$sesinfoarr["autologinby"] = "session";
 		}
 		//取登录信息
 		$cookiejsonarr = json_decode($cookiejson);
