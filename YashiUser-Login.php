@@ -49,7 +49,7 @@
         <tr>
         <input type="hidden" name="echomode" id="echomode" value="html">
         <?php
-          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
+          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Status.php";
           echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
         ?>
         <input type="hidden" name="userversion" id="userversion" value="1">

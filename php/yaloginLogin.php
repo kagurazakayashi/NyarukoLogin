@@ -142,9 +142,9 @@
                 return $result_array; //err
             }
 
+            session_start();
             $this->logout(); //注销之前的登录
             //$this->inpuser->autologin
-            session_start();
             $lifeTime = time() + intval($this->inpuser->autologin);
             $this->cookiejsonarr = array(
                 'sessiontoken'=>$sessiontoken,
