@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <title>YashiUser-Status</title>
 <link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
-<!--<script src="js/require.js" data-main="js/YashiUser-Registration.js"></script>-->
 </head>
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>

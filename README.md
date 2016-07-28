@@ -114,7 +114,7 @@
 依赖：
 
 - php/yaloginRegistration.php
-- echomode：返回值格式（HTML/JSON）（可选，默认HTML）。
+- echomode：返回值格式（HTML/JSON）。
 - YashiUser-Alert.php（echomode=HTML）
 
 输入（POST）：
@@ -122,7 +122,7 @@
 - 来自 YashiUser-Registration.php 的表单数据，调用 php/yaloginRegistration.php 处理。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 
-输出（JSON/HTML，默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
 
 - result：返回的结果代码。
 - backurl：要返回的页面。
@@ -167,7 +167,7 @@
 
 - css/YashiUser-Registration.css
 - js/YashiUser-Activation.js
-- php/yaloginActivation.php
+- php/yaloginActivationC.php
 
 输入（GET）：
 
@@ -190,9 +190,9 @@
 
 - 来自 YashiUser-Activation.php 的表单数据，调用 php/yaloginActivation.php 处理。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
-- echomode：返回值格式（HTML/JSON）（可选，默认HTML）。
+- echomode：返回值格式（HTML/JSON）。
 
-输出（JSON/HTML，默认 JSON。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
 
 - result：返回的结果代码。
 - backurl：要返回的页面。
@@ -208,9 +208,138 @@
 
 输入（GET/POST）：
 
-- acode：要使用的激活码
-- vaild() -> int ：返回结果代码
+- acode：要使用的激活码。
 
-##用户登录流程
+输出：
+
+- vaild() -> int ：返回结果代码。
+
+##用户登录与注销流程
+
+###YashiUser-Login.php
+**[View]前端：用户登录页**
+提供用户密码输入表单。
+
+依赖：
+
+- css/YashiUser-Registration.css
+- php/validate_image.php
+- php/yaloginLoginC.php
+- js/YashiUser-Login.js
+- js/md5.js
+- js/md6.js
+
+输入（GET）：
+
+- backurl：要返回的页面，默认值「YashiUser-Status.php」。
+
+###php/yaloginLoginC.php
+**[Controller]后端：用户登录和注销程序连接器。**
+
+依赖：
+
+- php/yaloginLogin.php
+- YashiUser-Login.php（echomode=HTML）
+
+输入（GET/POST）：
+
+- 来自 YashiUser-Login.php 的表单数据，调用 php/yaloginLogin.php 处理。
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
+- echomode：返回值格式（HTML/JSON）。
+
+输入（GET）：
+
+- logout：无参数（可选）：执行注销操作（否则为登录操作）。
+
+输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+
+- result：返回的结果代码。
+- backurl：要返回的页面。
+- sessiontoken：PHP会话令牌。（登录操作时）
+- sessionname：PHP会话令牌名称。（登录操作时）
+- sessionid：PHP会话令牌ID。（登录操作时）
+- username：用户名。（登录操作时）
+- userhash：用户哈希。（登录操作时）
+- lifetime：有效期至。（登录操作时）
+
+###php/yaloginLogin.php
+**[Model]后端：用户登录和注销程序**
+
+依赖：
+
+- php/yaloginGlobal.php
+- php/yaloginSQLC.php
+- php/yaloginUserInfo.php
+- php/yaloginSendmail.php
+- php/yaloginSafe.php
+
+输入（POST）：
+
+- vcode：验证码。
+- username：用户名。
+- userpassword：密码。
+- userpassword2：二级密码（可选）。
+- userversion：用户数据模型版本。
+- autologin：自动登录时长（秒）。
+
+输出：
+
+- vaild() -> int ：返回结果代码。
+- $cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）。
+
+##用户登录状态查询
+
+###YashiUser-Status.php
+**[View]前端：当前用户登录状态查询请求页**
+
+依赖：
+
+- css/YashiUser-Registration.css
+- php/YaloginStatusC.php
+
+输出：
+
+- 发送数据到：php/yaloginStatusC.php
+
+###php/yaloginStatusC.php
+**[Controller]后端：当前用户登录状态查询程序连接器。**
+
+依赖：
+
+- php/yaloginStatus.php
+- YashiUser-Login.php（echomode=HTML）
+
+输入（GET）：
+
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
+- echomode：返回值格式（HTML/JSON）。
+
+输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+
+- result：返回的结果代码。
+- backurl：要返回的页面。
+- autologinby：登录状态获取方式：包括 fail，cookie，session。
+- sessiontoken：PHP会话令牌。（有用户登录时）
+- sessionname：PHP会话令牌名称。（有用户登录时）
+- sessionid：PHP会话令牌ID。（有用户登录时）
+- username：用户名。（有用户登录时）
+- userhash：用户哈希。（有用户登录时）
+- lifetime：有效期至。（有用户登录时）
+
+###php/yaloginStatus.php
+**[Model]后端：当前用户登录状态查询程序**
+
+依赖：
+
+- php/yaloginUserInfo.php
+- php/YaloginSQLSetting.php
+
+输出：
+
+- loginuser() -> int ：返回结果代码。
+- sesinfoarr：autologinby：登录状态获取方式：包括 fail，cookie，session。
+- cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）（有用户登录时）。
+
+##用户信息查询
 
 ###开发中
