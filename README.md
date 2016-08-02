@@ -90,7 +90,7 @@
 
 ##用户注册流程
 ###YashiUser-Registration.php
-**[View]前端：用户注册测试页面。**
+**[View]前端：用户注册测试页面**
 
 依赖：
 
@@ -109,7 +109,7 @@
 - 发送数据到：php/yaloginRegistrationC.php
 
 ###php/yaloginRegistrationC.php
-**[Controller]后端：用户注册程序连接器。**
+**[Controller]后端：用户注册程序连接器**
 
 依赖：
 
@@ -119,7 +119,7 @@
 
 输入（POST）：
 
-- 来自 YashiUser-Registration.php 的表单数据，调用 php/yaloginRegistration.php 处理。
+- 模块 php/yaloginRegistration.php 所需的数据。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 
 输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
@@ -128,7 +128,7 @@
 - backurl：要返回的页面。
 
 ###php/yaloginRegistration.php
-**[Model]后端：用户注册程序。**
+**[Model]后端：用户注册程序**
 
 查询用户名是否重复、记录日志、发送激活码邮件。
 
@@ -181,7 +181,7 @@
 - 将 acode 提交到 php/yaloginActivationC.php 。
 
 ###php/yaloginActivationC.php
-**[Controller]后端：用户激活程序连接器。**
+**[Controller]后端：用户激活程序连接器**
 
 依赖：
 
@@ -190,7 +190,7 @@
 
 输入（GET）：
 
-- 来自 YashiUser-Activation.php 的表单数据，调用 php/yaloginActivation.php 处理。
+- 模块 php/yaloginActivation.php 所需的数据。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。
 
@@ -238,7 +238,7 @@
 - backurl：要返回的页面，默认值「YashiUser-Status.php」。
 
 ###php/yaloginLoginC.php
-**[Controller]后端：用户登录和注销程序连接器。**
+**[Controller]后端：用户登录和注销程序连接器**
 
 依赖：
 
@@ -247,7 +247,7 @@
 
 输入（GET/POST）：
 
-- 来自 YashiUser-Login.php 的表单数据，调用 php/yaloginLogin.php 处理。
+- 模块 php/yaloginLogin.php 所需的数据。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。
 
@@ -306,7 +306,7 @@
 - 发送数据到：php/yaloginStatusC.php
 
 ###php/yaloginStatusC.php
-**[Controller]后端：当前用户登录状态查询程序连接器。**
+**[Controller]后端：当前用户登录状态查询程序连接器**
 
 依赖：
 
@@ -315,6 +315,7 @@
 
 输入（GET）：
 
+- 模块 php/yaloginStatus.php 所需的数据。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。
 
@@ -346,6 +347,27 @@
 
 ##用户信息查询
 
+###php/yaloginInformationC.php
+**[Controller]后端：当前用户资料查询程序连接器**
+
+依赖：
+
+- php/yaloginInformation.php
+- YashiUser-Alert.php（echomode=HTML，并且遇到错误时）
+
+输入（POST）：
+
+- 模块 php/yaloginInformation.php 所需的数据。
+- backurl：处理完成后要返回的页面（可选，默认为后退JS）。
+- echomode：返回值格式（HTML/JSON）。不推荐 HTML 。
+
+输出（JSON/HTML）：
+
+- （HTML 输出模式时，出现错误将提交到 YashiUser-Alert.php 处理，否则直接输出查询结果。）
+- result：返回的结果代码。
+- backurl：要返回的页面。
+- 其他：在 php/yaloginInformation.php 中输入的所有查询命令得到的结果。
+
 ###php/yaloginInformation.php
 **[Model]后端：当前用户资料查询程序**
 
@@ -367,5 +389,9 @@
 输出：
 
 - getInformation() -> int/[str]：
-- 返回int时：错误代码。
-- 返回字符串字典数组时：所查询的所有用户资讯。
+- - 返回int时：错误代码。
+- - 返回字符串字典数组时：所查询的所有用户资讯。
+- subsql() -> int/[str]：
+- - 这种方式将直接对数据库进行自定义查询，为了安全最好不要直接用它。
+- - 返回int时：错误代码。
+- - 返回字符串字典数组时：所查询的所有用户资讯。
