@@ -129,6 +129,7 @@
 
 ###php/yaloginRegistration.php
 **[Model]后端：用户注册程序。**
+
 查询用户名是否重复、记录日志、发送激活码邮件。
 
 依赖：
@@ -161,6 +162,7 @@
 
 ###YashiUser-Activation.php
 **[View]前端：输入激活码激活用户**
+
 提供激活码输入表单。
 
 依赖：
@@ -199,6 +201,7 @@
 
 ###php/YashiUserActivation.php
 **[Model]后端：用户激活程序**
+
 判断输入的激活码正确、未过期、目标用户未激活，然后激活用户。
 
 依赖：
@@ -218,6 +221,7 @@
 
 ###YashiUser-Login.php
 **[View]前端：用户登录页**
+
 提供用户密码输入表单。
 
 依赖：
@@ -342,4 +346,26 @@
 
 ##用户信息查询
 
-###开发中
+###php/yaloginInformation.php
+**[Model]后端：当前用户资料查询程序**
+
+为了安全，只能查询当前已登录用户的资料。
+
+依赖：
+
+- php/yaloginUserInfo.php
+- php/yaloginGlobal.php
+- php/yaloginStatus.php
+- php/yaloginSQLC.php
+
+输入（POST）：
+
+- db：要查询的数据库名称（空为默认数据库，推荐为空）。
+- table：要查询的表（空为默认用户表）。
+- column：（字符串数组）要查询的所有列。
+
+输出：
+
+- getInformation() -> int/[str]：
+- 返回int时：错误代码。
+- 返回字符串字典数组时：所查询的所有用户资讯。
