@@ -36,15 +36,16 @@ class YaloginStatus
 		}
 		//取登录信息
 		if ($sesinfoarr["autologinby"] != "fail") {
-			$cookiejsonarr = json_decode($cookiejson);
-			if (isset($_SESSION["sessiontoken"]) && 
-			isset($_SESSION["sessionname"]) && 
-			isset($_SESSION["sessionid"]) && 
-			isset($_SESSION["username"]) && 
-			isset($_SESSION["userhash"]) && 
-			isset($_SESSION["lifetime"])) {
+			$cookiejsonarr = json_decode($cookiejson,true);
+
+			// if (isset($_SESSION["sessiontoken"]) && 
+			// isset($_SESSION["sessionname"]) && 
+			// isset($_SESSION["sessionid"]) && 
+			// isset($_SESSION["username"]) && 
+			// isset($_SESSION["userhash"]) && 
+			// isset($_SESSION["lifetime"])) {
 				return array_merge($sesinfoarr,$cookiejsonarr);
-			}
+			// }
         }
 		return array_merge($sesinfoarr);
 	}

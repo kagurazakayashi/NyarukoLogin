@@ -10,7 +10,7 @@ $cookiejsonarr = $c->loginuser();
 if ($cookiejsonarr == null) {
     $cookiejsonarr = array ();
     $errid = 90901;
-} else if ($cookiejsonarr["session"] == false && $cookiejsonarr["cookie"] == false) {
+} else if (isset($cookiejsonarr["autologinby"]) == false || $cookiejsonarr["autologinby"] == "fail") {
     $errid = 90901;
 } else {
     $errid = 1005;

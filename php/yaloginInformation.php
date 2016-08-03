@@ -1,5 +1,5 @@
 <?php
-    require 'yaloginUserInfo.php';
+    //require 'yaloginUserInfo.php';
     require 'yaloginGlobal.php';
     require 'yaloginStatus.php';
     require 'yaloginSQLC.php';
@@ -14,6 +14,7 @@
         {
             $this->user = new YaloginUserInfo();
             $this->ysqlc = new yaloginSQLC();
+            $this->ysqlc->init();
             $this->sqlset = $this->ysqlc->sqlset;
         }
 
@@ -26,7 +27,7 @@
         */
         function getInformation() {
              $db = "";
-             $tablename = "";
+             $table = "";
              $column = isset($_POST["column"]) ? $_POST["column"] : null;
 
              if (isset($_POST["db"]) && $_POST["db"] != "") {
@@ -39,20 +40,16 @@
              }
 
              if (isset($_POST["table"]) && $_POST["table"] != "") {
-                 $tablename = $this->aliasconv($_POST["table"],2);
-                 if ($tablename == null) {
+                 $table = $this->aliasconv($_POST["table"],2);
+                 if ($table == null) {
                      return 13002;
                  }
              } else {
-                 $tablename = $this->sqlset->db_user_table;
+                 $table = $this->sqlset->db_user_table;
              }
 
              if ($column == null) {
                  return 13001;
-             }
-             $tablename = isset($this->sqlset->db_tablealias[$table]) ? $this->sqlset->db_tablealias[$table] : null;
-             if ($tablename == null) {
-                 return 13002;
              }
              if (in_array($table,$this->sqlset->db_safetable) == true) {
                  return 13003; //包含禁止查询表
@@ -69,15 +66,22 @@
                  return 90901;
              }
              $userhash = $statusarr["userhash"];
-             return $this->subsql($tablename,$columnarr,$table,$db,$userhash);
+             $result_array = $this->subsql($columnarr,$table,$db,$userhash);
+             return $result_array;
         }
 
-        function subsql($tablename,$columnarr,$table,$db,$userhash) {
-            $sqlstr = "SELECT `";
+        function subsql($columnarr,$table,$db,$userhash) {
+            $sqlcmd = "SELECT `";
             $columns = implode('`,`',$columnarr);
-            sqlstr = sqlstr.columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."';";
+            $sqlcmd = $sqlcmd.$columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,true,false);
-            return $result_array;
+            if (count($result_array) == 0) {
+                return 90903;
+            }
+            if (count($result_array) > 1) {
+                return 90902;
+            }
+            return $result_array[0];
         }
 
         //从别名提取名字 mode 1=数据库 2=表 3=列（暂不支持）
@@ -100,6 +104,19 @@
             	$html = $html.'<tr><th scope="row">'.$key.'</th><td>'.$val.'</td></tr>';
             }
             return $html."</tbody></table></body></html>";
+        }
+
+        function deleteautokey($array) {
+            $newarr = array();
+            if (is_array($array) == false) {
+                return null;
+            }
+            while(list($key,$val)= each($array)) {
+            	if (is_int($key) == false) {
+                    $newarr[$key] = $val;
+                }
+            }
+            return $newarr;
         }
     }
     

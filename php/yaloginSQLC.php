@@ -1,5 +1,7 @@
 <?php 
-    require 'yaloginSQLSetting.php';
+    if(class_exists('YaloginSQLSetting') != true) {
+        require 'yaloginSQLSetting.php';
+    }
 
     class yaloginSQLC {
         public $sqlset;
