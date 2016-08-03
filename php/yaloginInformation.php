@@ -25,9 +25,28 @@
         $db_safecolumn
         */
         function getInformation() {
-             $db = isset($_POST["db"]) ? $_POST["db"] : $this->sqlset->db_name;
-             $table = isset($_POST["table"]) ? $_POST["table"] : $this->sqlset->db_user_table;
+             $db = "";
+             $tablename = "";
              $column = isset($_POST["column"]) ? $_POST["column"] : null;
+
+             if (isset($_POST["db"]) && $_POST["db"] != "") {
+                 $db = $this->aliasconv($_POST["db"],1);
+                 if ($db == null) {
+                     return 13005;
+                 }
+             } else {
+                 $db = $this->sqlset->db_name;
+             }
+
+             if (isset($_POST["table"]) && $_POST["table"] != "") {
+                 $tablename = $this->aliasconv($_POST["table"],2);
+                 if ($tablename == null) {
+                     return 13002;
+                 }
+             } else {
+                 $tablename = $this->sqlset->db_user_table;
+             }
+
              if ($column == null) {
                  return 13001;
              }
@@ -59,6 +78,20 @@
             sqlstr = sqlstr.columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,true,false);
             return $result_array;
+        }
+
+        //从别名提取名字 mode 1=数据库 2=表 3=列（暂不支持）
+        function aliasconv($name,$mode) {
+            $alias = null;
+            if ($mode == 1) {
+                $alias = $this->sqlset->db_dbalias;
+            } else if ($mode == 2) {
+                $alias = $this->sqlset->db_tablealias;
+            } else {
+                return null;
+            }
+            $resultname = isset($alias[$name]) ? $alias[$name] : null;
+            return $resultname;
         }
 
         function echohtml($result_array) {
