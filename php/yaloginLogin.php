@@ -163,9 +163,10 @@
             if (isset($_SESSION["logininfo"]) == false) {
                 return 12118;
             }
-            if (isset($_COOKIE[$cookiename]) == false) {
-                return 12119;
-            }
+            // cookie 打开第二个页面时才能查询，此处校验删除
+            // if (isset($_COOKIE[$cookiename]) == false) {
+            //     return 12119; 
+            // }
 
             return 0;
         }
