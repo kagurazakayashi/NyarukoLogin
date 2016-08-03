@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noarchive">
 <title>YashiUser-Alert</title>
-<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<link href="css/YashiUser-UI.css" rel="stylesheet" type="text/css">
 <script type="text/ecmascript" src="js/md5.js"></script>
 <script language="JavaScript" src="js/YashiUser-Registration.js"></script>
 </head>
@@ -80,7 +80,7 @@ function echoinfo() {
     }
     $safe = new yaloginSafe();
     $jsonarray = json_decode($safe->base_decode($json));
-    echo '<hr><table align="center" border="0" cellspacing="0" cellpadding="0"><tbody>';
+    echo '<hr><table><tbody>';
     while(list($key,$val)= each($jsonarray)) { 
         echo '<tr><th align="right" scope="row">'.$key.' ：</th><td align="left">'.$val.'</td></tr>';
     }

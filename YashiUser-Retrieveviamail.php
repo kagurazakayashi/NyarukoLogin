@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Retrieveviamail</title>
-<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<link href="css/YashiUser-UI.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="js/md5.js"></script>
 <script type="text/javascript" src="js/md6.js"></script>
 <script type="text/javascript" src="js/YashiUser-Retrieveviamail.js"></script>
@@ -11,9 +11,9 @@
 </head>
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
-<h3>通过邮件找回密码</h3></center>
+<h3>通过邮件找回密码</h3><hr></center>
 <form action="?" id="form1" name="form1" method="post">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <table>
     <tbody>
         <tr>
             <td align="right" width="50%">电子邮件*(text)：</td>

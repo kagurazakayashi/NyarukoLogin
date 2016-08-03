@@ -3,6 +3,7 @@ body {
 	text-shadow: 2px 2px 2px #FFF;
     background: -moz-linear-gradient( left,#FFF,#ffccff,#FFF);
     background: -webkit-linear-gradient(left,#FFF,#ffccff,#FFF);
+    font-family: Source Han Sans,Microsoft YaHei,Microsoft JhengHei,San Francisco,Apple LiGothic Medium,SimHei,NSimSun,SimSun;
 }
 
 td {
@@ -24,4 +25,18 @@ img {
 	border-radius:10px;
     box-shadow: 2px 2px 2px #ff66ff;
     cursor:pointer;
+}
+
+table {
+    align-content: center;
+    border: 0;
+    border-spacing: 0;
+    padding: 0;
+    margin: auto;
+}
+
+hr {
+    height:2px;
+    border:none;
+    border-top:2px dashed #FFFFFF;
 }

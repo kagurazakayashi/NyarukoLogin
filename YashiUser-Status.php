@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Status</title>
-<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<link href="css/YashiUser-UI.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
-<h3>用户登录状态查询</h3></center>
+<h3>用户登录状态查询</h3><hr></center>
 <form action="php/YaloginStatusC.php" name="form1" method="get">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <table>
     <tbody>
         <tr>
             <td align="center">查询用户状态</td>

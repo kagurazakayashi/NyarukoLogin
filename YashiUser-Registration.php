@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Registration</title>
-<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<link href="css/YashiUser-UI.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="js/md5.js"></script>
 <script type="text/javascript" src="js/md6.js"></script>
 <script type="text/javascript" src="js/YashiUser-Registration.js"></script>
@@ -12,14 +12,10 @@
 
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
-<h3>用户注册</h3></center>
+<h3>用户注册</h3><hr></center>
 <form action="?" id="form1" name="form1" method="post">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <table>
     <tbody>
-      <tr>
-        <td align="right">配置文件版本(uint5)：</td>
-        <td><input type="text" name="userversion" disabled id="userversion" value="1"></td>
-      </tr>
       <tr>
         <td align="right">用户名*(text)：</td>
         <?php
@@ -43,6 +39,7 @@ date("YmdHis").'"></td>';
         <td align="right">验证密码*(text)：</td>
         <td><input type="password" name="userpasswordr" id="userpasswordr" value="testpass"></td>
       </tr>
+      <tr><td><hr></td><td><hr></td></tr>
       <tr>
         <td align="right">二级密码(text)：</td>
         <td><input type="password" name="userpassword2" id="userpassword2"></td>
@@ -92,6 +89,7 @@ date("YmdHis").'"></td>';
         <td align="right">生日(date)：</td>
         <td><input type="text" name="userbirthday" id="userbirthday" value=""></td>
       </tr>
+      <tr><td><hr></td><td><hr></td></tr>
       <tr>
         <td></td>
         <td><img id="vcodeimg" title="点击刷新" src="image/getvalidateimage.gif" align="absbottom" onclick="this.src='php/validate_image.php?'+Math.random();" alt="点击刷新"></img> ←点击可以刷新</td>

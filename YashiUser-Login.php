@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <title>YashiUser-Login</title>
-<link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
+<link href="css/YashiUser-UI.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="js/YashiUser-Login.js"></script>
 <script type="text/javascript" src="js/md5.js"></script>
 <script type="text/javascript" src="js/md6.js"></script>
 </head>
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
-<h3>用户登录</h3></center>
+<h3>用户登录</h3><hr></center>
 <form action="?" id="form1" name="form1" method="post">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <table>
     <tbody>
     <tr>
         <td align="right">用户名*(text)：</td>
