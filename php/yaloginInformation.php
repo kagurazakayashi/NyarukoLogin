@@ -98,14 +98,6 @@
             return $resultname;
         }
 
-        function echohtml($result_array) {
-            $html = '<!doctype html><html><head><meta charset="utf-8"><title>用户信息查看</title></head><body><table border="1"><tbody>';
-            while(list($key,$val)= each($result_array)) { 
-            	$html = $html.'<tr><th scope="row">'.$key.'</th><td>'.$val.'</td></tr>';
-            }
-            return $html."</tbody></table></body></html>";
-        }
-
         function deleteautokey($array) {
             $newarr = array();
             if (is_array($array) == false) {

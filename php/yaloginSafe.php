@@ -62,5 +62,21 @@
         function is_md5($md5str) {
             return preg_match("/^[a-z0-9]{32}$/", $md5str);
         }
+
+        function base_encode($str) {
+            $src  = array("/","+","=");
+            $dist = array("_a","_b","_c");
+            $old  = base64_encode($str);
+            $new  = str_replace($src,$dist,$old);
+            return $new;
+        }
+
+        function base_decode($str) {
+            $src = array("_a","_b","_c");
+            $dist  = array("/","+","=");
+            $old  = str_replace($src,$dist,$str);
+            $new = base64_decode($old);
+            return $new;
+        }
     }
 ?>

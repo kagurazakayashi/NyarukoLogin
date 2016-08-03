@@ -32,6 +32,8 @@
 
 - errid：返回值ID。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
+- data：输入由 php/yaloginSafe.php->base_encode() 编码后的 JSON。
+（可选，用于显示返回数据，JSON 仅限于单层字典[str:str]）。
 
 输出：HTML
 
@@ -68,6 +70,14 @@
 - 确认是否符合32位MD5格式。
 - 输入：md5str：MD5文字。
 - 输出：bool：是否符合。
+- **base_encode**
+- 将字符串进行编码以便在网址中传输。
+- 输入：string：明文。
+- 输出：string：编码后字符。
+- **base_decode**
+- 将使用base_encode编码字符串进行解码。
+- 输入：string：编码后字符。
+- 输出：string：明文。
 
 ###php/yaloginSendmail.php
 **[Model]后端：邮件模板和发送邮件**
@@ -319,7 +329,7 @@
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。
 
-输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
+输出（JSON/HTML。HTML 输出模式将ID和数据提交到 YashiUser-Alert.php 处理。）：
 
 - result：返回的结果代码。
 - backurl：要返回的页面。
@@ -353,7 +363,7 @@
 依赖：
 
 - php/yaloginInformation.php
-- YashiUser-Alert.php（echomode=HTML，并且遇到错误时）
+- YashiUser-Alert.php（echomode=HTML）
 
 输入（POST）：
 
@@ -361,9 +371,8 @@
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。不推荐 HTML 。
 
-输出（JSON/HTML）：
+输出（JSON/HTML。HTML 输出模式将ID和数据提交到 YashiUser-Alert.php 处理。）：
 
-- （HTML 输出模式时，出现错误将提交到 YashiUser-Alert.php 处理，否则直接输出查询结果。）
 - result：返回的结果代码。
 - backurl：要返回的页面。
 - 其他：在 php/yaloginInformation.php 中输入的所有查询命令得到的结果。
@@ -376,7 +385,7 @@
 
 依赖：
 
-- php/yaloginUserInfo.php
+- php/yaloginUserInfo.php（父级引入）
 - php/yaloginGlobal.php
 - php/yaloginStatus.php
 - php/yaloginSQLC.php

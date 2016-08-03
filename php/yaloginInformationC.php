@@ -1,8 +1,9 @@
 <?php
 require 'yaloginInformation.php';
+require 'yaloginSafe.php';
 $c = new yaloginInformation();
 $c->init();
-$errid = 0;
+$errid = 1006;
 $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
 $echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
@@ -21,7 +22,8 @@ if ($infoarr == null || count($infoarr) == 0) {
     $infoarr = $c->deleteautokey($infoarr);
     $jsonarr = array_merge($jsonarr,$infoarr);
     if ($echomode == "html") {
-        $html = $c->echohtml($infoarr);
+        $safe = new yaloginSafe();
+        $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'&data='.$safe->base_encode(json_encode($infoarr)).'">';
     }
 }
 

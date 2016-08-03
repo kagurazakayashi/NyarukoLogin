@@ -1,6 +1,8 @@
 body {
 	background-color: #ffccff;
 	text-shadow: 2px 2px 2px #FFF;
+    background: -moz-linear-gradient( left,#FFF,#ffccff,#FFF);
+    background: -webkit-linear-gradient(left,#FFF,#ffccff,#FFF);
 }
 
 td {

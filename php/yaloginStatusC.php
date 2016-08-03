@@ -1,5 +1,6 @@
 <?php
 require 'yaloginStatus.php';
+require 'yaloginSafe.php';
 $c = new YaloginStatus();
 $c->init();
 $errid = 0;
@@ -20,11 +21,16 @@ $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 
 $jsonarr['result'] = strval($errid);
-$html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'">';
-
+$jsoninfo = array_merge($jsonarr,$cookiejsonarr);
 if ($echomode == "json") {
-    echo json_encode(array_merge($jsonarr,$cookiejsonarr));
+    echo json_encode($jsoninfo);
 } else if ($echomode == "html") {
+    if ($errid == 1005) {
+        $safe = new yaloginSafe();
+        $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'&data='.$safe->base_encode(json_encode($cookiejsonarr)).'">';
+    } else {
+        $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'">';
+    }
     echo $html;
 }
 ?>

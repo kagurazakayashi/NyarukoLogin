@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noarchive">
 <title>YashiUser-Alert</title>
 <link href="css/YashiUser-Registration.css" rel="stylesheet" type="text/css">
 <script type="text/ecmascript" src="js/md5.js"></script>
@@ -17,6 +18,7 @@ function showerr() {
 输入：errid，backurl
 */
     require "php/yaloginGlobal.php";
+    require "php/yaloginSafe.php";
     $showdetailedinformation = true;
     $errid = -2;
     if (isset($_GET["errid"])) {
@@ -50,19 +52,39 @@ function showerr() {
         $alerttitle = "提示";
         $alertbtntxt = "确定";
     }
-    echo "<h3>".$alerttitle."</h3><p>";
-    echo $showinfo;
+    echo "<h3>".$alerttitle."</h3>"; //标题
+    echo "<p>".$showinfo."</p>"; //信息
+    echoinfo();
     $onclick = "history.back(-1);";
     if ($backurl != null) {
         $onclick = "window.location.href='".$backurl."';";
     }
-    echo '</p><p><input type="button" name="submitbutton" id="submitbutton" value="'.$alertbtntxt.'"  onclick="'.$onclick.'" ></p>';
+    echo '<p><input type="button" name="submitbutton" id="submitbutton" value="'.$alertbtntxt.'" onclick="'.$onclick.'" ></p>'; //按钮
 }
 function test_input($data) {
     $data = trim($data);
     $data = stripslashes($data);
     $data = htmlspecialchars($data);
     return $data;
+}
+function echoinfo() {
+    $json = "";
+    if (isset($_GET["data"]) == false || $_GET["data"] == "") {
+        if (isset($_POST["data"]) == false || $_POST["data"] == "") {
+            return;
+        } else {
+            $json = $_POST["data"];
+        }
+    } else {
+        $json = $_GET["data"];
+    }
+    $safe = new yaloginSafe();
+    $jsonarray = json_decode($safe->base_decode($json));
+    echo '<hr><table align="center" border="0" cellspacing="0" cellpadding="0"><tbody>';
+    while(list($key,$val)= each($jsonarray)) { 
+        echo '<tr><th align="right" scope="row">'.$key.' ：</th><td align="left">'.$val.'</td></tr>';
+    }
+    echo "</tbody></table>";
 }
 showerr();
 ?>
