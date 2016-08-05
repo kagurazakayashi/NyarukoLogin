@@ -7,7 +7,10 @@ $errid = 1006;
 $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
 $echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
-$infoarr = $c->getInformation();
+$column = isset($_POST["column"]) ? $_POST["column"] : "";
+$table = isset($_POST["table"]) ? $_POST["table"] : null;
+$db = isset($_POST["db"]) ? $_POST["db"] : null;
+$infoarr = $c->getInformation($column,$table,$db);
 if ($infoarr == null || count($infoarr) == 0) {
     $errid = 13006;
     if ($echomode == "html") {

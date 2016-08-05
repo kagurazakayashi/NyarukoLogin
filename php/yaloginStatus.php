@@ -2,8 +2,12 @@
 /**
 * 登录状态检查类
 */
-require 'yaloginUserInfo.php';
-require 'YaloginSQLSetting.php';
+if(class_exists('yaloginUserInfo') != true) {
+	require 'yaloginUserInfo.php';
+}
+if(class_exists('YaloginSQLSetting') != true) {
+    require 'yaloginSQLSetting.php';
+}
 class YaloginStatus
 {
 	private $user;
@@ -17,7 +21,7 @@ class YaloginStatus
 
 	//登录状态
 	function loginuser() {
-		session_start();
+		if(!isset($_SESSION)){ session_start(); }
 		//检查登录 SESSION
 		$cookiejson = isset($_SESSION["logininfo"]) ? $_SESSION["logininfo"] : null;
 		$sesinfoarr = array('autologinby'=>"fail");

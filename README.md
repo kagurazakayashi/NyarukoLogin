@@ -25,9 +25,21 @@
 
 ###命名方式
 
-- 「YashiUser-*.php」为用户 UI 层，可以任意替换，注意保持功能。
-- 「php/*C.php」为 UI 与逻辑连接层，可以替换输出等功能部分代码。同时也可以作为逻辑层的使用说明。
-- 「php/」中的其他 php 文件为逻辑层，保持原样即可。
+- UI 层：
+ - 「YashiUser-*.php」为用户 UI 层，可以任意替换，注意保持功能。
+- 连接层：
+ - 「php/*C.php」为 UI 与逻辑连接层，可以替换输出等功能部分代码。同时也可以作为逻辑层的使用说明。
+- 逻辑层：
+ - 「php/」中的其他 php 文件为逻辑层，保持原样即可。
+
+###接入方式
+
+- HTML 接入时：
+ - 修改所有 UI 层文件开头的文件为自己的，可以重命名，注意所使用的接口。「echomode」设置为「html」。
+- APP 接入时：
+ - 根据接口说明直接调用各连接层网址，接收返回的 json 数据。「echomode」设置为「html」。
+- PHP 接入时：
+ - 根据说明直接调用各逻辑层 PHP 。
 
 ##类介绍
 
@@ -375,11 +387,17 @@
 - php/yaloginUserInfo.php
 - php/YaloginSQLSetting.php
 
+输入（PHP调用）：
+
+- loginuser()
+
 输出：
 
-- loginuser() -> int ：返回结果代码。
-- sesinfoarr：autologinby：登录状态获取方式：包括 fail，cookie，session。
-- cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）（有用户登录时）。
+- loginuser() -> int / [str]：
+ - 返回int时：错误代码。
+ - 返回字符串字典数组时：当然登录用户的基础信息。
+  - sesinfoarr：autologinby：登录状态获取方式：包括 fail，cookie，session。
+  - cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）（有用户登录时）。
 
 ##用户信息查询
 
@@ -393,9 +411,11 @@
 
 输入（POST）：
 
-- 模块 php/yaloginInformation.php 所需的数据。
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。不推荐 HTML 。
+- db：要查询的数据库名称（空为默认数据库，推荐为空）。
+- table：要查询的表（空为默认用户表）。
+- column：（字符串数组）要查询的所有列。
 
 输出（JSON/HTML。HTML 输出模式将ID和数据提交到 YashiUser-Alert.php 处理。）：
 
@@ -416,18 +436,18 @@
 - php/yaloginStatus.php
 - php/yaloginSQLC.php
 
-输入（POST）：
+输入（PHP调用）：
 
-- db：要查询的数据库名称（空为默认数据库，推荐为空）。
-- table：要查询的表（空为默认用户表）。
-- column：（字符串数组）要查询的所有列。
+- getInformation($column,$table,$db)
 
 输出：
 
-- getInformation() -> int/[str]：
-- - 返回int时：错误代码。
-- - 返回字符串字典数组时：所查询的所有用户资讯。
-- subsql() -> int/[str]：
-- - 这种方式将直接对数据库进行自定义查询，为了安全最好不要直接用它。
-- - 返回int时：错误代码。
-- - 返回字符串字典数组时：所查询的所有用户资讯。
+- getInformation() -> int / [str]：
+ - 返回int时：错误代码。
+ - 返回字符串字典数组时：所查询的所有用户资讯。
+  - [查询的key=>值,查询的key=>值...]
+- subsql() -> int / [str]：
+ - 这种方式将直接对数据库进行自定义查询，为了安全最好不要直接用它。
+ - 返回int时：错误代码。
+ - 返回字符串字典数组时：所查询的所有用户资讯。
+  - [查询的key=>值,查询的key=>值...]

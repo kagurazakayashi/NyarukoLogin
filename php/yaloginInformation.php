@@ -1,8 +1,12 @@
 <?php
     //require 'yaloginUserInfo.php';
     require 'yaloginGlobal.php';
-    require 'yaloginStatus.php';
-    require 'yaloginSQLC.php';
+    if(class_exists('yaloginStatus') != true) {
+        require 'yaloginStatus.php';
+    }
+    if(class_exists('YaloginSQLSetting') != true) {
+        require 'yaloginSQLSetting.php';
+    }
 
     class yaloginInformation
     {
@@ -25,13 +29,11 @@
         $db_safetable
         $db_safecolumn
         */
-        function getInformation() {
-             $db = "";
-             $table = "";
-             $column = isset($_POST["column"]) ? $_POST["column"] : null;
 
-             if (isset($_POST["db"]) && $_POST["db"] != "") {
-                 $db = $this->aliasconv($_POST["db"],1);
+        function getInformation($column,$table,$db) {
+
+             if (isset($db) && $db != "") {
+                 $db = $this->aliasconv($db,1);
                  if ($db == null) {
                      return 13005;
                  }
@@ -39,8 +41,8 @@
                  $db = $this->sqlset->db_name;
              }
 
-             if (isset($_POST["table"]) && $_POST["table"] != "") {
-                 $table = $this->aliasconv($_POST["table"],2);
+             if (isset($table) && $table != "") {
+                 $table = $this->aliasconv($table,2);
                  if ($table == null) {
                      return 13002;
                  }
