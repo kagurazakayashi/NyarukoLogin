@@ -152,7 +152,8 @@
                 'sessionid'=>session_id(),
                 'username'=>$this->seruser->username,
                 'userhash'=>$this->seruser->hash,
-                'lifetime'=>$lifeTime
+                'lifetime'=>$lifeTime,
+                'usernickname'=>$usernickname
                 );
             $cookiejson = json_encode($this->cookiejsonarr);
             $_SESSION["logininfo"] = $cookiejson;
@@ -187,7 +188,7 @@
         //检索用户信息
         //SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin` FROM `userdb`.`yalogin_user` WHERE `username` = 'testuser';
         function getseruser() {
-            $sqlcmd = "SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin`,`useremail`,`verifymailcode`,`hash` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$this->inpuser->username."';";
+            $sqlcmd = "SELECT `userpasserr`,`verifymail`,`userpasswordenabled`,`userenable`,`userjurisdiction`,`userpassword`,`userpassword2`,`autologin`,`useremail`,`verifymailcode`,`usernickname`,`hash` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$this->inpuser->username."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
             if (is_int($result_array)) {
                 return $result_array; //err
@@ -210,6 +211,7 @@
             $this->seruser->useremail = isset($seruser["useremail"]) ? $seruser["useremail"] : null;
             $this->seruser->verifymailcode = isset($seruser["verifymailcode"]) ? $seruser["verifymailcode"] : null;
             $this->seruser->hash = isset($seruser["hash"]) ? $seruser["hash"] : "";
+            $this->seruser->usernickname = isset($seruser["usernickname"]) ? $seruser["usernickname"] : $this->seruser->username;
             return 0;
         }
 

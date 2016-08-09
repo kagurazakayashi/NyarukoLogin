@@ -2,7 +2,7 @@
 require 'yaloginRegistration.php';
 $c = new yaloginRegistration();
 $c->init();
-$errid = $c->vaild();
+$errid = $c->vaild(); //验证输入
 $backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
 $echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
 $html = "";
@@ -17,10 +17,10 @@ if ($errid > 0) {
         $saved = $c->savereg($errid);
     }
 } else {
-    $errid2 = $c->gensql();
+    $errid2 = $c->gensql(); //创建SQL
     if ($errid2 > 0) {
-        $jsonarr['result'] = strval($errid);
-        $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'">';
+        $jsonarr['result'] = strval($errid2);
+        $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid2).'&backurl='.$backurl.'">';
     } else {
         if ($c->ysqlc->sqlset->mail_Enable == true) {
             $errid2 = 1002;
