@@ -8,7 +8,7 @@
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
 <h3>用户登录状态查询</h3><hr></center>
-<form action="php/YaloginStatusC.php" name="form1" method="get">
+<form action="php/yaloginStatusC.php" name="form1" method="get">
   <table>
     <tbody>
         <tr>

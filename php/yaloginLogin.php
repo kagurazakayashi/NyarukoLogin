@@ -153,12 +153,12 @@
                 'username'=>$this->seruser->username,
                 'userhash'=>$this->seruser->hash,
                 'lifetime'=>$lifeTime,
-                'usernickname'=>$usernickname
+                'usernickname'=>$this->seruser->usernickname
                 );
             $cookiejson = json_encode($this->cookiejsonarr);
             $_SESSION["logininfo"] = $cookiejson;
             $cookiename = $this->cookiename();
-            setcookie($cookiename, $cookiejson, $lifeTime);
+            setcookie($cookiename, $cookiejson, $lifeTime, "/");
 
             //验证登录
             if (isset($_SESSION["logininfo"]) == false) {
@@ -175,7 +175,7 @@
         function logout() {
             session_unset(); //内存登出
             session_destroy(); //文件登出
-            setcookie($this->cookiename()); //cookie登出
+            setcookie($this->cookiename(),"",0,"/"); //cookie登出
         }
 
         function cookiename($key = "") {
