@@ -1,5 +1,7 @@
 ## 使用说明
 
+注意：这个程序尚未做完，请勿使用。
+
 ###已完成功能
 
 - 用户注册：支持设置 用户名、昵称、邮箱、密码、二级密码、密码提示问题、生日、性别 等。
@@ -413,9 +415,9 @@
 
 - backurl：处理完成后要返回的页面（可选，默认为后退JS）。
 - echomode：返回值格式（HTML/JSON）。不推荐 HTML 。
-- db：要查询的数据库名称（空为默认数据库，推荐为空）。
-- table：要查询的表（空为默认用户表）。
-- column：（字符串数组）要查询的所有列。
+- db：要查询的数据库名称（使用别名，空为默认 db_name 数据库，推荐为空）。
+- table：要查询的表（使用别名，空为默认 db_user_table 用户表）。
+- column：要查询的所有列(逗号分隔，例如 "username,useremail" )。
 
 输出（JSON/HTML。HTML 输出模式将ID和数据提交到 YashiUser-Alert.php 处理。）：
 
@@ -439,6 +441,9 @@
 输入（PHP调用）：
 
 - getInformation($column,$table,$db)
+ - column：要查询的所有列(逗号分隔，例如 "username,useremail" )。
+ - table：要查询的表（使用别名，空为默认 db_user_table 用户表）。
+ - db：要查询的数据库名称（使用别名，空为默认 db_name 数据库，推荐为空）。
 
 输出：
 

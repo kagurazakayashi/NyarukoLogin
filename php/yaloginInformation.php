@@ -7,6 +7,9 @@
     if(class_exists('YaloginSQLSetting') != true) {
         require 'yaloginSQLSetting.php';
     }
+    if(class_exists('yaloginSQLC') != true) {
+        require 'yaloginSQLC.php';
+    }
 
     class yaloginInformation
     {
@@ -30,7 +33,7 @@
         $db_safecolumn
         */
 
-        function getInformation($column,$table,$db) {
+        function getInformation($column,$table = "",$db = "") {
 
              if (isset($db) && $db != "") {
                  $db = $this->aliasconv($db,1);

@@ -1,4 +1,7 @@
 <?php
+if(class_exists('YaloginSQLSetting') != true) {
+    require 'yaloginSQLSetting.php';
+}
 class ValidateCode {
  private $charset = 'abcdefghkmnprstuvwxyzABCDEFGHKMNPRSTUVWXYZ23456789';//随机因子
  private $code;//验证码
@@ -6,12 +9,25 @@ class ValidateCode {
  private $width = 130;//宽度
  private $height = 50;//高度
  private $img;//图形资源句柄
- private $font;//指定的字体
+ private $font = '../font/validateimagefont.ttf';//指定的字体
  private $fontsize = 20;//指定字体大小
- private $fontcolor;//指定字体颜色
+ private $bgchar = "poi";
+ private $imageformat = "png";
+ private $linedensity = 6;
+ private $bgchardensity = 33;
  //构造方法初始化
  public function __construct() {
-  $this->font = '../font/validateimagefont.ttf';//注意字体路径要写对，否则显示不了图片
+     $sqlset = new YaloginSQLSetting();
+     $this->fontsize = $sqlset->vcode_fontsize;
+     $this->bgchar = $sqlset->vcode_bgchar;
+     $this->charset = $sqlset->vcode_charset;
+     $this->codelen = $sqlset->vcode_codelen;
+     $this->width = $sqlset->vcode_width;
+     $this->height = $sqlset->vcode_height;
+     $this->imageformat = $sqlset->vcode_imageformat;
+     $this->font = $sqlset->vcode_font[array_rand($sqlset->vcode_font,1)];
+     $this->linedensity = $sqlset->vcode_line_density;
+     $this->bgchardensity = $sqlset->vcode_bgchar_density;
  }
  //生成随机码
  private function createCode() {
@@ -34,24 +50,34 @@ class ValidateCode {
    imagettftext($this->img,$this->fontsize,mt_rand(-30,30),$_x*$i+mt_rand(1,5),$this->height / 1.4,$this->fontcolor,$this->font,$this->code[$i]);
   }
  }
- //生成线条、雪花
+ //生成线条、干扰字
  private function createLine() {
   //线条
-  for ($i=0;$i<6;$i++) {
+  for ($i=0;$i<$this->linedensity;$i++) {
    $color = imagecolorallocate($this->img,mt_rand(0,156),mt_rand(0,156),mt_rand(0,156));
    imageline($this->img,mt_rand(0,$this->width),mt_rand(0,$this->height),mt_rand(0,$this->width),mt_rand(0,$this->height),$color);
   }
-  //雪花
-  for ($i=0;$i<33;$i++) {
+  //干扰字
+  for ($i=0;$i<$this->bgchardensity;$i++) {
    $color = imagecolorallocate($this->img,mt_rand(200,255),mt_rand(200,255),mt_rand(200,255));
-   imagestring($this->img,mt_rand(1,5),mt_rand(0,$this->width),mt_rand(0,$this->height),'poi',$color);
+   imagestring($this->img,mt_rand(1,5),mt_rand(0,$this->width),mt_rand(0,$this->height),$this->bgchar,$color);
   }
  }
  //输出
  private function outPut() {
-  header('Content-type:image/png');
-  imagepng($this->img);
-  imagedestroy($this->img);
+     header('Content-type:image/'.$this->imageformat);
+     if ($this->imageformat == "png") {
+         imagepng($this->img);
+     } else if ($this->imageformat == "jpg") {
+         imagejpeg($this->img);
+     } else if ($this->imageformat == "gif") {
+         imagegif($this->img);
+     } else if ($this->imageformat == "wbmp") {
+         imagewbmp($this->img);
+     } else if ($this->imageformat == "xbm") {
+         imagexbm($this->img);
+     }
+     imagedestroy($this->img);
  }
  //对外生成
  public function doimg() {
