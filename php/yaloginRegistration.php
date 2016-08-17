@@ -109,9 +109,7 @@
             if (strlen($v) < 5 || strlen($v) > 64) {
                 return 10502;
             }
-            $email_address = $v;
-            $pattern = "/^[a-z0-9]+([\+_\-\.]?[a-z0-9]+)*/i"; ///^([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,3}(\\.[a-z]{2})?)$/i
-            if ( !preg_match( $pattern, $email_address ) )
+            if ( !$this->safe->isEmail($v) )
             {
                 return 10503;
             }

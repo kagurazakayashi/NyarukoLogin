@@ -63,6 +63,12 @@
             return preg_match("/^[a-z0-9]{32}$/", $md5str);
         }
 
+        function isEmail($emailAddress) {
+            $pattern = "/^[a-z0-9]+([\+_\-\.]?[a-z0-9]+)*/i";
+            ///^([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,3}(\\.[a-z]{2})?)$/i
+            return preg_match( $pattern, $emailAddress );
+        }
+
         function base_encode($str) {
             $src  = array("/","+","=");
             $dist = array("_a","_b","_c");

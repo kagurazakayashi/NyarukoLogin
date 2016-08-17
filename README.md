@@ -110,6 +110,10 @@
 - 确认是否符合32位MD5格式。
 - 输入：md5str：MD5文字。
 - 输出：bool：是否符合。
+- **isEmail**
+- 确认是否符合电子邮件地址格式。
+- 输入：emailAddress：电子邮件地址。
+- 输出：bool：是否符合。
 - **base_encode**
 - 将字符串进行编码以便在网址中传输。
 - 输入：string：明文。
@@ -130,15 +134,20 @@
 
 功能：
 
-- **sendtestmail：发送测试邮件**
+- **sendtestmail：发送测试邮件(mailtype:0)**
 - 输入：接收方邮箱
 - 输出：HTML
-- **sendverifymail：发送注册验证邮件**
+- **sendverifymail：发送注册验证邮件(mailtype:1)**
+- 输入：address：接收方邮箱，username：请求注册的用户名，vcode：激活码，timeout：超时时间。
+- 输出：错误信息，null 为成功。
+- **sendretrievemail：发送找回密码邮件(mailtype:2)**
 - 输入：address：接收方邮箱，username：请求注册的用户名，vcode：激活码，timeout：超时时间。
 - 输出：错误信息，null 为成功。
 
-
 ##用户注册流程
+
+[√]前端网页调用　[√]APP-API调用　[×]后端PHP直接调用
+
 ###YashiUser-Registration.php
 **[View]前端：用户注册测试页面**
 
@@ -210,6 +219,10 @@
 
 - vaild() -> int ：返回结果代码
 
+##用户激活流程
+
+[√]前端网页调用　[√]APP-API调用　[√]后端PHP直接调用
+
 ###YashiUser-Activation.php
 **[View]前端：输入激活码激活用户**
 
@@ -268,6 +281,8 @@
 - vaild() -> int ：返回结果代码。
 
 ##用户登录与注销流程
+
+[√]前端网页调用　[√]APP-API调用　[×]后端PHP直接调用
 
 ###YashiUser-Login.php
 **[View]前端：用户登录页**
@@ -343,6 +358,8 @@
 
 ##用户登录状态查询
 
+[√]前端网页调用　[√]APP-API调用　[√]后端PHP直接调用
+
 ###YashiUser-Status.php
 **[View]前端：当前用户登录状态查询请求页**
 
@@ -401,7 +418,9 @@
   - sesinfoarr：autologinby：登录状态获取方式：包括 fail，cookie，session。
   - cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）（有用户登录时）。
 
-##用户信息查询
+##用户信息查询流程
+
+[√]前端网页调用　[√]APP-API调用　[√]后端PHP直接调用
 
 ###php/yaloginInformationC.php
 **[Controller]后端：当前用户资料查询程序连接器**
@@ -456,3 +475,9 @@
  - 返回int时：错误代码。
  - 返回字符串字典数组时：所查询的所有用户资讯。
   - [查询的key=>值,查询的key=>值...]
+
+##通过邮件重置密码流程
+
+[√]前端网页调用　[√]APP-API调用　[×]后端PHP直接调用
+
+尚未开发完成。
