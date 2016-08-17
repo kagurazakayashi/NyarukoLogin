@@ -59,7 +59,6 @@
         }
 
         //记录日志
-        //2：注册用户，3：验证注册邮件，4：登录
         function savereg($userlogininfoid = 0,$hash = "",$datetime = "",$ip = "",$modeid = 0) {
             $sqlcmd = "insert `".$this->sqlset->db_name."`.`".$this->sqlset->db_loginhistory_table."`(`userhash`,`userlogintime`,`userloginip`,`userloginapp`,`userlogininfo`,`mode`) values('".$hash."','".$datetime."','".$ip."','".$this->sqlset->db_app."',".$userlogininfoid.",".$modeid.");";
             $result_array = $this->sqlc($sqlcmd);

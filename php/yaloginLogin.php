@@ -35,23 +35,27 @@
             
             //vcode
             @session_start();
-            $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
-            if($v != null){
-                if ($this->safe->containsSpecialCharacters($v) != 0) {
-                    return 90404;
+            if ($this->sqlset->vcode_verification == true) {
+                $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
+                if($v != null){
+                    if ($this->safe->containsSpecialCharacters($v) != 0) {
+                        return 90404;
+                    }
+                    if(!isset($_SESSION["authnum_session"])) {
+                        return 90401;
+                    }
+                    $va = strtoupper($v);
+                    $vb = strtoupper($_SESSION["authnum_session"]);
+                    if($va!=$vb){
+                        $_SESSION["authnum_session"] = null;
+                        return 90402;
+                    }
+                } else {
+                    return 90403;
                 }
-                if(!isset($_SESSION["authnum_session"])) {
-                    return 90401;
-                }
-                $va = strtoupper($v);
-                $vb = strtoupper($_SESSION["authnum_session"]);
-                if($va!=$vb){
-                    return 90402;
-                }
-            } else {
-                return 90403;
+                $_SESSION["authnum_session"] = null;
             }
-
+            
             //username
             $v = isset($_POST["username"]) ? $_POST["username"] : null;
             if($v == null || !is_string($v)) {
@@ -309,7 +313,7 @@
             }
             $datetime = date("Y-m-d H:i:s");
             $ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
-            $saveregr = $this->ysqlc->savereg($infoid,$this->hash,$datetime,$ip,4);
+            $saveregr = $this->ysqlc->savereg($infoid,$this->hash,$datetime,$ip,1);
             $this->errinfo = "";
             return $saveregr;
         }

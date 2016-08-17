@@ -41,21 +41,25 @@
             
              //vcode
             @session_start();
-            $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
-            if($v != null){
-                if ($this->safe->containsSpecialCharacters($v) != 0) {
-                    return 90404;
+            if ($this->sqlset->vcode_verification == true) {
+                $v = isset($_POST["vcode"]) ? $_POST["vcode"] : null;
+                if($v != null){
+                    if ($this->safe->containsSpecialCharacters($v) != 0) {
+                        return 90404;
+                    }
+                    if(!isset($_SESSION["authnum_session"])) {
+                        return 90401;
+                    }
+                    $va = strtoupper($v);
+                    $vb = strtoupper($_SESSION["authnum_session"]);
+                    if($va!=$vb){
+                        $_SESSION["authnum_session"] = null;
+                        return 90402;
+                    }
+                } else {
+                    return 90403;
                 }
-                if(!isset($_SESSION["authnum_session"])) {
-                    return 90401;
-                }
-                $va = strtoupper($v);
-                $vb = strtoupper($_SESSION["authnum_session"]);
-                if($va!=$vb){
-                    return 90402;
-                }
-            } else {
-                return 90403;
+                $_SESSION["authnum_session"] = null;
             }
             
             //id

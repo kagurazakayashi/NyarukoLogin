@@ -5,11 +5,21 @@
 */
     class yaloginRetrieveviamail {
 
-        public $echomode;
+        private $ysqlc;
+        public $hash;
+        private $sqlset;
 
-        function init() {
-            $this->echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "json";
+        function init() { //__constrct()
+            $this->ysqlc = new yaloginSQLC();
+            $this->ysqlc->init();
+            $this->sqlset = $this->ysqlc->sqlset;
         }
+
+        function vaild() {
+            
+        }
+
+
 
     }
 ?>
