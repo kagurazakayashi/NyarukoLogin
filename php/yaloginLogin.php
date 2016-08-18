@@ -317,5 +317,25 @@
             $this->errinfo = "";
             return $saveregr;
         }
+
+        //查询额外登录手续
+        function multipleverification($username) {
+            $mv = array();
+            $sqlcmd = "SELECT `userpassword2` FROM `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` WHERE `username` = '".$username."';";
+            $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
+            if (is_int($result_array)) {
+                return $result_array; //err
+            }
+            if (count($result_array) == 0) {
+                return 12104;
+            } else if (count($result_array) > 1) {
+                return 12105;
+            }
+            //需要二级密码
+            if (isset($seruser["userpassword2"])) {
+                array_push($mv,"userpassword2");
+            }
+            return $mv;
+        }
 }
 ?>

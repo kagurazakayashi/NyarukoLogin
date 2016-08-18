@@ -305,6 +305,13 @@
 ###php/yaloginLoginC.php
 **[Controller]后端：用户登录和注销程序连接器**
 
+yaloginLogin 和 yaloginLoginC 提供 3 种功能：
+
+- POST 输入 vcode，username，userpassword，userpassword2，userversion，autologin ：进行用户登录。
+- POST 输入 multipleverification ：查询用户是否需要其他验证方式。
+- GET 输入 logout ：进行用户注销。
+- 通用输入：backurl，echomode。
+
 依赖：
 
 - php/yaloginLogin.php
@@ -318,7 +325,11 @@
 
 输入（GET）：
 
-- logout：无参数（可选）：执行注销操作（否则为登录操作）。
+- logout：无参数（可选模式）：执行注销操作（否则为登录操作）。
+
+输入（POST）：
+
+- multipleverification：用户名（可选模式）：检查是否需要其他验证方式。
 
 输出（JSON/HTML。HTML 输出模式将提交到 YashiUser-Alert.php 处理。）：
 
@@ -330,6 +341,7 @@
 - username：用户名。（登录操作时）
 - userhash：用户哈希。（登录操作时）
 - lifetime：有效期至。（登录操作时）
+- 查询是否需要其他验证方式时，返回需要验证方式数组。
 
 ###php/yaloginLogin.php
 **[Model]后端：用户登录和注销程序**
@@ -345,7 +357,7 @@
 输入（POST）：
 
 - vcode：验证码。
-- username：用户名。
+- username：用户名（是否需要其他验证方式时，只需要这一个参数）。
 - userpassword：密码。
 - userpassword2：二级密码（可选）。
 - userversion：用户数据模型版本。
@@ -355,6 +367,7 @@
 
 - vaild() -> int ：返回结果代码。
 - $cookiejsonarr：用户基础信息（sessiontoken，sessionname，sessionid，username，userhash，lifetime）。
+- multipleverification($username)：返回需要验证方式数组。
 
 ##用户登录状态查询
 
