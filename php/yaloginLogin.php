@@ -147,23 +147,32 @@
                 return $result_array; //err
             }
 
-            //session_start();
+            //if (!isset($_SESSION)) { session_start(); }
+            session_id($this->cookiename());
+            @session_start();
             $this->logout(); //注销之前的登录
-            $lifeTime = time() + intval($this->inpuser->autologin);
+            $autologinTime = intval($this->inpuser->autologin);
+            $templogin = 0;
+            if ($autologinTime == 0) {
+                $autologinTime = 30;
+                $templogin = 1;
+            }
+            $lifeTime = time() + $autologinTime;
             $this->cookiejsonarr = array(
                 'sessiontoken'=>$sessiontoken,
                 'sessionname'=>session_name(),
-                'sessionid'=>session_id(),
+                'sid'=>session_id(),
                 'username'=>$this->seruser->username,
                 'userhash'=>$this->seruser->hash,
                 'lifetime'=>$lifeTime,
-                'usernickname'=>$this->seruser->usernickname
+                'usernickname'=>$this->seruser->usernickname,
+                'tmp'=>$templogin
                 );
             $cookiejson = json_encode($this->cookiejsonarr);
             $_SESSION["logininfo"] = $cookiejson;
             $cookiename = $this->cookiename();
             setcookie($cookiename, $cookiejson, $lifeTime, "/");
-
+            
             //验证登录
             if (isset($_SESSION["logininfo"]) == false) {
                 return 12118;
