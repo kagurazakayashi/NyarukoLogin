@@ -1,6 +1,8 @@
 <?php
     //require 'yaloginUserInfo.php';
-    require 'yaloginGlobal.php';
+    if(class_exists('yaloginGlobal') != true) {
+        require 'yaloginGlobal.php';
+    }
     if(class_exists('yaloginStatus') != true) {
         require 'yaloginStatus.php';
     }
@@ -16,6 +18,9 @@
         private $user;
         private $sqlset;
         private $ysqlc;
+        public $limitfrom = 0;
+        public $limitnum = 1;
+        public $specificuserhash = "";
 
         function init()
         {
@@ -34,7 +39,7 @@
         */
 
         function getInformation($column,$table = "",$db = "") {
-
+            //echo "limitfrom=".$this->limitfrom.", limitnum=".$this->limitnum.", specificuserhash=".$this->specificuserhash;
              if (isset($db) && $db != "") {
                  $db = $this->aliasconv($db,1);
                  if ($db == null) {
@@ -64,13 +69,17 @@
              if ($columnarrintersect != null && count($columnarrintersect) > 0) {
                  return 13004; //包含禁止查询列
              }
-             $status = new YaloginStatus();
-             $status->init();
-             $statusarr = $status->loginuser();
-             if ($statusarr["autologinby"] == "fail") {
-                 return 90901;
+             if ($this->specificuserhash != "") {
+                 $userhash = $this->specificuserhash;
+             } else {
+                 $status = new YaloginStatus();
+                 $status->init();
+                 $statusarr = $status->loginuser();
+                 if ($statusarr["autologinby"] == "fail") {
+                     return 90901;
+                 }
+                 $userhash = $statusarr["userhash"];
              }
-             $userhash = $statusarr["userhash"];
              $result_array = $this->subsql($columnarr,$table,$db,$userhash);
              return $result_array;
         }
@@ -78,15 +87,29 @@
         function subsql($columnarr,$table,$db,$userhash) {
             $sqlcmd = "SELECT `";
             $columns = implode('`,`',$columnarr);
-            $sqlcmd = $sqlcmd.$columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."';";
+            $sqlcmd = $sqlcmd.$columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."'";
+            $oneUser = true;
+            if ($this->limitfrom < 0 || ($this->limitnum < 1 && $this->limitnum != -1)) {
+                return 90905;
+            }
+            if ($this->limitfrom > 0 || $this->limitnum > 1 || $this->limitnum == -1) {
+                if ($this->limitnum > 1) {
+                    $sqlcmd = $sqlcmd." LIMIT ".$this->limitfrom.",".$this->limitnum;
+                }
+                $oneUser = false;
+            }
+            $sqlcmd = $sqlcmd.";";
             $result_array = $this->ysqlc->sqlc($sqlcmd,true,false);
             if (count($result_array) == 0) {
                 return 90903;
             }
-            if (count($result_array) > 1) {
-                return 90902;
+            if ($oneUser == true) {
+                // if (count($result_array) > 1) {
+                //     return 90902;
+                // }
+                return $result_array[0];
             }
-            return $result_array[0];
+            return $result_array;
         }
 
         //从别名提取名字 mode 1=数据库 2=表 3=列（暂不支持）

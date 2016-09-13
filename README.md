@@ -95,7 +95,7 @@
 - 输入：len：长度，chars：字符库。
 - 输出：string：随机文本。
 - **randhash**
-- 生成一个随机哈希值，用于创建临时会话等标记。
+- 生成一个基于数据的随机哈希值，用于创建临时会话等标记。
 - 输入：userinfo：要混入的用户固定信息文本，capital：是否大写，useMD6：是否使用MD6。
 - 输出：string：随机 MD6 或 MD5 哈希值。
 - **containsSpecialCharacters**
@@ -450,6 +450,10 @@ yaloginLogin 和 yaloginLoginC 提供 3 种功能：
 - db：要查询的数据库名称（使用别名，空为默认 db_name 数据库，推荐为空）。
 - table：要查询的表（使用别名，空为默认 db_user_table 用户表）。
 - column：要查询的所有列(逗号分隔，例如 "username,useremail" )。
+- 范围查询：可选，下面两个参数都为1时为禁用：当为1时返回多个数据视为错误。
+ - limitfrom：查询范围起始点（int 值，可选，默认为0，应大于等于0）。
+ - limitnum：查询从起始点数量（int 值，可选，默认为1，应大于等于1）。
+- specificuserhash：因为安全问题已弃用，只允许在 php/yaloginInformation.php 中由 PHP 调用。
 
 输出（JSON/HTML。HTML 输出模式将ID和数据提交到 YashiUser-Alert.php 处理。）：
 
@@ -458,7 +462,7 @@ yaloginLogin 和 yaloginLoginC 提供 3 种功能：
 - 其他：在 php/yaloginInformation.php 中输入的所有查询命令得到的结果。
 
 ###php/yaloginInformation.php
-**[Model]后端：当前用户资料查询程序**
+**[Model]后端：多功能用户资料查询程序**
 
 - 为了安全，只能查询当前已登录用户的资料。
 - 目标数据不能从名称为纯数字的列中取。
@@ -476,6 +480,10 @@ yaloginLogin 和 yaloginLoginC 提供 3 种功能：
  - column：要查询的所有列(逗号分隔，例如 "username,useremail" )。
  - table：要查询的表（使用别名，空为默认 db_user_table 用户表）。
  - db：要查询的数据库名称（使用别名，空为默认 db_name 数据库，推荐为空）。
+- 设置属性
+ - limitfrom：查询范围起始点（int 值，可选，默认为0，应大于等于0）。
+ - limitnum：查询从起始点数量（int 值，可选，默认为1，应大于等于1）。
+ - specificuserhash：要查询的目标用户哈希值（可选，默认为""，表示当前用户。不允许 GET/POST 请求它）。
 
 输出：
 

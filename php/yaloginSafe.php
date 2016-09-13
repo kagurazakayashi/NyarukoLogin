@@ -19,7 +19,7 @@
             return $password;
         }
 
-        //随机哈希值生成
+        //基于数据的随机哈希值生成
         function randhash($userinfo, $capital = false, $useMD6 = true) {
             $data = date('YmdHis').$userinfo.$this->randstr(32);
             $result = "";

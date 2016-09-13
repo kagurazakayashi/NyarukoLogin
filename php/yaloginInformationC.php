@@ -10,7 +10,13 @@ $jsonarr = array ('result'=>"null",'backurl'=>$backurl);
 $column = isset($_POST["column"]) ? $_POST["column"] : "";
 $table = isset($_POST["table"]) ? $_POST["table"] : null;
 $db = isset($_POST["db"]) ? $_POST["db"] : null;
+
+$c->$limitfrom = isset($_POST["limitform"]) ? intval($_POST["limitform"]) : 0;
+$c->$limitnum = isset($_POST["limitnum"]) ? intval($_POST["limitnum"]) : 1;
+//$c->$specificuserhash = isset($_POST["specificuserhash"]) ? intval($_POST["specificuserhash"]) : "";
+
 $infoarr = $c->getInformation($column,$table,$db);
+
 if ($infoarr == null || count($infoarr) == 0) {
     $errid = 13006;
     if ($echomode == "html") {
