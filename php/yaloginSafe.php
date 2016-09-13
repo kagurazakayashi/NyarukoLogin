@@ -20,18 +20,29 @@
         }
 
         //随机哈希值生成
-        function randhash($userinfo) {
+        function randhash($userinfo, $capital = false, $useMD6 = true) {
             $data = date('YmdHis').$userinfo.$this->randstr(32);
-            $result = $this->md6hash($data);
+            $result = "";
+            if ($useMD6 == true) {
+                $result = $this->md6hash($data);
+            } else {
+                $result = md5($data);
+            }
+            if ($capital == true) {
+                $result = strtoupper($result);
+            }
             return $result;
         }
 
         //识别是否有特殊字符 $this->safe->containsSpecialCharacters($data);
         function containsSpecialCharacters($data,$inputmatch = "/^[^\/\'\\\"#$%&\^\*]+$/") {
+            if ($data == null) {
+                return 0;
+            }
             if (is_string($data) == false) {
                 return 90210;
             }
-            if ($data == null || strlen($data) == 0) {
+            if (strlen($data) == 0) {
                 return 0;
             }
             $edata = trim($data);

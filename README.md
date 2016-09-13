@@ -96,8 +96,8 @@
 - 输出：string：随机文本。
 - **randhash**
 - 生成一个随机哈希值，用于创建临时会话等标记。
-- 输入：userinfo：要混入的用户固定信息文本。
-- 输出：string：随机 MD6 哈希值。
+- 输入：userinfo：要混入的用户固定信息文本，capital：是否大写，useMD6：是否使用MD6。
+- 输出：string：随机 MD6 或 MD5 哈希值。
 - **containsSpecialCharacters**
 - 识别是否有特殊字符。
 - 输入：data：文字数据，inputmatch：特殊字符库。
