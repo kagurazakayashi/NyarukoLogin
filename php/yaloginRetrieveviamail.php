@@ -5,6 +5,7 @@
 require 'yaloginSafe.php';
 require 'yaloginSendmail.php';
 require 'yaloginUserInfo.php';
+require 'yaloginPasswd.php';
     class yaloginRetrieveviamail {
 
         private $ysqlc;
@@ -171,18 +172,26 @@ require 'yaloginUserInfo.php';
                 return 11406;
             }
             $this->userobj->hash = $resultdata["hash"];
-            //清除使用过的码（retrievepwd）
-            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `retrievepwd`=null where `hash`='".$this->userobj->hash."'";
+            
+            /*变更密码、二级密码、密码提示问题（新建流程）
+            update `huishengquan_user` set `userpassword`='123456',`userpassword2`='45689',`userpasswordquestion1`='222',`userpasswordanswer1`='3333' where `id`=62;
+            */
+            $passwd = new yaloginPasswd();
+            $pwdcmd = $passwd->vaild($this->userobj);
+            if (is_int($pwdcmd)) {
+                return $pwdcmd; //errID
+            }
+
+            //提交变更数据并清除使用过的码（retrievepwd）
+            $sqlcmd = "update `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` set `retrievepwd`=null,".$pwdcmd." where `hash`='".$this->userobj->hash."'";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,true);
             if (!isset($result_array) && is_int($result_array)) {
                 return 11405;
             }
-            //变更密码、二级密码、密码提示问题（新建流程）
+
             //记录日志和返回值（由连接器处理）
             return 1008;
         }
-
-
 
     }
 ?>
