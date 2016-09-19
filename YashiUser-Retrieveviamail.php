@@ -12,7 +12,7 @@
 <body>
 <center><h2>雅诗通用用户登录后台测试接口</h2>
 <h3>通过邮件找回密码</h3><hr></center>
-<form action="?" id="form1" name="form1" method="post">
+<form action="?" id="form1" name="form1" method="get">
   <table>
     <tbody>
         <tr>

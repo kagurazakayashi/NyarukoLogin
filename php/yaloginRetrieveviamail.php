@@ -23,7 +23,7 @@ require 'yaloginPasswd.php';
         }
 
         //发送邮件
-        function retrieve($vcode,$mailaddress) {
+        function retrievemail($vcode,$mailaddress) {
             //校验验证码
             @session_start();
             if ($this->sqlset->vcode_verification == true) {
@@ -107,14 +107,14 @@ require 'yaloginPasswd.php';
             }
         }
 
-        function savetryreg($userlogininfoid) {
+        function savelog($userlogininfoid,$modeid) {
             if (!($userlogininfoid >= 1000 && $userlogininfoid < 10000 && $this->ysqlc->sqlset->log_TryingRetrieve_OK == true) || !($userlogininfoid >= 10000 && $userlogininfoid < 100000 && $this->ysqlc->sqlset->log_TryingRetrieve_Fail == true)) {
                 return -1;
             }
             $note = $this->userobj->mailaddress;
             $datetime = date("Y-m-d H:i:s");
             $ip = $_SERVER['REMOTE_ADDR'].":".$_SERVER['REMOTE_PORT']."/".$_SERVER['REMOTE_HOST'];
-            $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$datetime,$ip,2,$note);
+            $saveregr = $this->ysqlc->savereg($userlogininfoid,$this->userobj->hash,$datetime,$ip,$modeid,$note);
             $this->errinfo = "";
             return $saveregr;
         }
@@ -155,6 +155,7 @@ require 'yaloginPasswd.php';
             if ($arrcount > 1) {
                 return 11402;
             }
+            $this->userobj->hash = isset($resultdata["hash"]) ? $resultdata["hash"] : null;
             //检查是否已激活（retrievepwdcode为空）
             $resultdata = $result_array[0];
             if (isset($resultdata["verifymail"]) == false || $resultdata["verifymail"] == null || $resultdata["verifymail"] == "") {
