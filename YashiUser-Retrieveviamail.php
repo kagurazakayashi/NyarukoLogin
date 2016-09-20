@@ -29,7 +29,7 @@
             <input type="hidden" name="echomode" id="echomode" value="html">
             <?php 
             $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Resetpassword.php";
-            echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
+            //echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
             echo '<input type="hidden" name="mode" id="mode" value="smail">';
             ?>
         </tr>

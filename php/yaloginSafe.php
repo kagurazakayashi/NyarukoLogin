@@ -95,5 +95,12 @@
             $new = base64_decode($old);
             return $new;
         }
+
+        function mailaddress2serve($mail) {
+            if (!$this->isEmail($mail)) {
+                return "";
+            }
+            return "http://mail.".end(explode("@",$str));
+        }
     }
 ?>

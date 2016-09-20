@@ -103,8 +103,8 @@ date("YmdHis").'"></td>';
         <td>&nbsp;</td>
         <input type="hidden" name="echomode" id="echomode" value="html">
         <?php
-          $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
-          echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
+          // $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
+          // echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
         ?>
       </tr>
       <tr>

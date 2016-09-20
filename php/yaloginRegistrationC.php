@@ -3,7 +3,8 @@ require 'yaloginRegistration.php';
 $c = new yaloginRegistration();
 $c->init();
 $errid = $c->vaild(); //验证输入
-$backurl = isset($_POST["backurl"]) ? $_POST["backurl"] : "";
+$useremail = isset($_POST["useremail"]) ? $_POST["useremail"] : null;
+$backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : $c->safe->mailaddress2serve($useremail);
 $echomode = isset($_POST["echomode"]) ? $_POST["echomode"] : "";
 $html = "";
 $jsonarr = array ('result'=>"null",'backurl'=>$backurl);

@@ -3,11 +3,11 @@ require 'yaloginRetrieveviamail.php';
 $c = new yaloginRetrieveviamail();
 $c->init();
 
-$backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "";
 $echomode = isset($_GET["echomode"]) ? $_GET["echomode"] : "";
 $vcode = isset($_GET["vcode"]) ? $_GET["vcode"] : null;
 
 $useremail = isset($_GET["useremail"]) ? $_GET["useremail"] : null;
+$backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : $c->safe->mailaddress2serve($useremail);
 
 $mode = isset($_GET["mode"]) ? $_GET["mode"] : null;
 
