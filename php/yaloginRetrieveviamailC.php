@@ -18,7 +18,7 @@ $errid = 0;
 $logerrid = 0;
 if ($mode == "smail") {
     $errid = $c->retrievemail($vcode,$useremail);
-    $logerrid = $c->savetryreg($errid,4);
+    $logerrid = $c->savelog($errid,4);
 } else if ($mode == "cpwd") {
     $c->userobj->mailaddress = $useremail;
     $c->userobj->userpassword = isset($_GET["userpassword"]) ? $_GET["userpassword"] : null;
@@ -31,7 +31,7 @@ if ($mode == "smail") {
     $c->userobj->userpasswordanswer3 = isset($_GET["userpasswordanswer3"]) ? $_GET["userpasswordanswer3"] : null;
     $mcode = isset($_GET["mcode"]) ? $_GET["mcode"] : null;
     $errid = $c->vaild($mcode);
-    $logerrid = $c->savetryreg($errid,5);
+    $logerrid = $c->savelog($errid,5);
 }
 // if ($errid == 1008) {}
 $html = '<meta http-equiv="refresh" content="1;url=../YashiUser-Alert.php?errid='.strval($errid).'&backurl='.$backurl.'">';

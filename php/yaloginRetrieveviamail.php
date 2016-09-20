@@ -6,13 +6,14 @@ require 'yaloginSafe.php';
 require 'yaloginSendmail.php';
 require 'yaloginUserInfo.php';
 require 'yaloginPasswd.php';
+require 'yaloginSQLC.php';
     class yaloginRetrieveviamail {
 
         private $ysqlc;
         public $hash;
         private $sqlset;
         private $safe;
-        private $userobj;
+        public $userobj;
 
         function init() { //__constrct()
             $this->userobj = new YaloginUserInfo();
@@ -28,7 +29,7 @@ require 'yaloginPasswd.php';
             @session_start();
             if ($this->sqlset->vcode_verification == true) {
                 if($vcode != null){
-                    if ($this->safe->containsSpecialCharacters($v) != 0) {
+                    if ($this->safe->containsSpecialCharacters($vcode) != 0) {
                         return 90404;
                     }
                     if(!isset($_SESSION["authnum_session"])) {
@@ -93,18 +94,19 @@ require 'yaloginPasswd.php';
             //mysql>UPDATE `userdb`.`yalogin_user` SET `retrievepwd`='2016-09-18 22:19:46',`retrievepwdcode`='f423e67950ffdbf9' WHERE `useremail` = 'cxchope@163.com'
             $sqlcmd = "UPDATE `".$this->sqlset->db_name."`.`".$this->sqlset->db_user_table."` SET `retrievepwd`='".$retrievepwd."',`retrievepwdcode`='".$retrievepwdcode."' WHERE `useremail` = '".$mailaddress."';";
             $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
-            if (is_int($result_array)) {
+            if (is_int($result_array) && $result_array != 0) {
                 return $result_array; //errID
             }
             //发送邮件
-            if ($c->ysqlc->sqlset->mail_Enable == true) {
+            if ($this->ysqlc->sqlset->mail_Enable == true) {
                 $sendmail = new Sendmail();
                 $sendmail->init();
-                $mailresult = $sendmail->sendretrievemail($mailaddress, $username, $retrievepwdcode, $retrievepwd);
-                if ($mailresult != null && $mailresult != -2) {
+                $mailresult = $sendmail->sendretrievemail($mailaddress, $this->userobj->username, $retrievepwdcode, $retrievepwd);
+                if ($mailresult != null && $mailresult != -2 && $mailresult != 0) {
                     return $mailresult;
                 }
             }
+            return 1009;
         }
 
         function savelog($userlogininfoid,$modeid) {
@@ -138,7 +140,7 @@ require 'yaloginPasswd.php';
             if (strlen($acode) != 64) {
                 return 11303;
             }
-            if (!preg_match('/^[0-9a-z]*$/',$v)) {
+            if (!preg_match('/^[0-9a-z]*$/',$acode)) {
                 return 11304;
             }
             //取激活码相关数据
@@ -158,9 +160,10 @@ require 'yaloginPasswd.php';
             $this->userobj->hash = isset($resultdata["hash"]) ? $resultdata["hash"] : null;
             //检查是否已激活（retrievepwdcode为空）
             $resultdata = $result_array[0];
-            if (isset($resultdata["verifymail"]) == false || $resultdata["verifymail"] == null || $resultdata["verifymail"] == "") {
-                return 11403;
-            }
+            // var_dump($resultdata);
+            // if (isset($resultdata["retrievepwdcode"]) == false || $resultdata["retrievepwdcode"] == null || $resultdata["retrievepwdcode"] == "") {
+            //     return 11403;
+            // }
             //检查是否过期（retrievepwd）
             $dateformat = "Y-m-d H:i:s";
             $nowstrtotime = strtotime(date($dateformat));
@@ -178,6 +181,7 @@ require 'yaloginPasswd.php';
             update `huishengquan_user` set `userpassword`='123456',`userpassword2`='45689',`userpasswordquestion1`='222',`userpasswordanswer1`='3333' where `id`=62;
             */
             $passwd = new yaloginPasswd();
+            $passwd->init();
             $pwdcmd = $passwd->vaild($this->userobj);
             if (is_int($pwdcmd)) {
                 return $pwdcmd; //errID

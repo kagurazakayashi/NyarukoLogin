@@ -2,10 +2,15 @@
 /**
 * 修改安全信息
 */
+if (class_exists('yaloginSafe') != true) {
+    require 'yaloginSafe.php';
+}
 class yaloginPasswd {
 
+    private $safe;
+
     function init() { //__constrct()
-        
+        $this->safe = new yaloginSafe();
     }
 
     /* 输入新密码

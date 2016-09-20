@@ -4,20 +4,18 @@ function toVaild(path) {
     var intnum = /^[1-9]+[0-9]*]*$/;
     var floatnum = /^[0-9]+.?[0-9]*$/;
     var englishnum = /^[A-Za-z0-9]+$/;
+    var acodeformat = /^[0-9a-z]*$/g;
     //var md5hash = require(["js/md5.js"]).md5hash;
     //var md6hash = require(["js/md6.js"]).md6hash;
 
-    var v = document.getElementById("username").value;
-    if (v.length < 3 || v.length > 32) {
-        wrni++; wrn = wrn + wrni + ". 「用户名」必须在 3 到 32 个字之间。\n";
+    var v = document.getElementById("mcode").value;
+    if (v.length != 64) {
+        wrni++; wrn = wrn + wrni + ". 激活码的长度不正确。\n";
     }
-    if (!englishnum.test(v)) {
-        wrni++; wrn = wrn + wrni + ". 「用户名」只能由小写字母和数字组成。\n";
+    if (acodeformat.test(v) == false) {
+        wrni++; wrn = wrn + wrni + ". 激活码的格式不正确。\n";
     }
-    if (!inputcheck(v)) {
-        wrni++; wrn = wrn + wrni + ". 「用户名」不能包含特殊字符。\n";
-    }
-    document.getElementById("username").value = v.toLowerCase();
+    document.getElementById("mcode").value = v.toLowerCase();
 
     var v = document.getElementById("userpassword").value;
     if (v.length < 6 || v.length > 64) {

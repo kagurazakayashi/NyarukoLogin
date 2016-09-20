@@ -17,7 +17,7 @@
     <tbody>
         <tr>
             <td align="right" width="50%">电子邮件*(text)：</td>
-            <td><input type="text" name="useremail" id="useremail" value="test@test.test"></td>
+            <td><input type="text" name="useremail" id="useremail" value=""></td>
         </tr>
         <tr>
             <td></td>
@@ -26,10 +26,16 @@
         <tr>
             <td align="right">验证码*(text)：</td>
             <td><input type="text" name="vcode" id="vcode"></td>
+            <input type="hidden" name="echomode" id="echomode" value="html">
+            <?php 
+            $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Resetpassword.php";
+            echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'\">';
+            echo '<input type="hidden" name="mode" id="mode" value="smail">';
+            ?>
         </tr>
         <tr>
             <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-            <td><input type="button" name="submitbutton" id="submitbutton" value="验证邮箱地址" onclick="toVaild('php/yaloginRetrieve.php')"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" value="验证邮箱地址" onclick="toVaild('php/yaloginRetrieveviamailC.php')"></td>
         </tr>
     </tbody>
   </table>

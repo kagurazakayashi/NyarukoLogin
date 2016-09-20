@@ -69,7 +69,7 @@ class Sendmail {
         $this->mail->Subject = $this->appname." 用户找回密码确认邮件";
         $this->mail->AddAddress($address, $username);
         $this->mail->IsHTML(true);
-        $mvurl = $this->sqlset->www_root."YashiUser-Retrieveviamail.php";
+        $mvurl = $this->sqlset->www_root."YashiUser-Resetpassword.php";
         $ovurl = $mvurl."?acode=".$vcode;
         $html = $this->mailhtmlhead."<h1>&nbsp;</h1><h1>您好， ".$username." 。</h1><p>&nbsp;</p><p>您收到了这封邮件说明这个邮件地址已经请求在 ".$this->appname." 找回密码。</p><p>这封邮件用于确认是否是您本人邮箱申请找回密码，</p><p>如果您没有使用这个邮箱请求找回密码，可能是有人冒用您的邮箱，</p><p>请不要点邮件里的任何链接并直接删除这封邮件。</p><p>&nbsp;</p><p>这封邮件中的激活码有效期至 ".$timeout." 。</p><p>&nbsp;</p><p>&nbsp;</p><p>你的激活码是</p><p>".$vcode."</p><p>&nbsp;</p><p>你可以点击下面的链接一键激活</p><p><a href=\"".$ovurl."\">".$ovurl."</a></p><p>&nbsp;</p><p>也可以点击下面的链接输入你的激活码</p><p><a href=\"".$mvurl."\">".$mvurl."</a></p><p>&nbsp;</p><p id=\"navigation\">".$this->appname."</p></div></div></div></body></html>";
         if ($address == "test@test.test") {

@@ -17,7 +17,10 @@
     <tbody>
       <tr>
         <td align="right">邮件验证码*(text)：</td>
-        <td><input type="text" name="mcode" id="mcode" value=""></td>
+        <?php
+          $acode = isset($_GET["acode"]) ? $_GET["acode"] : "";
+          echo '<td><input type="text" name="mcode" id="mcode" value="'.$acode.'"></td>';
+        ?>
       </tr>
       <tr>
         <td align="right">密码*(text)：</td>
@@ -81,7 +84,7 @@
       </tr>
       <tr>
         <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户" onclick="toVaild('php/yaloginRetrieveviamailC.php')"></td>
+        <td><input type="button" name="submitbutton" id="submitbutton" value="修改" onclick="toVaild('php/yaloginRetrieveviamailC.php')"></td>
       </tr>
     </tbody>
   </table>
