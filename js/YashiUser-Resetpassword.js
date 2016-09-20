@@ -10,10 +10,10 @@ function toVaild(path) {
 
     var v = document.getElementById("mcode").value;
     if (v.length != 64) {
-        wrni++; wrn = wrn + wrni + ". 激活码的长度不正确。\n";
+        wrni++; wrn = wrn + wrni + ". 邮箱验证码的长度不正确。\n";
     }
     if (acodeformat.test(v) == false) {
-        wrni++; wrn = wrn + wrni + ". 激活码的格式不正确。\n";
+        wrni++; wrn = wrn + wrni + ". 邮箱验证码的格式不正确。\n";
     }
     document.getElementById("mcode").value = v.toLowerCase();
 

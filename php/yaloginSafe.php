@@ -100,7 +100,10 @@
             if (!$this->isEmail($mail)) {
                 return "";
             }
-            return "http://mail.".end(explode("@",$str));
+            $mailarr = explode("@",$mail);
+            $mailurl = end($mailarr);
+            $url = "http://mail.".$mailurl;
+            return $url;
         }
     }
 ?>

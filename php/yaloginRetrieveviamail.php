@@ -12,7 +12,7 @@ require 'yaloginSQLC.php';
         private $ysqlc;
         public $hash;
         private $sqlset;
-        private $safe;
+        public $safe;
         public $userobj;
 
         function init() { //__constrct()

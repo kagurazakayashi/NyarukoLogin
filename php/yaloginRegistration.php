@@ -15,7 +15,7 @@
         private $datetime, $ip;
         private $sqlset;
         private $app;
-        private $safe;
+        public $safe;
         private $errinfo = "";
         public $ysqlc;
         public $globalsett;

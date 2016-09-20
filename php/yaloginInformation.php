@@ -33,58 +33,53 @@
         /*获取指定的用户资料
         $table 为空使用 $db_user_table
         table 使用别名
-        column 列名(逗号分隔)
+        column 列名(逗号分隔字符串或者数组均可)
         $db_safetable
         $db_safecolumn
         */
 
         function getInformation($column,$table = "",$db = "") {
-            //echo "limitfrom=".$this->limitfrom.", limitnum=".$this->limitnum.", specificuserhash=".$this->specificuserhash;
-             if (isset($db) && $db != "") {
-                 $db = $this->aliasconv($db,1);
-                 if ($db == null) {
-                     return 13005;
-                 }
-             } else {
-                 $db = $this->sqlset->db_name;
+             $va = $this->vaild($column,$table,$db);
+             if (is_int($va)) {
+                 return $va;
              }
-
-             if (isset($table) && $table != "") {
-                 $table = $this->aliasconv($table,2);
-                 if ($table == null) {
-                     return 13002;
-                 }
-             } else {
-                 $table = $this->sqlset->db_user_table;
-             }
-
-             if ($column == null) {
-                 return 13001;
-             }
-             if (in_array($table,$this->sqlset->db_safetable) == true) {
-                 return 13003; //包含禁止查询表
-             }
-             $columnarr = explode(",",$column);
-             $columnarrintersect = array_intersect($columnarr,$this->sqlset->db_safecolumn);
-             if ($columnarrintersect != null && count($columnarrintersect) > 0) {
-                 return 13004; //包含禁止查询列
-             }
-             if ($this->specificuserhash != "") {
-                 $userhash = $this->specificuserhash;
-             } else {
-                 $status = new YaloginStatus();
-                 $status->init();
-                 $statusarr = $status->loginuser();
-                 if ($statusarr["autologinby"] == "fail") {
-                     return 90901;
-                 }
-                 $userhash = $statusarr["userhash"];
-             }
-             $result_array = $this->subsql($columnarr,$table,$db,$userhash);
+             $result_array = $this->getInformation2($va["columnarr"],$table,$db,$va["userhash"]);
              return $result_array;
         }
 
-        function subsql($columnarr,$table,$db,$userhash) {
+        /*设定指定的用户资料
+        $table 为空使用 $db_user_table
+        table 使用别名
+        column 列名(字典)(必须全为字符串不能有int)
+        $db_safetable
+        $db_safecolumn
+        */
+
+        function setInformation($column,$table = "",$db = "") {
+            $va = $this->vaild($column,$table,$db);
+             if (is_int($va)) {
+                 return $va;
+             }
+             $result_array = $this->setInformation2($va["columnarr"],$table,$db,$va["userhash"]);
+             return $result_array;
+        }
+
+        function setInformation2($columnarr,$table,$db,$userhash) {
+            $sqlcmd = "";
+            foreach ($columnarr as $key=>$val) {
+                if (!is_int($key)) {
+                    if ($sqlcmd != "") {
+                        $sqlcmd = $sqlcmd.",";
+                    }
+                    $sqlcmd = "`".$key."`='".$val."'";
+                }
+            }
+            $sqlcmd = "UPDATE `".$db."`.`".$table."` SET ".$sqlcmd." WHERE `hash`= '".$userhash."';";
+            $result_array = $this->ysqlc->sqlc($sqlcmd,true,false);
+            return $result_array;
+        }
+
+        function getInformation2($columnarr,$table,$db,$userhash) {
             $sqlcmd = "SELECT `";
             $columns = implode('`,`',$columnarr);
             $sqlcmd = $sqlcmd.$columns."` FROM `".$db."`.`".$table."` WHERE `hash` = '".$userhash."'";
@@ -138,6 +133,56 @@
             }
             return $newarr;
         }
+
+        function vaild($column,$table,$db) {
+            if (isset($db) && $db != "") {
+                 $db = $this->aliasconv($db,1);
+                 if ($db == null) {
+                     return 13005;
+                 }
+             } else {
+                 $db = $this->sqlset->db_name;
+             }
+
+             if (isset($table) && $table != "") {
+                 $table = $this->aliasconv($table,2);
+                 if ($table == null) {
+                     return 13002;
+                 }
+             } else {
+                 $table = $this->sqlset->db_user_table;
+             }
+
+             if ($column == null) {
+                 return 13001;
+             }
+             if (in_array($table,$this->sqlset->db_safetable) == true) {
+                 return 13003; //包含禁止查询表
+             }
+             $columnarr;
+             if (is_array($column)) {
+                 $columnarr = $column; //字典/数组
+             } else {
+                 $columnarr = explode(",",$column);
+             }
+             $columnarrintersect = array_intersect($columnarr,$this->sqlset->db_safecolumn);
+             if ($columnarrintersect != null && count($columnarrintersect) > 0) {
+                 return 13004; //包含禁止查询列
+             }
+             if ($this->specificuserhash != "") {
+                 $userhash = $this->specificuserhash;
+             } else {
+                 $status = new YaloginStatus();
+                 $status->init();
+                 $statusarr = $status->loginuser();
+                 if ($statusarr["autologinby"] == "fail") {
+                     return 90901;
+                 }
+                 $userhash = $statusarr["userhash"];
+             }
+             return array($columnarr,$userhash);
+        }
+
     }
     
     
