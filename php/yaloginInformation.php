@@ -43,7 +43,7 @@
              if (is_int($va)) {
                  return $va;
              }
-             $result_array = $this->getInformation2($va["columnarr"],$table,$db,$va["userhash"]);
+             $result_array = $this->getInformation2($va[0],$va[1],$va[2],$va[3]);
              return $result_array;
         }
 
@@ -60,12 +60,15 @@
              if (is_int($va)) {
                  return $va;
              }
-             $result_array = $this->setInformation2($va["columnarr"],$table,$db,$va["userhash"]);
+             $result_array = $this->setInformation2($va[0],$va[1],$va[2],$va[3]);
              return $result_array;
         }
 
         function setInformation2($columnarr,$table,$db,$userhash) {
             $sqlcmd = "";
+            if (!is_array($columnarr)) {
+                return $columnarr;
+            }
             foreach ($columnarr as $key=>$val) {
                 if (!is_int($key)) {
                     if ($sqlcmd != "") {
@@ -75,7 +78,7 @@
                 }
             }
             $sqlcmd = "UPDATE `".$db."`.`".$table."` SET ".$sqlcmd." WHERE `hash`= '".$userhash."';";
-            $result_array = $this->ysqlc->sqlc($sqlcmd,true,false);
+            $result_array = $this->ysqlc->sqlc($sqlcmd,false,false);
             return $result_array;
         }
 
@@ -180,7 +183,7 @@
                  }
                  $userhash = $statusarr["userhash"];
              }
-             return array($columnarr,$userhash);
+             return array($columnarr,$table,$db,$userhash);
         }
 
     }

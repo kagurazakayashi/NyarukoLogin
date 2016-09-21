@@ -21,39 +21,33 @@
             }
             $result = mysqli_query($con,$sqlcmd);
             mysqli_close($con);
-            if ($result) {
-                if(@mysqli_num_rows($result)) {
-                    $result_array = array();
-                    if ($onedata == true) {
-                        $result_array = mysqli_fetch_array($result);
-                    } else {
-                        $rowi = 0;
-                        while ($row = mysqli_fetch_array($result)) {
-                            $result_array[$rowi] = $row;
-                            $rowi++;
-                        }
-                    }
-                    if($result_array) {
-                        if (count($result_array) > 0) {
-                            return $result_array;
-                        } else {
-                            return 90104;
-                        }
-                        //foreach($result_array as $result_row) {
-                            //print_r($result_array);
-                        //}
-                    } else {
-                        return 90103;
-                    }
-                } else {
-                    if ($voidiserr == true) {
-                        return 90102;
-                    }
-                    return 0;
-                }
-            } else {
-                //die($sqlcmd);
+            if (!$result) {
+                die("<b>YashiLogin SQL ERROR: </b>".$sqlcmd); //Debug SQL
                 return 90101;
+            }
+            if(@mysqli_num_rows($result) == 0) {
+                if ($voidiserr == true) {
+                    return 90102;
+                }
+                return array();
+            }
+            $result_array = array();
+            if ($onedata == true) {
+                $result_array = mysqli_fetch_array($result);
+            } else {
+                $rowi = 0;
+                while ($row = mysqli_fetch_array($result)) {
+                    $result_array[$rowi] = $row;
+                    $rowi++;
+                }
+            }
+            if(!$result_array) {
+                return 90103;
+            }
+            if (count($result_array) > 0) {
+                return $result_array;
+            } else {
+                return 90104;
             }
             return 90100;
         }
