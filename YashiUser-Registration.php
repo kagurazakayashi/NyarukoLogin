@@ -108,8 +108,8 @@ date("YmdHis").'"></td>';
         ?>
       </tr>
       <tr>
-        <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-        <td><input type="button" name="submitbutton" id="submitbutton" value="注册新用户" onclick="toVaild('php/yaloginRegistrationC.php')"></td>
+        <td align="right"><input type="reset" name="reset" id="reset" class="mainbtn" value="取消"></td>
+        <td><input type="button" name="submitbutton" id="submitbutton" class="mainbtn" value="注册新用户" onclick="toVaild('php/yaloginRegistrationC.php')"></td>
       </tr>
     </tbody>
   </table>

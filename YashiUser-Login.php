@@ -53,8 +53,8 @@
           echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'">';
         ?>
         <input type="hidden" name="userversion" id="userversion" value="1">
-            <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-            <td><input type="button" name="submitbutton" id="submitbutton" value="用户登录" onclick="toVaild('php/yaloginLoginC.php')"></td>
+            <td align="right"><input type="reset" name="reset" id="reset" class="mainbtn" value="取消"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" class="mainbtn" value="用户登录" onclick="toVaild('php/yaloginLoginC.php')"></td>
         </tr>
     </tbody>
   </table>

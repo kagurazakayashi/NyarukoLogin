@@ -34,8 +34,8 @@
             ?>
         </tr>
         <tr>
-            <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-            <td><input type="button" name="submitbutton" id="submitbutton" value="验证邮箱地址" onclick="toVaild('php/yaloginRetrieveviamailC.php')"></td>
+            <td align="right"><input type="reset" name="reset" id="reset" class="mainbtn" value="取消"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" class="mainbtn" value="验证邮箱地址" onclick="toVaild('php/yaloginRetrieveviamailC.php')"></td>
         </tr>
     </tbody>
   </table>

@@ -30,8 +30,8 @@
                     HTML<br>
             <input type="radio" name="echomode" value="json" id="echomode_1">
                     JSON
-            <input type="hidden" name="backurl" value="YashiUser-Information.php">
-            <p><input type="submit" value="查询"></p>
+            <input type="hidden" name="backurl" class="mainbtn" value="YashiUser-Information.php">
+            <p><input type="submit" class="mainbtn" value="查询"></p>
             </center>
 </form>
 <center><p>© Kagurazaka Yashi</p></center>

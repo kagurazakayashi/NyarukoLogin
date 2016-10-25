@@ -25,7 +25,7 @@
         <tr>
             <td align="center">
             <input type="hidden" name="backurl" value="YashiUser-Status.php">
-            <input type="submit" value="查询">
+            <input type="submit" class="mainbtn" value="查询">
             </td>
         </tr>
     </tbody>

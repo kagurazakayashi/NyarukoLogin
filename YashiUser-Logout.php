@@ -20,7 +20,7 @@
             <input type="hidden" name="logout">
             <input type="hidden" name="backurl" value="YashiUser-Login.php">
             <input type="hidden" name="echomode" value="html">
-            <input type="submit" value="登出">
+            <input type="submit" class="mainbtn" value="登出">
             </td>
         </tr>
     </tbody>

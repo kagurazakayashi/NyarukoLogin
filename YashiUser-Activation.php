@@ -26,8 +26,8 @@
           $backurl = isset($_GET["backurl"]) ? $_GET["backurl"] : "YashiUser-Login.php";
           echo '<input type="hidden" name="backurl" id="backurl" value="'.$backurl.'">';
         ?>
-            <td align="right"><input type="reset" name="reset" id="reset" value="取消"></td>
-            <td><input type="button" name="submitbutton" id="submitbutton" value="激活用户" onclick="toVaild('php/yaloginActivationC.php')"></td>
+            <td align="right"><input type="reset" name="reset" id="reset" class="mainbtn" value="取消"></td>
+            <td><input type="button" name="submitbutton" id="submitbutton" class="mainbtn" value="激活用户" onclick="toVaild('php/yaloginActivationC.php')"></td>
         </tr>
     </tbody>
   </table>
