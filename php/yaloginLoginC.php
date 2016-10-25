@@ -1,5 +1,8 @@
 <?php
 require 'yaloginLogin.php';
+if(class_exists('yaloginGlobal') != true) {
+        require 'yaloginGlobal.php';
+}
 $c = new yaloginLogin();
 $c->init();
 $errid = 0;
@@ -41,8 +44,25 @@ if ($errid >= 0) {
     $saved = $c->savereg($errid);
 }
 
-if ($echomode == "json") {
-    echo json_encode(array_merge($jsonarr,$jsonarr2));
+if ($echomode == "alert") {
+    $globalsett = new YaloginGlobal();
+    $errorarr = $globalsett->erroridArr;
+    $erridstr = strval($errid);
+    $errinfo = isset($errorarr[$erridstr]) ? $errorarr[$erridstr] : "其他错误。";
+    $showinfo = "代码 ".$erridstr;
+    $erridnum = intval($errid);
+    if ($erridnum >= 1000 && $erridnum < 10000) {
+        $alerttitle = "提示";
+        $alertbtntxt = "确定";
+    }
+    $showinfo = $showinfo." : ".$errinfo;
+    echo $showinfo;
+} else if ($echomode == "json") {
+    if (is_array($jsonarr2)) {
+        echo json_encode(array_merge($jsonarr,$jsonarr2));
+    } else {
+        echo json_encode($jsonarr);
+    }
 } else if ($echomode == "html") {
     echo $html;
 }

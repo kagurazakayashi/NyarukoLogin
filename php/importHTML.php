@@ -85,7 +85,7 @@ class importHTML {
             }
         }
 
-        $html = '<!doctype html><html><head><meta charset="UTF-8"><title>YashiImport '.$this->ver.' - '.$localfile.'</title></head><body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0"><script>function yhvc_codebtn(){document.getElementById("yhv_codebtn").bgColor="#666666";document.getElementById("yhv_infobtn").bgColor="#000000";document.getElementById("yhv_showbtn").bgColor="#000000";document.getElementById("yhv_code").hidden=false;document.getElementById("yhv_info").hidden=true;document.getElementById("yhv_show").hidden=true;}function yhvc_infobtn(){document.getElementById("yhv_codebtn").bgColor="#000000";document.getElementById("yhv_infobtn").bgColor="#666666";document.getElementById("yhv_showbtn").bgColor="#000000";document.getElementById("yhv_code").hidden=true;document.getElementById("yhv_info").hidden=false;document.getElementById("yhv_show").hidden=true;}function yhvc_showbtn(){document.getElementById("yhv_codebtn").bgColor="#000000";document.getElementById("yhv_infobtn").bgColor="#000000";document.getElementById("yhv_showbtn").bgColor="#666666";document.getElementById("yhv_code").hidden=true;document.getElementById("yhv_info").hidden=true;document.getElementById("yhv_show").hidden=false;}</script><font color="#FFF"><table width="100%" border="0" bgcolor="#000000"><tr><td width="150" height="40" align="center">YashiImport '.$this->ver.'</td><td width="100" align="center" bgcolor="#666666" id="yhv_codebtn" onClick="yhvc_codebtn()" style="cursor:pointer;">Code</td><td width="100" align="center" id="yhv_infobtn" onClick="yhvc_infobtn()" style="cursor:pointer;">Info</td><td width="100" align="center" id="yhv_showbtn" onClick="yhvc_showbtn()" style="cursor:pointer;">Show</td><td align="right">'.$localfile.$bodyinf.'</td></tr></table></font><div id="yhv_code"><p>'.$filecode.'</p></div><div id="yhv_info" hidden="true">'.$fileinfo.'</div><div id="yhv_show" hidden="true">'.$filedata.'</div></body></html>';
+        $html = '<!doctype html><html><head><meta charset="UTF-8"><title>YashiImport '.$this->ver.' - '.$localfile.'</title></head><body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0"><script>function yhvc_codebtn(){document.getElementById("yhv_codebtn").bgColor="#666666";document.getElementById("yhv_infobtn").bgColor="#000000";document.getElementById("yhv_showbtn").bgColor="#000000";document.getElementById("yhv_code").hidden=false;document.getElementById("yhv_info").hidden=true;document.getElementById("yhv_show").hidden=true;}function yhvc_infobtn(){document.getElementById("yhv_codebtn").bgColor="#000000";document.getElementById("yhv_infobtn").bgColor="#666666";document.getElementById("yhv_showbtn").bgColor="#000000";document.getElementById("yhv_code").hidden=true;document.getElementById("yhv_info").hidden=false;document.getElementById("yhv_show").hidden=true;}function yhvc_showbtn(){document.getElementById("yhv_codebtn").bgColor="#000000";document.getElementById("yhv_infobtn").bgColor="#000000";document.getElementById("yhv_showbtn").bgColor="#666666";document.getElementById("yhv_code").hidden=true;document.getElementById("yhv_info").hidden=true;document.getElementById("yhv_show").hidden=false;}</script><font color="#FFF"><table width="100%" border="0" bgcolor="#000000"><tr><td width="150" height="40" align="center">YashiImport '.$this->ver.'</td><td width="100" align="center" bgcolor="#666666" id="yhv_codebtn" onClick="yhvc_codebtn()" style="cursor:pointer;">Code</td><td width="100" align="center" id="yhv_showbtn" onClick="yhvc_showbtn()" style="cursor:pointer;">Show</td><td width="100" align="center" id="yhv_infobtn" onClick="yhvc_infobtn()" style="cursor:pointer;">Info</td><td width="100" align="center" id="yhv_yashibtn" onClick="window.location.href = \'https://github.com/cxchope/YashiLogin/blob/master/php/importHTML.php\'" style="cursor:pointer;">Update</td><td align="right">'.$localfile.$bodyinf.'</td></tr></table></font><div id="yhv_code"><p>'.$filecode.'</p></div><div id="yhv_info" hidden="true">'.$fileinfo.'</div><div id="yhv_show" hidden="true">'.$filedata.'</div></body></html>';
 
         return $html;
     }
@@ -110,13 +110,13 @@ class importHTML {
 
 //输出导入内容
 // $ih = new importHTML();
-// $ih->replace = array("HTML"=>"PAGE");
+// $ih->replace = array("HTML"=>"PAGE"); //可选行
 // echo $ih->loadfile("testbody.html",true);
 
 //输出测试
-// $ih = new importHTML();
-// $ih->replace = array("HTML"=>"PAGE");
-// echo $ih->debug("testbody.html",true,true);
+$ih = new importHTML();
+$ih->replace = array("HTML"=>"PAGE"); //可选行
+echo $ih->debug("testbody.html",true,true);
 
 //测试部分结束>
 
