@@ -44,25 +44,32 @@ if ($errid >= 0) {
     $saved = $c->savereg($errid);
 }
 
-if ($echomode == "alert") {
+if ($echomode == "json_cn") {
     $globalsett = new YaloginGlobal();
     $errorarr = $globalsett->erroridArr;
     $erridstr = strval($errid);
     $errinfo = isset($errorarr[$erridstr]) ? $errorarr[$erridstr] : "其他错误。";
-    $showinfo = "代码 ".$erridstr;
-    $erridnum = intval($errid);
-    if ($erridnum >= 1000 && $erridnum < 10000) {
-        $alerttitle = "提示";
-        $alertbtntxt = "确定";
-    }
-    $showinfo = $showinfo." : ".$errinfo;
-    echo $showinfo;
-} else if ($echomode == "json") {
+    $alertinfo = array("alertinfo" => $errinfo);
     if (is_array($jsonarr2)) {
-        echo json_encode(array_merge($jsonarr,$jsonarr2));
+        echo json_encode(array_merge($jsonarr,$jsonarr2,$alertinfo));
     } else {
-        echo json_encode($jsonarr);
+        echo json_encode(array_merge($jsonarr,$alertinfo));
     }
+}
+if ($echomode == "json") {
+    if (isset($_POST["jsonlang"])) {
+        $jsonlang = $_POST["jsonlang"]; //多语言功能预留
+        $globalsett = new YaloginGlobal();
+        $errorarr = $globalsett->erroridArr;
+        $erridstr = strval($errid);
+        $errinfo = isset($errorarr[$erridstr]) ? $errorarr[$erridstr] : "其他错误。";
+        $alertinfo = array("alertinfo" => $errinfo);
+        $jsonarr = array_merge($jsonarr,$alertinfo);
+    }
+    if (is_array($jsonarr2)) {
+        $jsonarr = array_merge($jsonarr,$jsonarr2);
+    }
+    echo json_encode($jsonarr);
 } else if ($echomode == "html") {
     echo $html;
 }

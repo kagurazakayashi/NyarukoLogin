@@ -55,11 +55,9 @@ function toVaild(path) {
         // var form1 = document.getElementById("form1");
         // form1.action = path;
         // form1.submit();
-        urlsend = urlsend + "&userversion=1&echomode=alert";
+        urlsend = urlsend + "&userversion=1&echomode=json&jsonlang=zh-cn";
         psubmit(path,urlsend);
     }
-    // btn.value = "用户登录";
-    // btn.disabled = false;
 }
 
 function hash(str) {
@@ -88,8 +86,21 @@ function psubmit(path,urlsend) {
     xmlhttp.onreadystatechange = function() {
         //console.log("readyState="+xmlhttp.readyState+", status="+xmlhttp.status+", responseText="+xmlhttp.responseText);
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
+            var jsondata = JSON.parse(xmlhttp.responseText);
+            var resultid = parseInt(jsondata["result"]);
+            var resultinfo = jsondata["alertinfo"];
+            if (resultid >= 1000 && resultid < 10000) {
+                btn.value = "正在跳转...";
+                window.location.href = "YashiUser-Alert.php?errid=" + resultid + "&backurl=" + document.getElementById("backurl").value;
+            } else {
+                alert("错误 " + resultid + " : " + resultinfo);
+            }
+        } else if (xmlhttp.status >= 300) {
+            alert("抱歉，出现了 " + xmlhttp.status + " 错误，请稍后重新进入再试。");
         }
+        var btn = document.getElementById("submitbutton");
+        btn.value = "用户登录";
+        btn.disabled = false;
     }
     xmlhttp.open("POST",path,true);
     xmlhttp.setRequestHeader("CONTENT-TYPE","application/x-www-form-urlencoded");
