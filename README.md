@@ -1,13 +1,16 @@
-## 使用说明
+# 雅诗个人网站登录系统 2
 
 注意：这个程序尚未做完，请勿使用。
 
 要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
 
-### 数据库结构
+## 数据库结构
+
+*为必须
+
 - kylogin_user (用户基本信息表格)
   - id (int32) *用户ID (主键,自增)
-  - hash (text64) *用户哈希（日期时间32哈希+名称邮箱32哈希）
+  - hash (text64) *用户哈希 (日期时间32哈希+名称邮箱32哈希)
   - mail (text32) *用户邮箱及验证信息 (可登录)
   - phone (int15) 用户手机号码及验证信息 (尚未开发)
   - mailv (text32) 邮箱验证码 (用户哈希+当前时间的哈希,空未验证,1已验证)
@@ -37,34 +40,25 @@
   - ip (text39) 绑定IP地址
   - token (text64) *访问令牌 (用户哈希+当前时间的哈希)
 
-### 已完成功能
+## 错误代码表
 
-正在创建中。
+JSON返回格式: {"stat":xxxx,"msg":"..."}
 
-要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
-
-### 集成步骤
-
-正在创建中。
-
-要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
-
-### 命名方式
-
-正在创建中。
-
-要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
-
-## 类介绍
-
-### 通用类
-
-正在创建中。
-
-要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
-
-### 第三方类库
-
-正在创建中。
-
-要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
+- 1xxx : 操作成功执行
+  - 11xx : 数据库操作成功
+    - 1100 : SQL语句成功执行。
+    - 1101 : SQL语句成功执行，返回0值。
+- 2xxx : 操作执行失败
+  - 20xx : 参数不足
+    - 2000 : No parameters.
+    - 2001 : More parameters are needed.
+    - 2002 : Invalid parameter.
+  - 21xx : 数据库操作失败
+    - 2100 : Failed to connect to DB.
+    - 2101 : SQL Error.
+    - 2102 : Error returning data.
+  - 22xx : 字符串检查异常
+    - 2200 : Invalid string.
+    - 2201 : Incorrect characters.
+    - 2202 : Incorrect SQL characters.
+    - 2203 : Incorrect HTML characters.
