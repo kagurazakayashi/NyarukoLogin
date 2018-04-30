@@ -16,10 +16,10 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- 表的结构 `kylogin_activity`
+-- 表的结构 `nyalogin_activity`
 --
 
-CREATE TABLE `kylogin_activity` (
+CREATE TABLE `nyalogin_activity` (
   `hash` text NOT NULL COMMENT '用户哈希',
   `app` text NOT NULL COMMENT '应用程序名称',
   `timeset` datetime NOT NULL COMMENT '令牌生成时间',
@@ -31,10 +31,10 @@ CREATE TABLE `kylogin_activity` (
 -- --------------------------------------------------------
 
 --
--- 表的结构 `kylogin_jur`
+-- 表的结构 `nyalogin_jur`
 --
 
-CREATE TABLE `kylogin_jur` (
+CREATE TABLE `nyalogin_jur` (
   `id` int(3) NOT NULL COMMENT '权限ID',
   `jname` text NOT NULL COMMENT '权限组名称',
   `func` text COMMENT '可用功能代号(逗号)'
@@ -43,10 +43,10 @@ CREATE TABLE `kylogin_jur` (
 -- --------------------------------------------------------
 
 --
--- 表的结构 `kylogin_safe`
+-- 表的结构 `nyalogin_safe`
 --
 
-CREATE TABLE `kylogin_safe` (
+CREATE TABLE `nyalogin_safe` (
   `hash` text NOT NULL COMMENT '用户哈希',
   `qa` text NOT NULL COMMENT '密码提示问题和答案',
   `spwd` text NOT NULL COMMENT '二级密码哈希'
@@ -55,10 +55,10 @@ CREATE TABLE `kylogin_safe` (
 -- --------------------------------------------------------
 
 --
--- 表的结构 `kylogin_user`
+-- 表的结构 `nyalogin_user`
 --
 
-CREATE TABLE `kylogin_user` (
+CREATE TABLE `nyalogin_user` (
   `id` int(32) UNSIGNED NOT NULL COMMENT '用户ID',
   `hash` text NOT NULL COMMENT '用户哈希',
   `mail` text NOT NULL COMMENT '用户邮箱',
@@ -81,16 +81,16 @@ CREATE TABLE `kylogin_user` (
 --
 
 --
--- Indexes for table `kylogin_jur`
+-- Indexes for table `nyalogin_jur`
 --
-ALTER TABLE `kylogin_jur`
+ALTER TABLE `nyalogin_jur`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id` (`id`);
 
 --
--- Indexes for table `kylogin_user`
+-- Indexes for table `nyalogin_user`
 --
-ALTER TABLE `kylogin_user`
+ALTER TABLE `nyalogin_user`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id` (`id`);
 
@@ -99,14 +99,14 @@ ALTER TABLE `kylogin_user`
 --
 
 --
--- 使用表AUTO_INCREMENT `kylogin_jur`
+-- 使用表AUTO_INCREMENT `nyalogin_jur`
 --
-ALTER TABLE `kylogin_jur`
+ALTER TABLE `nyalogin_jur`
   MODIFY `id` int(3) NOT NULL AUTO_INCREMENT COMMENT '权限ID';
 --
--- 使用表AUTO_INCREMENT `kylogin_user`
+-- 使用表AUTO_INCREMENT `nyalogin_user`
 --
-ALTER TABLE `kylogin_user`
+ALTER TABLE `nyalogin_user`
   MODIFY `id` int(32) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID';COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
