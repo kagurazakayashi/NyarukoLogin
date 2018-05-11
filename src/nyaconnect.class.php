@@ -1,5 +1,5 @@
 <?php
-    require_once "nyaconfig.class.php";
+    require_once "../nyaconfig.class.php";
     require_once "nyainfomsg.class.php";
     class nyadbconnect {
         var $nyasetting_db;

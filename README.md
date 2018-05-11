@@ -23,6 +23,7 @@
   - `ban` (datetime) 封锁到时间 (超时和空可登录)
   - `alert` (text) 重要警告文本 (非空则显示警告信息,可配合ban)
   - `jur` (int3) *权限ID (kylogin_jur->id)
+  - `fail` (uint) 连续操作失败计数
 - `nyalogin_jur` (权限等级表格)
   - `id` (int3) *权限ID (主键,自增)
   - `jname` (text16) *权限组名称
@@ -43,3 +44,6 @@
 
 - JSON返回格式: `{"stat":xxxx,"msg":"..."}` 。
 - 返回值及其对应的解释内容见 `nyainfomsg.class.php` 。
+
+## tests/
+- `sqlconnect.php` 测试数据库连接是否正常。
