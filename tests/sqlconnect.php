@@ -7,7 +7,7 @@ echo "完成。\n";
 echo "初始化 nyadbconnect ... ";
 $nyadbconnect = new nyadbconnect();
 echo "完成。\n";
-echo "执行 nyaconnect_sqltest() ... \n";
-echo "数据库版本: ".$nyadbconnect->nyaconnect_sqltest();
+echo "执行 sqltest() ... \n";
+echo "数据库版本: ".$nya->db->sqltest();
 echo "\n完成。\n";
 ?>

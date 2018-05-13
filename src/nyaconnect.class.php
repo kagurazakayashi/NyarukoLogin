@@ -1,52 +1,69 @@
 <?php
-    require_once "../nyaconfig.class.php";
-    require_once "nyainfomsg.class.php";
     class nyadbconnect {
-        var $nyasetting_db;
-        var $nyasetting_app;
-        function __construct() {
-            $this->nyasetting_db = new nyasetting_db();
-            $this->nyasetting_app = new nyasetting_app();
-            $this->nyainfomsg = new nyainfomsg();
+        /* 查询数据
+        selectArr:要查询的列名
+        tableStr:表名
+        whereStr:条件
+        whereIsStr:条件值
+        */
+        function select($selectArr,$tableStr,$whereStr,$whereIsStr) {
+            global $nya;
+            $sqlcmd = "SELECT `".implode('`,`',$selectArr)."` FROM `".$nya->cfg->db->db_name."`.`".$tableStr."` WHERE `".$whereStr."` = '".$whereIsStr."';";
+            return $this->sqlc($sqlcmd);
         }
-        //查询数据 selectArr:要查询的列名 tableStr:表名
-        function nyaconnect_select($selectArr,$tableStr,$whereStr,$whereIsStr) {
-            $sqlcmd = "SELECT `".implode('`,`',$selectArr)."` FROM `".$this->nyasetting_db->db_name."`.`".$tableStr."` WHERE `".$whereStr."` = '".$whereIsStr."';";
-            return nyaconnect_sqlc($sqlcmd);
-        }
-        //插入数据
-        function nyaconnect_insert($insertDic,$tableStr) {
+        /* 插入数据
+        insertDic:要插入的数据字典
+        tableStr:表名
+        */
+        function insert($insertDic,$tableStr) {
+            global $nya;
             $keys = "";
             $vals = "";
             while(list($key,$val) = each($insertDic)) { 
                 $keys += "`".$key."`,";
                 $vals += "'".$val."',";
             }
-            $sqlcmd = "INSERT INTO `".$this->nyasetting_db->db_name."`.`".$tableStr."`(".substr($keys, 0, -1).") VALUES(".substr($vals, 0, -1).");";
-            return nyaconnect_sqlc($sqlcmd);
+            $sqlcmd = "INSERT INTO `".$nya->cfg->db->db_name."`.`".$tableStr."`(".substr($keys, 0, -1).") VALUES(".substr($vals, 0, -1).");";
+            return $this->sqlc($sqlcmd);
         }
-        //更新数据
-        function nyaconnect_update($updateDic,$whereStr,$whereIsStr) {
+        /* 更新数据
+        updateDic:要更新的数据字典
+        tableStr:表名
+        whereStr:条件
+        whereIsStr:条件值
+        */
+        function update($updateDic,$tableStr,$whereStr,$whereIsStr) {
+            global $nya;
             $update = "";
             while(list($key,$val) = each($updateDic)) { 
                 $update += "`".$key."` = '".$val."', ";
             }
-            $sqlcmd = "UPDATE `".$this->nyasetting_db->db_name."`.`".$tableStr."` SET ".substr($update, 0, -2)." WHERE `".$whereStr."` = '".$whereIsStr."';";
-            return nyaconnect_sqlc($sqlcmd);
+            $sqlcmd = "UPDATE `".$nya->cfg->db->db_name."`.`".$tableStr."` SET ".substr($update, 0, -2)." WHERE `".$whereStr."` = '".$whereIsStr."';";
+            return $this->sqlc($sqlcmd);
+        }
+        /* 查询有多少数据
+        tableStr:表名
+        */
+        function scount($tableStr) {
+            global $nya;
+            $sqlcmd = "select count(*) from ".$tableStr;
+            return $this->sqlc($sqlcmd);
         }
         //测试SQL连接(获得mysql版本)
-        function nyaconnect_sqltest() {
-            $con = mysqli_connect($this->nyasetting_db->db_host,$this->nyasetting_db->db_user,$this->nyasetting_db->db_password,$this->nyasetting_db->db_name,$this->nyasetting_db->db_port);
+        function sqltest() {
+            global $nya;
+            $con = mysqli_connect($nya->cfg->db->db_host,$nya->cfg->db->db_user,$nya->cfg->db->db_password,$nya->cfg->db->db_name,$nya->cfg->db->db_port);
             $serinfo = mysqli_get_server_info($con);
             mysqli_close($con);
             return $serinfo;
         }
         //执行SQL连接
-        function nyaconnect_sqlc($sqlcmd) {
-            $con = mysqli_connect($this->nyasetting_db->db_host,$this->nyasetting_db->db_user,$this->nyasetting_db->db_password,$this->nyasetting_db->db_name,$this->nyasetting_db->db_port);
+        function sqlc($sqlcmd) {
+            global $nya;
+            $con = mysqli_connect($nya->cfg->db->db_host,$nya->cfg->db->db_user,$nya->cfg->db->db_password,$nya->cfg->db->db_name,$nya->cfg->db->db_port);
             $sqlerrno = mysqli_connect_errno($con);
             if ($sqlerrno) {
-                die($this->nyainfomsg->m(2100,true,$sqlerrno));
+                die($nya->msg->m(2100,true,$sqlerrno));
             }
             $result = mysqli_query($con,$sqlcmd);
             mysqli_close($con);
@@ -62,14 +79,14 @@
                         if (count($result_array) > 0) {
                             return [1100,$result_array];
                         } else {
-                            die($this->nyainfomsg->m(2102));
+                            die($nya->msg->m(2102));
                         }
                     }
                 } else {
                     return [1101]; //SQL语句成功执行，返回0值。
                 }
             } else {
-                die($this->nyainfomsg->m(2101));
+                die($nya->msg->m(2101));
             }
         }
     }
