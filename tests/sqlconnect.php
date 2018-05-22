@@ -1,4 +1,5 @@
-<?
+<?php
+require_once "../src/nyacore.class.php";
 header('Content-Type: text/plain; charset=utf-8');
 echo "【数据库连接测试】\n";
 echo "引入文件 nyaconnect.class.php ... ";

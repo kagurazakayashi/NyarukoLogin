@@ -1,20 +1,24 @@
 <?php
     class nyadbconnect {
-        /* 查询数据
-        selectArr:要查询的列名
-        tableStr:表名
-        whereStr:条件
-        whereIsStr:条件值
-        */
+        /**
+         * @description: 查询数据
+         * @param Array<String> selectArr 要查询的列名
+         * @param String tableStr 表名
+         * @param String whereStr 条件
+         * @param String whereIsStr 条件值
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
         function select($selectArr,$tableStr,$whereStr,$whereIsStr) {
             global $nya;
             $sqlcmd = "SELECT `".implode('`,`',$selectArr)."` FROM `".$nya->cfg->db->db_name."`.`".$tableStr."` WHERE `".$whereStr."` = '".$whereIsStr."';";
             return $this->sqlc($sqlcmd);
         }
-        /* 插入数据
-        insertDic:要插入的数据字典
-        tableStr:表名
-        */
+        /**
+         * @description: 插入数据
+         * @param Dictionary<Key:String> insertDic 要插入的数据字典
+         * @param String tableStr 表名
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
         function insert($insertDic,$tableStr) {
             global $nya;
             $keys = "";
@@ -26,12 +30,14 @@
             $sqlcmd = "INSERT INTO `".$nya->cfg->db->db_name."`.`".$tableStr."`(".substr($keys, 0, -1).") VALUES(".substr($vals, 0, -1).");";
             return $this->sqlc($sqlcmd);
         }
-        /* 更新数据
-        updateDic:要更新的数据字典
-        tableStr:表名
-        whereStr:条件
-        whereIsStr:条件值
-        */
+        /**
+         * @description: 更新数据
+         * @param Dictionary<Key:String> updateDic 要更新的数据字典
+         * @param String tableStr 表名
+         * @param String whereStr 条件
+         * @param String whereIsStr 条件值
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
         function update($updateDic,$tableStr,$whereStr,$whereIsStr) {
             global $nya;
             $update = "";
@@ -41,15 +47,21 @@
             $sqlcmd = "UPDATE `".$nya->cfg->db->db_name."`.`".$tableStr."` SET ".substr($update, 0, -2)." WHERE `".$whereStr."` = '".$whereIsStr."';";
             return $this->sqlc($sqlcmd);
         }
-        /* 查询有多少数据
-        tableStr:表名
-        */
+        /**
+         * @description: 查询有多少数据
+         * @param String tableStr 表名
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
         function scount($tableStr) {
             global $nya;
             $sqlcmd = "select count(*) from ".$tableStr;
             return $this->sqlc($sqlcmd);
         }
-        //测试SQL连接(获得mysql版本)
+        //
+        /**
+         * @description: 测试SQL连接
+         * @return String mysql版本号
+         */
         function sqltest() {
             global $nya;
             $con = mysqli_connect($nya->cfg->db->db_host,$nya->cfg->db->db_user,$nya->cfg->db->db_password,$nya->cfg->db->db_name,$nya->cfg->db->db_port);
@@ -57,7 +69,11 @@
             mysqli_close($con);
             return $serinfo;
         }
-        //执行SQL连接
+        /**
+         * @description: 执行SQL连接
+         * @param String sqlcmd SQL语句
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
         function sqlc($sqlcmd) {
             global $nya;
             $con = mysqli_connect($nya->cfg->db->db_host,$nya->cfg->db->db_user,$nya->cfg->db->db_password,$nya->cfg->db->db_name,$nya->cfg->db->db_port);

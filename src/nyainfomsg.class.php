@@ -20,9 +20,21 @@ class nyainfomsg {
         2202 => 'SQL语句不正确。',
         2203 => '不应包含HTML代码。'
     );
+    /**
+     * @description: 创建异常信息提示JSON
+     * @param Int code 错误代码
+     * @param Bool showmsg 是否显示错误信息（否则直接无输出）
+     * @param String str 附加错误信息
+     * @return String 异常信息提示JSON
+     */
     function m($code = -1,$showmsg = true,$str = "") {
+        if (!$showmsg) return null;
         header('Content-type:text/json');
-        return json_encode(array("stat"=>$code,"msg"=>$this->imsg[2100].$sqlerrno));
+        return json_encode(array(
+            "stat"=>$code,
+            "msg"=>$this->imsg[2100],
+            "info"=>$str
+        ));
     }
 }
 ?>

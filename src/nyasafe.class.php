@@ -1,6 +1,10 @@
 <?php
 class nyasafe_hash {
-    //base64加密
+    /**
+     * @description: base64 加密
+     * @param String 明文
+     * @return String 密文
+     */
     function base_encode($str) {
         $src  = array("/","+","=");
         $dist = array("_a","_b","_c");
@@ -8,7 +12,11 @@ class nyasafe_hash {
         $new  = str_replace($src,$dist,$old);
         return $new;
     }
-    //base64解密
+    /**
+     * @description: base64 解密
+     * @param String 密文
+     * @return String 明文
+     */
     function base_decode($str) {
         $src = array("_a","_b","_c");
         $dist  = array("/","+","=");
@@ -16,26 +24,47 @@ class nyasafe_hash {
         $new = base64_decode($old);
         return $new;
     }
-    //是否为MD5
+    /**
+     * @description: 是否为MD5
+     * @param String 需要判断的字符串 
+     * @return Int 是否匹配 > 0 || != false
+     */
     function is_md5($md5str) {
         return preg_match("/^[a-z0-9]{32}$/", $md5str);
     }
 }
 class nyasafe_rand {
-    //随机文本生成 randstr(32);
-    function randstr($len=6, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
-        abcdefghijklmnopqrstuvwxyz0123456789') { 
-        mt_srand((double)microtime()*1000000*getmypid()); 
+    /**
+     * @description: 生成一段随机文本
+     * @param Int len 生成长度
+     * @param String chars 从此字符串中抽取字符
+     * @return String 新生成的随机文本
+     */
+    function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
+        abcdefghijklmnopqrstuvwxyz0123456789') {
+        mt_srand($this->seed());
         $password='';
         while(strlen($password)<$len) 
-        $password.=substr($chars,(mt_rand()%strlen($chars)),1); 
+            $password.=substr($chars,(mt_rand()%strlen($chars)),1); 
         return $password;
     }
-    //随机哈希值生成
-    function randhash($userinfo) {
-        $data = date('YmdHis').$userinfo.$this->randstr(32);
-        $result = md5($data);
-        return $result;
+    /**
+     * @description: 生成随机哈希值
+     * @param String salt 盐（可选信息）
+     * @return String 生成的随机MD5码
+     */
+    function randhash($salt="") {
+        $data = (double)microtime().$salt.$this->randstr(32);
+        return md5($data);
+    }
+    /**
+     * @description: 生成随机数发生器种子
+     * @param String salt 盐（可选信息）
+     * @return String 种子
+     */
+    function seed($salt="") {
+        $newsalt = (double)microtime()*1000000*getmypid();
+        return $newsalt.$salt;
     }
 }
 class nyasafe_str {

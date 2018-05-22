@@ -1,4 +1,4 @@
-<?
+<?php
 header('Content-Type: text/plain; charset=utf-8');
 echo "【用户数量】\n";
 echo "引入文件 nyaadduser.class.php ... ";
