@@ -1,6 +1,6 @@
 <?php
 class nyainfomsg {
-    var $imsg = array(
+    public $imsg = array(
         -1 => '发生不明错误。',
         // 1xxx : 操作成功执行
         // 11xx : 数据库操作成功
@@ -35,6 +35,9 @@ class nyainfomsg {
             "msg"=>$this->imsg[2100],
             "info"=>$str
         ));
+    }
+    function __destruct() {
+        $this->$imsg = null; unset($this->$imsg);
     }
 }
 ?>

@@ -95,4 +95,19 @@ class nyasafe_str {
         return $value;
     }
 }
+class nyasafe {
+    public $hash;
+    public $rand;
+    public $str;
+    function __construct() {
+        $this->$hash = new nyasafe_hash();
+        $this->$rand = new nyasafe_rand();
+        $this->$str = new nyasafe_str();
+    }
+    function __destruct() {
+        $this->$hash = null; unset($this->$hash);
+        $this->$rand = null; unset($this->$rand);
+        $this->$str = null; unset($this->$str);
+    }
+}
 ?>

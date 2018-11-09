@@ -76,7 +76,8 @@
          */
         function sqlc($sqlcmd) {
             global $nya;
-            $con = mysqli_connect($nya->cfg->db->db_host,$nya->cfg->db->db_user,$nya->cfg->db->db_password,$nya->cfg->db->db_name,$nya->cfg->db->db_port);
+            $dbcfg = $nya->cfg->db;
+            $con = mysqli_connect($dbcfg->db_host,$dbcfg->db_user,$dbcfg->db_password,$dbcfg->db_name,$dbcfg->db_port);
             $sqlerrno = mysqli_connect_errno($con);
             if ($sqlerrno) {
                 die($nya->msg->m(2100,true,$sqlerrno));
