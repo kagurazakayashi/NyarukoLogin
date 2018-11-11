@@ -16,10 +16,11 @@ class nyacore {
         $this->safe = new nyasafe();
     }
     function __destruct() {
-        $this->$cfg = null; unset($this->$cfg);
-        $this->$msg = null; unset($this->$msg);
-        $this->$db = null; unset($this->$db);
-        $this->$safe = null; unset($this->$safe);
+        $this->cfg = null;
+        unset($this->cfg);
+        $this->msg = null; unset($this->msg);
+        $this->db = null; unset($this->db);
+        $this->safe = null; unset($this->safe);
     }
 }
 global $nya;
