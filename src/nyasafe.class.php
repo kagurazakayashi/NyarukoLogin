@@ -68,31 +68,120 @@ class nyasafe_rand {
     }
 }
 class nyasafe_str {
-    //检查字符串中是否有非法字符 errdie=出错是否终止 
+    /**
+     * @description: 过滤字符串中的非法字符
+     * @param String value 源字符串
+     * @param Bool errdie 如果出错则完全中断执行，返回错误信息JSON
+     * @param Bool dhtml 是否将HTML代码也视为非法字符
+     * @return String 经过过滤的字符
+     */
     function safestr($value,$errdie=false,$dhtml=true) {
+        global $nya;
         $ovalue = $value;
         if (get_magic_quotes_gpc()) {
             $value = stripslashes($value);
         }
         if ($value != $ovalue && $errdie == true) {
-            header('Content-type:text/json');
-            die(json_encode(array("stat"=>2201,"msg"=>"字符格式不正确。")));
+            die($nya->msg->m(2020101));
         }
         if (!is_numeric($value)) {
             $value = "'" . mysql_real_escape_string($value) . "'";
         }
         if ($value != $ovalue && $errdie == true) {
-            header('Content-type:text/json');
-            die(json_encode(array("stat"=>2202,"msg"=>"SQL语句不正确。")));
+            die($nya->msg->m(2020102));
         }
         if ($dhtml) {
             $value = htmlspecialchars($value);
             if ($value != $ovalue && $errdie == true) {
-                header('Content-type:text/json');
-                die(json_encode(array("stat"=>2203,"msg"=>"不可以包含HTML代码。")));
+                die($nya->msg->m(2020103));
             }
         }
         return $value;
+    }
+    /**
+     * @description: 检查是否为电子邮件地址
+     * @param String str 源字符串
+     * @return Bool 是否正确
+     */
+    function isEmail($str) {
+        $checkmail="/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";//定义正则表达式
+        if(isset($str) && $str!=""){//判断文本框中是否有值
+            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+               return true;
+            }else{
+               return false;
+            }
+        }
+    }
+    /**
+     * @description: 检查是否为 IPv4 地址
+     * @param String str 源字符串
+     * @return Bool 是否正确
+     */
+    function isIPv4($str) {
+        $checkmail="'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$'";//定义正则表达式
+        if(isset($str) && $str!=""){//判断文本框中是否有值
+            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+               return true;
+            }else{
+               return false;
+            }
+        }
+    }
+    /**
+     * @description: 检查是否为 IPv6 地址
+     * @param String str 源字符串
+     * @return Bool 是否正确
+     */
+    function isIPv6($str) {
+        $checkmail="/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/";
+        if(isset($str) && $str!=""){//判断文本框中是否有值
+            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+               return true;
+            }else{
+               return false;
+            }
+        }
+    }
+    /**
+     * @description: 检查是否为整数数字字符串
+     * @param String str 源字符串
+     * @return Bool 是否正确
+     */
+    function isInt($str) {
+        $v = is_numeric($str) ? true : false;//判断是否为数字或数字字符串
+        if ($v) {
+            if (strpos($str,".")) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+    /**
+     * @description: 检查是否为中国手机电话号码格式
+     * @param String str 源字符串
+     * @return Bool 是否正确
+     */
+    function isPhoneNumCN($str) {
+        $checkmail="/^1[34578]\d{9}$/";//定义正则表达式
+        if(isset($str) && $str!=""){//判断文本框中是否有值
+            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+               return true;
+            }else{
+               return false;
+            }
+        }
+    }
+    /**
+     * @description: 检查是否包含违禁词汇
+     * @param String str 源字符串
+     * @return Array<String> 发现的违禁词数组
+     */
+    function banWord($str) {
+
     }
 }
 class nyasafe {
@@ -100,14 +189,17 @@ class nyasafe {
     public $rand;
     public $str;
     function __construct() {
-        $this->$hash = new nyasafe_hash();
-        $this->$rand = new nyasafe_rand();
-        $this->$str = new nyasafe_str();
+        $this->hash = new nyasafe_hash();
+        $this->rand = new nyasafe_rand();
+        $this->str = new nyasafe_str();
     }
     function __destruct() {
-        $this->$hash = null; unset($this->$hash);
-        $this->$rand = null; unset($this->$rand);
-        $this->$str = null; unset($this->$str);
+        $this->hash = null; unset($this->hash);
+        $this->rand = null; unset($this->rand);
+        $this->str = null; unset($this->str);
     }
 }
+// echo "测试：";
+// $nyasafe_hashobj = new nyasafe_str();
+// echo $nyasafe_hashobj->isPhoneNumCN($_GET["str"]);
 ?>
