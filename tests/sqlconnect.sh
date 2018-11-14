@@ -1,1 +1,1 @@
-curl http://127.0.0.1/NyarukoLogin/tests/sqlconnect.php
+curl http://dev.uuu.moe/NyarukoLogin/tests/sqlconnect.php
