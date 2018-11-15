@@ -6,8 +6,8 @@ class adduser {
         //检查是否已有用户
     }
     function isuserempty() {
-        global $nya;
-        $sdata = $nya->db->scount($nya->cfg->db->tb_user);
+        global $nlcore;
+        $sdata = $nlcore->db->scount($nlcore->cfg->db->tb_user);
         print_r($sdata);
     }
 }

@@ -23,6 +23,6 @@ class nyacore {
         $this->safe = null; unset($this->safe);
     }
 }
-global $nya;
-if (!isset($nya)) $nya = new nyacore();
+global $nlcore;
+if (!isset($nlcore)) $nlcore = new nyacore();
 ?>

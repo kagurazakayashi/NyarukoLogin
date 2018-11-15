@@ -45,7 +45,8 @@ class nyasetting_db {
         "users_information" => "users_information", //用户信息表
         "user_group" => "user_group", //用户组表
         "verification_sending_log" => "verification_sending_log", //验证信息发送日志
-        "stopword" => "stopword" //敏感词表
+        "stopword" => "stopword", //敏感词表
+        "test" => "test"
     ];
 }
 //应用名称设置

@@ -9,6 +9,10 @@ class nyainfomsg {
         DD: 详细错误
         */
         // A=1 : 操作成功执行
+        // A=1/BB=00 : 通用成功类型
+        // A=1/BB=00/CC=00 : 通用成功
+        // A=1/BB=00/CC=00/DD=00 : 
+        1000000 => '执行成功。',
         // A=1/BB=01 : 数据库类
         // A=1/BB=01/CC=00 : 数据库相关
         // A=1/BB=01/CC=00/DD=00 : 
@@ -33,6 +37,8 @@ class nyainfomsg {
         2010101 => '数据库错误。',
         // A=2/BB=01/CC=01/DD=02 :
         2010102 => '数据库未能返回正确的数据。',
+        // A=2/BB=01/CC=01/DD=03 :
+        2010103 => '缺少数据库配置。',
         // A=2/BB=02 : 安全类
         // A=2/BB=02/CC=01 : 字符串规则检查
         // A=2/BB=02/CC=01/DD=00 :
@@ -67,10 +73,9 @@ class nyainfomsg {
      */
     function m($code = -1,$showmsg = true,$str = "") {
         if (!$showmsg) return null;
-        header('Content-type:text/json');
         return json_encode(array(
             "stat"=>$code,
-            "msg"=>$this->imsg[2100],
+            "msg"=>$this->imsg[$code],
             "info"=>$str
         ));
     }

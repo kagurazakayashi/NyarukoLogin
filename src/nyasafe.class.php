@@ -76,24 +76,24 @@ class nyasafe_str {
      * @return String 经过过滤的字符
      */
     function safestr($value,$errdie=false,$dhtml=true) {
-        global $nya;
+        global $nlcore;
         $ovalue = $value;
         if (get_magic_quotes_gpc()) {
             $value = stripslashes($value);
         }
         if ($value != $ovalue && $errdie == true) {
-            die($nya->msg->m(2020101));
+            die($nlcore->msg->m(2020101));
         }
         if (!is_numeric($value)) {
             $value = "'" . mysql_real_escape_string($value) . "'";
         }
         if ($value != $ovalue && $errdie == true) {
-            die($nya->msg->m(2020102));
+            die($nlcore->msg->m(2020102));
         }
         if ($dhtml) {
             $value = htmlspecialchars($value);
             if ($value != $ovalue && $errdie == true) {
-                die($nya->msg->m(2020103));
+                die($nlcore->msg->m(2020103));
             }
         }
         return $value;

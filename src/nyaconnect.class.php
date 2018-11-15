@@ -1,106 +1,103 @@
 <?php
     class nyadbconnect {
         private $con = null;
-        private $db_host;
-        private $db_port;
-        private $db_name;
-        private $db_user;
-        private $db_password;
+        private $mode = 0;
+        private $debug = false;
         public $tables;
         /**
-         * @description: 初始化，读入设置
+         * @description: 初始化，读入设置，建立SQL连接
          * @param Int mode 选择数据库：0只读库 1可写入库 2屏蔽词库
          */
-        function init($mode=0) {
-            global $nya;
+        function init($mode=0,$debug=false) {
+            global $nlcore;
             $selectdbs;
+            $this->mode = $mode;
+            $this->debug = $debug;
             switch ($mode) {
                 case 1:
-                    $selectdbs = $nya->cfg->db->write_dbs;
+                    $selectdbs = $nlcore->cfg->db->write_dbs;
                     break;
                 case 2:
-                    $selectdbs = $nya->cfg->db->stopword_dbs;
+                    $selectdbs = $nlcore->cfg->db->stopword_dbs;
                     break;
                 default:
-                    $selectdbs = $nya->cfg->db->read_dbs;
+                    $selectdbs = $nlcore->cfg->db->read_dbs;
                     break;
             }
-            $tables = $nya->cfg->db->tables;
+            $tables = $nlcore->cfg->db->tables;
             $selectdbscount = count($selectdbs);
             if ($selectdbscount > 0) {
                 $dbid = rand(0, $selectdbscount-1);
                 $selectdb = $selectdbs[$dbid];
-                $this->db_host = $selectdb["db_host"];
-                $this->db_port = $selectdb["db_port"];
-                $this->db_name = $selectdb["db_name"];
-                $this->db_user = $selectdb["db_user"];
-                $this->db_password = $selectdb["db_password"];
+                if (!$this->con) {
+                    $this->con = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
+                    if ($this->debug) echo "打开数据库连接。";
+                }
+                $sqlerrno = mysqli_connect_errno($this->con);
+                if ($sqlerrno) {
+                    die($nlcore->msg->m(2010100,true,$sqlerrno));
+                }
             } else {
-                throw new Exception("还没有配置数据库设置。");
+                die($nlcore->msg->m(2010103,true,$sqlerrno));
             }
         }
         /**
          * @description: 查询数据
-         * @param Array<String> selectArr 要查询的列名
+         * @param Array<String> selectArr 要查询的列名数组
          * @param String tableStr 表名
-         * @param String whereStr 条件
-         * @param String whereIsStr 条件值
+         * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function select($selectArr,$tableStr,$whereStr,$whereIsStr) {
-            $sqlcmd = "SELECT `".implode('`,`',$selectArr)."` FROM `".$this->db_name."`.`".$tableStr."` WHERE `".$whereStr."` = '".$whereIsStr."';";
+        function select($columnArr,$tableStr,$whereDic) {
+            $columnStr = implode('`,`',$columnArr);
+            $whereStr = $this->dic2sql($whereDic,2);
+            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 插入数据
-         * @param Dictionary<Key:String> insertDic 要插入的数据字典
+         * @param Dictionary<String:String> insertDic 要插入的数据字典
          * @param String tableStr 表名
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function insert($insertDic,$tableStr) {
-            $keys = "";
-            $vals = "";
-            while(list($key,$val) = each($insertDic)) { 
-                $keys += "`".$key."`,";
-                $vals += "'".$val."',";
-            }
-            $sqlcmd = "INSERT INTO `".$this->db_name."`.`".$tableStr."`(".substr($keys, 0, -1).") VALUES(".substr($vals, 0, -1).");";
+            $insertStr = $this->dic2sql($insertDic,0);
+            $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 更新数据
-         * @param Dictionary<Key:String> updateDic 要更新的数据字典
+         * @param Dictionary<String:String> updateDic 要更新的数据字典
          * @param String tableStr 表名
-         * @param String whereStr 条件
-         * @param String whereIsStr 条件值
+         * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function update($updateDic,$tableStr,$whereStr,$whereIsStr) {
-            $update = "";
-            while(list($key,$val) = each($updateDic)) { 
-                $update += "`".$key."` = '".$val."', ";
-            }
-            $sqlcmd = "UPDATE `".$this->db_name."`.`".$tableStr."` SET ".substr($update, 0, -2)." WHERE `".$whereStr."` = '".$whereIsStr."';";
+        function update($updateDic,$tableStr,$whereDic) {
+            $update = $this->dic2sql($updateDic,1);
+            $whereStr = $this->dic2sql($whereDic,2);
+            $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 删除数据
          * @param String tableStr 表名
-         * @param String whereStr 条件
-         * @param String whereIsStr 条件值
+         * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function delete($tableStr,$whereStr,$whereIsStr) {
-            $sqlcmd = "DELETE FROM `".$this->db_name."`.`".$tableStr."` WHERE `".$whereStr."` = '".$whereIsStr."';";
+        function delete($tableStr,$whereDic) {
+            $whereStr = $this->dic2sql($whereDic,2);
+            $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 查询有多少数据
          * @param String tableStr 表名
+         * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function scount($tableStr) {
-            $sqlcmd = "select count(*) from ".$tableStr;
+        function scount($tableStr,$whereDic=null) {
+            $whereStr = $this->dic2sql($whereDic,2);
+            $sqlcmd = "select count(*) from ".$tableStr."` WHERE ".$whereStr.";";
             return $this->sqlc($sqlcmd);
         }
         //
@@ -109,7 +106,6 @@
          * @return String mysql版本号
          */
         function sqltest() {
-            if (!$this->con) $this->con = mysqli_connect($this->db_host,$this->db_user,$this->db_password,$this->db_name,$this->db_port);
             $serinfo = mysqli_get_server_info($this->con);
             return $serinfo;
         }
@@ -120,6 +116,7 @@
             if ($this->con) {
                 mysqli_close($this->con);
                 $this->con = null;
+                if ($this->debug) echo "关闭数据库连接。";
             }
         }
         /**
@@ -128,12 +125,8 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function sqlc($sqlcmd) {
-            global $nya;
-            if (!$this->con) $this->con = mysqli_connect($this->db_host,$this->db_user,$this->db_password,$this->db_name,$this->db_port);
-            $sqlerrno = mysqli_connect_errno($this->con);
-            if ($sqlerrno) {
-                die($nya->msg->m(2100,true,$sqlerrno));
-            }
+            global $nlcore;
+            if ($this->debug) echo "[SQL]".$sqlcmd."[/SQL]";
             $result = mysqli_query($this->con,$sqlcmd);
             if ($result) {
                 if(@mysqli_num_rows($result)) {
@@ -147,14 +140,51 @@
                         if (count($result_array) > 0) {
                             return [1100,$result_array];
                         } else {
-                            die($nya->msg->m(2010102));
+                            die($nlcore->msg->m(2010102));
                         }
                     }
                 } else {
                     return [1101]; //SQL语句成功执行，返回0值。
                 }
             } else {
-                die($nya->msg->m(2010101));
+                die($nlcore->msg->m(2010101));
+            }
+        }
+        /**
+         * @description: 将字典类型转换为SQL语句
+         * @param Dictionary<String:String> dic 要转换的字典
+         * @param Int mode 返回字符串的格式
+         *     0; (列1, 列2) VALUES (值1, 值2)
+         *     1: `列1`='值1', `列2`='值2'
+         *     2: `列1`='值1' AND `列2`='值2'
+         *     3: `列1`='值1' OR `列2`='值2'
+         * @return String 返回 SQL 语句片段，如果不提供要转换的字典(null)，则返回通用*号
+         */
+        function dic2sql($dic=null,$mode=0) {
+            if ($dic == null) return "*";
+            if ($mode == 0) {
+                $keys = "";
+                $vals = "";
+                while(list($key,$val) = each($dic)) { 
+                    $keys += "`".$key."`, ";
+                    $vals += "'".$val."', ";
+                }
+                $keystr = substr($keys, 0, -2);
+                $valstr = substr($vals, 0, -2);
+                return "(".$keystr.") VALUES (".$valstr.");";
+            } else {
+                $modestr = ", ";
+                if ($modestr == 2) {
+                    $modestr = " AND ";
+                } else if ($modestr == 3) {
+                    $modestr = " OR ";
+                }
+                $modestrlen = strlen($modestr);
+                $keyval = "";
+                while(list($key,$val) = each($dic)) {
+                    $keyval += "`".$key."` = '".$val."'".$modestr;
+                }
+                return substr($keyval, 0, (0-$modestrlen));
             }
         }
         /**
@@ -162,7 +192,13 @@
          */
         function __destruct() {
             $this->close();
+            $this->mode = null;
+            $this->tables = null;
+            $this->debug = null;
             unset($this->con);
+            unset($this->mode);
+            unset($this->tables);
+            unset($this->debug);
         }
     }
 ?>
