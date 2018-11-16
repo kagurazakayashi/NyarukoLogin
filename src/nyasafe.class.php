@@ -161,6 +161,20 @@ class nyasafe_str {
         }
     }
     /**
+     * @description: 检查字符串是否仅包含字母和数字并满足指定长度条件
+     * @param String str 源字符串
+     * @param Int minlen 至少需要多长（可选,默认-1不限制）
+     * @param Int maxlen 至多需要多长（可选,默认-1不限制）
+     * @return Bool 是否正确
+     */
+    function isNumberOrEnglishChar($str,$minlen=-1,$maxlen=-1) {
+        if (preg_match("/^[A-Za-z0-9]+$/i",$str) == 0) return false;
+        $len = strlen($str);
+        if ($minlen != -1 && $len < $minlen) return false;
+        if ($maxlen != -1 && $len > $maxlen) return false;
+        return true;
+    }
+    /**
      * @description: 检查是否为中国手机电话号码格式
      * @param String str 源字符串
      * @return Bool 是否正确

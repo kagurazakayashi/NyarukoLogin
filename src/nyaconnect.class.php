@@ -10,6 +10,7 @@
          */
         function init($mode=0,$debug=false) {
             global $nlcore;
+            $this->close();
             $selectdbs;
             $this->mode = $mode;
             $this->debug = $debug;
@@ -31,7 +32,7 @@
                 $selectdb = $selectdbs[$dbid];
                 if (!$this->con) {
                     $this->con = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
-                    if ($this->debug) echo "打开数据库连接。";
+                    if ($this->debug) echo "[SQL START]";
                 }
                 $sqlerrno = mysqli_connect_errno($this->con);
                 if ($sqlerrno) {
@@ -46,17 +47,19 @@
          * @param Array<String> selectArr 要查询的列名数组
          * @param String tableStr 表名
          * @param String whereDic 条件字典（k:列名=v:预期内容）
+         * @param String customWhere 自定义条件表达式
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function select($columnArr,$tableStr,$whereDic) {
+        function select($columnArr,$tableStr,$whereDic,$customWhere="") {
             $columnStr = implode('`,`',$columnArr);
             $whereStr = $this->dic2sql($whereDic,2);
-            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.";";
+            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 插入数据
-         * @param Dictionary<String:String> insertDic 要插入的数据字典
+         * @param Array<String:String> insertDic 要插入的数据字典
          * @param String tableStr 表名
          * @return Array<Int,Array> 返回的状态码和内容
          */
@@ -67,37 +70,43 @@
         }
         /**
          * @description: 更新数据
-         * @param Dictionary<String:String> updateDic 要更新的数据字典
+         * @param Array<String:String> updateDic 要更新的数据字典
          * @param String tableStr 表名
-         * @param String whereDic 条件字典（k:列名=v:预期内容）
+         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
+         * @param String customWhere 自定义条件表达式
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function update($updateDic,$tableStr,$whereDic) {
+        function update($updateDic,$tableStr,$whereDic,$customWhere="") {
             $update = $this->dic2sql($updateDic,1);
             $whereStr = $this->dic2sql($whereDic,2);
-            $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.";";
+            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 删除数据
          * @param String tableStr 表名
-         * @param String whereDic 条件字典（k:列名=v:预期内容）
+         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
+         * @param String customWhere 自定义条件表达式
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function delete($tableStr,$whereDic) {
+        function delete($tableStr,$whereDic,$customWhere="") {
             $whereStr = $this->dic2sql($whereDic,2);
-            $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.";";
+            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
         /**
          * @description: 查询有多少数据
          * @param String tableStr 表名
-         * @param String whereDic 条件字典（k:列名=v:预期内容）
+         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
+         * @param String customWhere 自定义条件表达式
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function scount($tableStr,$whereDic=null) {
+        function scount($tableStr,$whereDic=null,$customWhere="") {
             $whereStr = $this->dic2sql($whereDic,2);
-            $sqlcmd = "select count(*) from ".$tableStr."` WHERE ".$whereStr.";";
+            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
         //
@@ -116,7 +125,7 @@
             if ($this->con) {
                 mysqli_close($this->con);
                 $this->con = null;
-                if ($this->debug) echo "关闭数据库连接。";
+                if ($this->debug) echo "[SQL-END]";
             }
         }
         /**
@@ -129,6 +138,7 @@
             if ($this->debug) echo "[SQL]".$sqlcmd."[/SQL]";
             $result = mysqli_query($this->con,$sqlcmd);
             if ($result) {
+                $insertid = mysqli_insert_id($this->con);
                 if(@mysqli_num_rows($result)) {
                     $result_array = array();
                     $rowi = 0;
@@ -138,15 +148,16 @@
                     }
                     if($result_array) {
                         if (count($result_array) > 0) {
-                            return [1100,$result_array];
+                            return [1010000,$insertid,$result_array];
                         } else {
                             die($nlcore->msg->m(2010102));
                         }
                     }
                 } else {
-                    return [1101]; //SQL语句成功执行，返回0值。
+                    return [1010001,$insertid];
                 }
             } else {
+                if ($this->debug) echo "[SQLERR]".mysqli_connect_error()."[/SQLERR]";
                 die($nlcore->msg->m(2010101));
             }
         }
@@ -165,24 +176,24 @@
             if ($mode == 0) {
                 $keys = "";
                 $vals = "";
-                while(list($key,$val) = each($dic)) { 
-                    $keys += "`".$key."`, ";
-                    $vals += "'".$val."', ";
+                foreach ($dic as $key => $val) {
+                    $keys .= "`".$key."`, ";
+                    $vals .= "'".$val."', ";
                 }
                 $keystr = substr($keys, 0, -2);
                 $valstr = substr($vals, 0, -2);
                 return "(".$keystr.") VALUES (".$valstr.");";
             } else {
                 $modestr = ", ";
-                if ($modestr == 2) {
+                if ($mode == 2) {
                     $modestr = " AND ";
-                } else if ($modestr == 3) {
+                } else if ($mode == 3) {
                     $modestr = " OR ";
                 }
                 $modestrlen = strlen($modestr);
                 $keyval = "";
-                while(list($key,$val) = each($dic)) {
-                    $keyval += "`".$key."` = '".$val."'".$modestr;
+                foreach ($dic as $key => $val) {
+                    $keyval .= "`".$key."` = '".$val."'".$modestr;
                 }
                 return substr($keyval, 0, (0-$modestrlen));
             }
