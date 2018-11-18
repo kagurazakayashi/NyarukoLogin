@@ -17,6 +17,8 @@ class nyainfomsg {
         // A=1/BB=01/CC=00 : 数据库相关
         // A=1/BB=01/CC=00/DD=00 : 
         1010000 => 'SQL语句成功执行。',
+        // A=1/BB=01/CC=00/DD=01 : 
+        1010001 => 'SQL语句成功执行，但没有查询到数据。',
         // A=2 : 操作出现问题
         // A=2/BB=00 : 通用
         // A=2/BB=00/CC=00 : 未知问题
@@ -63,6 +65,17 @@ class nyainfomsg {
         // A=2/BB=02/CC=03 : 合规性检查
         // A=2/BB=02/CC=03/DD=00 :
         2020300 => '包含违禁词汇。',
+        // A=2/BB=02/CC=04 : 加密通信
+        // A=2/BB=02/CC=04/DD=00 :
+        2020400 => '不正确的参数',
+        // A=2/BB=02/CC=04/DD=01 :
+        2020401 => '无效的 app_id 或 app_secret。',
+        // A=2/BB=02/CC=04/DD=02 :
+        2020402 => '无法验证IP地址',
+        // A=2/BB=02/CC=04/DD=03 :
+        2020403 => 'IP地址处于封禁状态',
+        // A=2/BB=02/CC=04/DD=04 :
+        2020404 => '写入历史记录失败',
     );
     /**
      * @description: 创建异常信息提示JSON
@@ -74,9 +87,9 @@ class nyainfomsg {
     function m($code = -1,$showmsg = true,$str = "") {
         if (!$showmsg) return null;
         return json_encode(array(
-            "stat"=>$code,
-            "msg"=>$this->imsg[$code],
-            "info"=>$str
+            "code" => $code,
+            "msg" => $this->imsg[$code],
+            "info" => $str
         ));
     }
     function __destruct() {

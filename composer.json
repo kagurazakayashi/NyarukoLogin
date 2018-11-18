@@ -1,0 +1,5 @@
+{
+    "require": {
+        "phpgangsta/googleauthenticator": "dev-master"
+    }
+}
