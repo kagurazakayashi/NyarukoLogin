@@ -1,46 +1,58 @@
 <?php
     class nyadbconnect {
-        private $con = null;
-        private $mode = 0;
-        private $debug = false;
-        public $tables;
+        //TODO:RW
+        private $conR = null; //只读数据库
+        private $conW = null; //可写入数据库
+        private $conK = null; //关键词数据库
+        private $con = null; //当前数据库（指针变量）
+        public $debug = false;
         /**
-         * @description: 初始化，读入设置，建立SQL连接
-         * @param Int mode 选择数据库：0只读库 1可写入库 2屏蔽词库
+         * @description: 初始化可写入数据库，按需建立SQL连接
          */
-        function init($mode=0,$debug=false) {
+        function initWriteDbs() {
             global $nlcore;
-            $this->close();
-            $selectdbs;
-            $this->mode = $mode;
-            $this->debug = $debug;
-            switch ($mode) {
-                case 1:
-                    $selectdbs = $nlcore->cfg->db->write_dbs;
-                    break;
-                case 2:
-                    $selectdbs = $nlcore->cfg->db->stopword_dbs;
-                    break;
-                default:
-                    $selectdbs = $nlcore->cfg->db->read_dbs;
-                    break;
-            }
-            $tables = $nlcore->cfg->db->tables;
+            if ($this->debug) echo "[SQL-W]";
+            if (!$this->conW) $this->conW = $this->initMysqli($nlcore->cfg->db->write_dbs);
+            $this->con = &$this->conW;
+        }
+        /**
+         * @description: 初始化只读数据库，按需建立SQL连接
+         */
+        function initReadDbs() {
+            global $nlcore;
+            if ($this->debug) echo "[SQL-R]";
+            if (!$this->conR) $this->conR = $this->initMysqli($nlcore->cfg->db->read_dbs);
+            $this->con = &$this->conR;
+        }
+        /**
+         * @description: 初始化关键词数据库，按需建立SQL连接
+         */
+        function initStopwordDbs() {
+            global $nlcore;
+            if ($this->debug) echo "[SQL-K]";
+            if (!$this->conK) $this->conK = $this->initMysqli($nlcore->cfg->db->stopword_dbs);
+            $this->con = &$this->conK;
+        }
+        /**
+         * @description: 初始化数据库
+         * @param String selectdbs 数据库配置数组($nlcore->cfg->db->*)
+         * @return mysqli_connect 数据库连接对象
+         */
+        function initMysqli($selectdbs) {
             $selectdbscount = count($selectdbs);
             if ($selectdbscount > 0) {
                 $dbid = rand(0, $selectdbscount-1);
                 $selectdb = $selectdbs[$dbid];
-                if (!$this->con) {
-                    $this->con = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
-                    if ($this->debug) echo "[SQL START]";
-                }
-                $sqlerrno = mysqli_connect_errno($this->con);
+                $newcon = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
+                $sqlerrno = mysqli_connect_errno($newcon);
                 if ($sqlerrno) {
                     die($nlcore->msg->m(2010100,true,$sqlerrno));
                 }
+                return $newcon;
             } else {
                 die($nlcore->msg->m(2010103,true,$sqlerrno));
             }
+            return null;
         }
         /**
          * @description: 查询数据
@@ -51,6 +63,7 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function select($columnArr,$tableStr,$whereDic,$customWhere="") {
+            $this->initReadDbs();
             $columnStr = implode('`,`',$columnArr);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
@@ -64,6 +77,7 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function insert($insertDic,$tableStr) {
+            $this->initWriteDbs();
             $insertStr = $this->dic2sql($insertDic,0);
             $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
             return $this->sqlc($sqlcmd);
@@ -77,6 +91,7 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function update($updateDic,$tableStr,$whereDic,$customWhere="") {
+            $this->initWriteDbs();
             $update = $this->dic2sql($updateDic,1);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
@@ -91,6 +106,7 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function delete($tableStr,$whereDic,$customWhere="") {
+            $this->initWriteDbs();
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
             $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
@@ -104,6 +120,7 @@
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function scount($tableStr,$whereDic=null,$customWhere="") {
+            $this->initReadDbs();
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
@@ -122,10 +139,20 @@
          * @description: 结束SQL连接
          */
         function close() {
-            if ($this->con) {
-                mysqli_close($this->con);
-                $this->con = null;
-                if ($this->debug) echo "[SQL-END]";
+            if ($this->conR) {
+                if ($this->debug) echo "[/SQL-R]";
+                mysqli_close($this->conR);
+                $this->conR = null;
+            }
+            if ($this->conW) {
+                if ($this->debug) echo "[/SQL-W]";
+                mysqli_close($this->conW);
+                $this->conW = null;
+            }
+            if ($this->conK) {
+                if ($this->debug) echo "[/SQL-K]";
+                mysqli_close($this->conK);
+                $this->conK = null;
             }
         }
         /**
@@ -182,7 +209,7 @@
                 }
                 $keystr = substr($keys, 0, -2);
                 $valstr = substr($vals, 0, -2);
-                return "(".$keystr.") VALUES (".$valstr.");";
+                return "(".$keystr.") VALUES (".$valstr.")";
             } else {
                 $modestr = ", ";
                 if ($mode == 2) {
@@ -204,11 +231,9 @@
         function __destruct() {
             $this->close();
             $this->mode = null;
-            $this->tables = null;
             $this->debug = null;
             unset($this->con);
             unset($this->mode);
-            unset($this->tables);
             unset($this->debug);
         }
     }
