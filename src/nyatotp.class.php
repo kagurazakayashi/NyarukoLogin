@@ -41,17 +41,18 @@ class nyatotp {
     function newdevicetotp($appname,$appsecret) {
         global $nlcore;
         //检查应用名称和密钥
-        if (!$nlcore->safe->str->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->str->isNumberOrEnglishChar($appsecret,32,32)) $this->http403(2020400);
+        if (!$nlcore->safe->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $this->http403(2020400);
         $datadic = [
             "app_id" => $appname,
             "app_secret" => $appsecret
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["external_app"],$datadic);
         if ($result[0] >= 2000000 || $result[2][0][0] == 0) $this->http403(2020401);
-        //获取环境信息
-        
         //检查IP是否被封禁
-        
+        $time = time(); // + 8 * 3600
+        $result = $nlcore->safe->chkip($time);
+        if ($result[0] != 0) $this->http403($result[0]);
+        $ipid = $result[1];
         //检查APP是否已经注册 $appname,$appsecret
         
 

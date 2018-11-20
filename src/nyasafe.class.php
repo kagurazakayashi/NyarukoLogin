@@ -1,5 +1,5 @@
 <?php
-class nyasafe_hash {
+class nyasafe {
     /**
      * @description: base64 加密
      * @param String 明文
@@ -32,8 +32,7 @@ class nyasafe_hash {
     function is_md5($md5str) {
         return preg_match("/^[a-z0-9]{32}$/", $md5str);
     }
-}
-class nyasafe_rand {
+
     /**
      * @description: 生成一段随机文本
      * @param Int len 生成长度
@@ -66,8 +65,7 @@ class nyasafe_rand {
         $newsalt = (double)microtime()*1000000*getmypid();
         return $newsalt.$salt;
     }
-}
-class nyasafe_str {
+    
     /**
      * @description: 过滤字符串中的非法字符
      * @param String value 源字符串
@@ -197,23 +195,43 @@ class nyasafe_str {
     function banWord($str) {
 
     }
-}
-class nyasafe {
-    public $hash;
-    public $rand;
-    public $str;
-    function __construct() {
-        $this->hash = new nyasafe_hash();
-        $this->rand = new nyasafe_rand();
-        $this->str = new nyasafe_str();
+
+    /**
+     * @description: 检查IP地址是否处于封禁期内
+     * @param time 当前时间time()
+     * @return Array<Int> 状态码 和 IP表的id
+     */
+    function chkip($time) {
+        global $nlcore;
+        //获取环境信息
+        $stime = date("Y-m-d H:i:s", $time);
+        $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
+        $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : "";
+        if ($ipaddr == "") return [2020402];
+        //检查IP是否被封禁
+        $datadic = ["ip_address" => $_SERVER['REMOTE_ADDR']];
+        if ($proxyaddr != "") $datadic["proxy_ip_address"] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        $ipaddresstable = $nlcore->cfg->db->tables["ip_address"];
+        $result = $nlcore->db->select(["id","closing_time"],$ipaddresstable,$datadic,"","OR");
+        $ipid = null;
+        if ($result[0] == 1010000) {
+            //如果有数据则比对时间,取ID
+            $onedata = $result[2][0];
+            $datatime = strtotime($onedata["closing_time"]); 
+            if ($time < $datatime) return [2020403];
+            $ipid = $onedata["id"];
+        } else if ($result[0] == 1010001) {
+            //如果没有则写入IP记录,取ID
+            $datadic = array(
+                "ip_address" => $ipaddr,
+                "proxy_ip_address" => $proxyaddr
+            );
+            $result = $nlcore->db->insert($datadic,$ipaddresstable);
+            if ($result[0] != 1010001) return [2020404];
+            $ipid = $result[1];
+        }
+        if (!$ipid) return [2020402];
+        return [0,$ipid];
     }
-    function __destruct() {
-        $this->hash = null; unset($this->hash);
-        $this->rand = null; unset($this->rand);
-        $this->str = null; unset($this->str);
-    }
 }
-// echo "测试：";
-// $nyasafe_hashobj = new nyasafe_str();
-// echo $nyasafe_hashobj->isPhoneNumCN($_GET["str"]);
 ?>

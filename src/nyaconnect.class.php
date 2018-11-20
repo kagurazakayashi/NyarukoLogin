@@ -5,7 +5,7 @@
         private $conW = null; //可写入数据库
         private $conK = null; //关键词数据库
         private $con = null; //当前数据库（指针变量）
-        public $debug = false;
+        public $debug = true; //输出SQL语句和连接的建立与断开信息
         /**
          * @description: 初始化可写入数据库，按需建立SQL连接
          */
@@ -60,13 +60,14 @@
          * @param String tableStr 表名
          * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式
+         * @param String whereMode 条件判断模式（AND/OR/...）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function select($columnArr,$tableStr,$whereDic,$customWhere="") {
+        function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initReadDbs();
             $columnStr = implode('`,`',$columnArr);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
@@ -88,13 +89,14 @@
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式
+         * @param String whereMode 条件判断模式（AND/OR/...）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function update($updateDic,$tableStr,$whereDic,$customWhere="") {
+        function update($updateDic,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
             $update = $this->dic2sql($updateDic,1);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
@@ -103,12 +105,13 @@
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式
+         * @param String whereMode 条件判断模式（AND/OR/...）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function delete($tableStr,$whereDic,$customWhere="") {
+        function delete($tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
@@ -117,12 +120,13 @@
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式
+         * @param String whereMode 条件判断模式（AND/OR/...）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function scount($tableStr,$whereDic=null,$customWhere="") {
+        function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND") {
             $this->initReadDbs();
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " AND ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
