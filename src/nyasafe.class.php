@@ -197,22 +197,21 @@ class nyasafe {
     }
 
     /**
-     * @description: 检查IP地址是否处于封禁期内
+     * @description: 检查 IP 地址是否处于封禁期内
      * @param time 当前时间time()
      * @return Array<Int> 状态码 和 IP表的id
      */
     function chkip($time) {
         global $nlcore;
         //获取环境信息
-        $stime = date("Y-m-d H:i:s", $time);
         $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
         $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : "";
         if ($ipaddr == "") return [2020402];
         //检查IP是否被封禁
         $datadic = ["ip_address" => $_SERVER['REMOTE_ADDR']];
         if ($proxyaddr != "") $datadic["proxy_ip_address"] = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        $ipaddresstable = $nlcore->cfg->db->tables["ip_address"];
-        $result = $nlcore->db->select(["id","closing_time"],$ipaddresstable,$datadic,"","OR");
+        $table = $nlcore->cfg->db->tables["ip_address"];
+        $result = $nlcore->db->select(["id","closing_time"],$table,$datadic,"","OR");
         $ipid = null;
         if ($result[0] == 1010000) {
             //如果有数据则比对时间,取ID
@@ -226,12 +225,28 @@ class nyasafe {
                 "ip_address" => $ipaddr,
                 "proxy_ip_address" => $proxyaddr
             );
-            $result = $nlcore->db->insert($datadic,$ipaddresstable);
+            $result = $nlcore->db->insert($datadic,$table);
             if ($result[0] != 1010001) return [2020404];
             $ipid = $result[1];
         }
         if (!$ipid) return [2020402];
         return [0,$ipid];
+    }
+    /**
+     * @description: 检查 APP 是否已经注册 appname 和 appsecret
+     * @param String appname 已注册的应用名
+     * @param String appsecret 已注册的应用密钥app_id
+     */
+    function chkappsecret($appname,$appsecret) {
+        global $nlcore;
+        $table = $nlcore->cfg->db->tables["external_app"];
+        $whereDic = array(
+            "app_id" => $appname,
+            "app_secret" => $appsecret
+        );
+        $result = $nlcore->db->select(["id"],$table,$whereDic);
+        if (isset($result[2][0]["id"]) && intval($result[2][0]["id"]) > 0) return $result[2][0]["id"];
+        return null;
     }
 }
 ?>

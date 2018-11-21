@@ -59,8 +59,8 @@
          * @param Array<String> selectArr 要查询的列名数组
          * @param String tableStr 表名
          * @param String whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式
-         * @param String whereMode 条件判断模式（AND/OR/...）
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
@@ -73,11 +73,11 @@
         }
         /**
          * @description: 插入数据
-         * @param Array<String:String> insertDic 要插入的数据字典
          * @param String tableStr 表名
+         * @param Array<String:String> insertDic 要插入的数据字典
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function insert($insertDic,$tableStr) {
+        function insert($tableStr,$insertDic) {
             $this->initWriteDbs();
             $insertStr = $this->dic2sql($insertDic,0);
             $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
@@ -88,8 +88,8 @@
          * @param Array<String:String> updateDic 要更新的数据字典
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式
-         * @param String whereMode 条件判断模式（AND/OR/...）
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function update($updateDic,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
@@ -104,8 +104,8 @@
          * @description: 删除数据
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式
-         * @param String whereMode 条件判断模式（AND/OR/...）
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function delete($tableStr,$whereDic,$customWhere="",$whereMode="AND") {
@@ -119,8 +119,8 @@
          * @description: 查询有多少数据
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式
-         * @param String whereMode 条件判断模式（AND/OR/...）
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
          * @return Array<Int,Array> 返回的状态码和内容
          */
         function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND") {
@@ -130,7 +130,6 @@
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
-        //
         /**
          * @description: 测试SQL连接
          * @return String mysql版本号
