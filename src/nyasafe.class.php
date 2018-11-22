@@ -248,5 +248,47 @@ class nyasafe {
         if (isset($result[2][0]["id"]) && intval($result[2][0]["id"]) > 0) return $result[2][0]["id"];
         return null;
     }
+    /**
+     * @description: 获得真实IP
+     * @return String IP地址
+     */
+    function getip() {
+        $ip = "";
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else if (isset($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } else if (isset($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        return $ip;
+    }
+    /**
+     * @description: 检查当前IP是否到达接口访问频率限制
+     * @return Array<Int,Int> [状态代码,第几次请求]
+     * 如果未加载Redis则自动关闭此功能，直接返回通过，请求数返回-1
+     */
+    function frequencylimitation() {
+        global $nlcore;
+        $conf = $nlcore->cfg->iplimit;
+        if (!class_exists("Redis") && !$conf->frequency) return [1000000,-1];
+        $redis = new Redis();
+        $redis->connect($conf->redis_host, $conf->redis_port);
+        $redis->auth($conf->iplimitauth);
+        $key = $this->getip();
+        $check = $redis->exists($key);
+        if($check){
+            $redis->incr($key);
+            $count = $redis->get($key);
+            if($count > $conf->iplimit){
+                return [2020407,$count];
+            }
+        } else {
+            $redis->incr($key);
+            $redis->expire($key,$conf->iplimittime);
+        }
+        $count = $redis->get($key);
+        return [1000000,$count];
+    }
 }
 ?>

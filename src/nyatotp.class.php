@@ -12,6 +12,7 @@ class nyatotp {
     function http403($code=null) {
         header('HTTP/1.1 403 Forbidden');
         //出于安全考虑，非调试状态不输出错误原因
+        die();
         if ($code) {
             global $nlcore;
             $json = $nlcore->msg->m($code);
@@ -40,6 +41,9 @@ class nyatotp {
      */
     function newdevicetotp($appname,$appsecret) {
         global $nlcore;
+        //检查IP访问频率
+        $result = $nlcore->safe->frequencylimitation();
+        if ($result[0] >= 2000000) $this->http403($result[0]);
         //检查应用名称和密钥
         if (!$nlcore->safe->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $this->http403(2020400);
         $datadic = [
