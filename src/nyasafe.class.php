@@ -225,7 +225,7 @@ class nyasafe {
                 "ip_address" => $ipaddr,
                 "proxy_ip_address" => $proxyaddr
             );
-            $result = $nlcore->db->insert($datadic,$table);
+            $result = $nlcore->db->insert($table,$datadic);
             if ($result[0] != 1010001) return [2020404];
             $ipid = $result[1];
         }
@@ -271,21 +271,30 @@ class nyasafe {
     function frequencylimitation() {
         global $nlcore;
         $conf = $nlcore->cfg->iplimit;
-        if (!class_exists("Redis") && !$conf->frequency) return [1000000,-1];
+        if (!class_exists("Redis") && !$conf->frequency) {
+            if ($conf->ignoreerr) return [1000000,-1];
+            return [2010200];
+        }
         $redis = new Redis();
-        $redis->connect($conf->redis_host, $conf->redis_port);
-        $redis->auth($conf->iplimitauth);
+        try {
+            $redis->connect($conf->redis_host, $conf->redis_port);
+        } catch (Exception $e){
+            if ($conf->ignoreerr) return [1000000,-1];
+            echo $e;
+            return [2010201];
+        }
+        $redis->auth($conf->redis_auth);
         $key = $this->getip();
         $check = $redis->exists($key);
         if($check){
             $redis->incr($key);
             $count = $redis->get($key);
-            if($count > $conf->iplimit){
+            if($count > $conf->limittime["getlinktotp"][1]){
                 return [2020407,$count];
             }
         } else {
             $redis->incr($key);
-            $redis->expire($key,$conf->iplimittime);
+            $redis->expire($key,$conf->limittime["getlinktotp"][0]);
         }
         $count = $redis->get($key);
         return [1000000,$count];

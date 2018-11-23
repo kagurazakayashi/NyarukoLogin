@@ -12,7 +12,7 @@ class nyatotp {
     function http403($code=null) {
         header('HTTP/1.1 403 Forbidden');
         //出于安全考虑，非调试状态不输出错误原因
-        die();
+        // die();
         if ($code) {
             global $nlcore;
             $json = $nlcore->msg->m($code);

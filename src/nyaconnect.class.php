@@ -5,7 +5,7 @@
         private $conW = null; //可写入数据库
         private $conK = null; //关键词数据库
         private $con = null; //当前数据库（指针变量）
-        public $debug = true; //输出SQL语句和连接的建立与断开信息
+        public $debug = false; //输出SQL语句和连接的建立与断开信息
         /**
          * @description: 初始化可写入数据库，按需建立SQL连接
          */
