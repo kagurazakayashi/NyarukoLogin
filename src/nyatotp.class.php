@@ -1,5 +1,4 @@
 <?php
-require_once '../vendor/phpgangsta/googleauthenticator/PHPGangsta/GoogleAuthenticator.php';
 class nyatotp {
     private $ga;
     function __construct() {
@@ -11,8 +10,7 @@ class nyatotp {
      */
     function http403($code=null) {
         header('HTTP/1.1 403 Forbidden');
-        //出于安全考虑，非调试状态不输出错误原因
-        // die();
+        die(); //出于安全考虑，非调试状态不输出错误原因
         if ($code) {
             global $nlcore;
             $json = $nlcore->msg->m($code);
@@ -64,16 +62,20 @@ class nyatotp {
         //创建新的 totp secret
         $secret = $this->ga->createSecret();
         $numcode = $this->ga->getCode($secret);
+        //创建 apptoken
+        $apptoken = $nlcore->safe->randhash($secret);
         //检查 session_totp 表
         $datadic = [
-            "secret" => $secret
+            "secret" => $secret,
+            "apptoken" => $apptoken
         ];
-        //如果 secret 已存在则删除
-        $result = $nlcore->db->delete($nlcore->cfg->db->tables["session_totp"],$datadic);
+        //如果 secret 或者 apptoken 已存在则删除
+        $result = $nlcore->db->delete($nlcore->cfg->db->tables["session_totp"],$datadic,"","OR");
         if ($result[0] >= 2000000) $this->http403(2020405);
         //写入 session_totp 表
         $datadic = array(
             "secret" => $secret,
+            "apptoken" => $apptoken,
             "ipid" => $ipid,
             "appid" => $appid,
             "time" => $stime
@@ -85,6 +87,7 @@ class nyatotp {
             "code" => 1000000,
             "totp_secret" => $secret,
             "totp_code" => intval($numcode),
+            "totp_token" => $apptoken,
             "time" => intval($time),
             "appname" => $appname
         ));

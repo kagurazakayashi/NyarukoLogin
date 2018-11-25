@@ -1,5 +1,6 @@
 {
     "require": {
-        "phpgangsta/googleauthenticator": "dev-master"
+        "phpgangsta/googleauthenticator": "dev-master",
+        "xxtea/xxtea": "^1.0"
     }
 }

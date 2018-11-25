@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6220a72d155ba814d131ff71dd6136f4",
+    "content-hash": "3ac38e3b17a08a96f95a05d30ca118fe",
     "packages": [
         {
             "name": "phpgangsta/googleauthenticator",
@@ -48,6 +48,57 @@
                 "totp"
             ],
             "time": "2019-03-20T00:55:58+00:00"
+        },
+        {
+            "name": "xxtea/xxtea",
+            "version": "v1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/xxtea/xxtea-php.git",
+                "reference": "3906dd28e4d18b6434095c5057f550d10d6c3324"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/xxtea/xxtea-php/zipball/3906dd28e4d18b6434095c5057f550d10d6c3324",
+                "reference": "3906dd28e4d18b6434095c5057f550d10d6c3324",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=4.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "xxtea.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ma Bingyao",
+                    "email": "mabingyao@gmail.com",
+                    "homepage": "https://github.com/xxtea/xxtea-php",
+                    "role": "Developer"
+                }
+            ],
+            "description": "XXTEA is a fast and secure encryption algorithm. This is a XXTEA library for PHP.",
+            "homepage": "https://github.com/xxtea/xxtea-php",
+            "keywords": [
+                "crypt",
+                "cryptography",
+                "decrypt",
+                "encrypt",
+                "library",
+                "security",
+                "xxtea"
+            ],
+            "time": "2016-03-02T15:39:42+00:00"
         }
     ],
     "packages-dev": [],

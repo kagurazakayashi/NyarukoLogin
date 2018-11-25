@@ -39,8 +39,7 @@ class nyasafe {
      * @param String chars 从此字符串中抽取字符
      * @return String 新生成的随机文本
      */
-    function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ 
-        abcdefghijklmnopqrstuvwxyz0123456789') {
+    function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
         mt_srand($this->seed());
         $password='';
         while(strlen($password)<$len) 
@@ -298,6 +297,13 @@ class nyasafe {
         }
         $count = $redis->get($key);
         return [1000000,$count];
+    }
+
+    function decryptargv() {
+        $argv = count($_POST) > 0 ? $_POST : $_GET;
+        if (isset($argv["t"]) && $this->is_md5($argv["t"]) == 32 && isset($argv["j"])) {
+            //TODO:
+        }
     }
 }
 ?>
