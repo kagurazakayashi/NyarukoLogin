@@ -31,6 +31,8 @@ class nyainfomsg {
         2000101 => '需要更多参数。',
         // A=2/BB=00/CC=01/DD=02 :
         2000102 => '参数无效。',
+        // A=2/BB=00/CC=01/DD=03 :
+        2000103 => '不支持的提交方式。',
         // A=2/BB=01 : 数据库类
         // A=2/BB=01/CC=01 : MySQL 数据库连接
         // A=2/BB=01/CC=01/DD=00 :
@@ -87,6 +89,14 @@ class nyainfomsg {
         2020406 => '创建加密过程失败',
         // A=2/BB=02/CC=04/DD=07 :
         2020407 => '访问过于频繁',
+        // A=2/BB=02/CC=04/DD=08 :
+        2020408 => '用于解密的参数不正确',
+        // A=2/BB=02/CC=04/DD=09 :
+        2020409 => 'apptoken不正确',
+        // A=2/BB=02/CC=04/DD=10 :
+        2020410 => 'json解析失败',
+        // A=2/BB=02/CC=04/DD=11 :
+        2020411 => '加密json解析失败',
         // A=2/BB=02/CC=05 : 应用验证
         // A=2/BB=02/CC=05/DD=00 :
         2020500 => '此应用不可用',
@@ -105,6 +115,21 @@ class nyainfomsg {
             "msg" => $this->imsg[$code],
             "info" => $str
         ));
+    }
+    /**
+     * @description: 返回信息的同时，抛出403错误，结束程序
+     * @param Int code 错误代码
+     * @param Bool showmsg 是否显示错误信息（否则直接403）
+     */
+    function http403($code=null,$showmsg=true) {
+        header('HTTP/1.1 403 Forbidden');
+        if ($code && $showmsg) {
+            global $nlcore;
+            $json = $nlcore->msg->m($code);
+            header('Content-Type:application/json;charset=utf-8');
+            echo $json;
+        }
+        die();
     }
     function __destruct() {
         $this->imsg = null;
