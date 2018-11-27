@@ -298,12 +298,105 @@ class nyasafe {
         $count = $redis->get($key);
         return [1000000,$count];
     }
-
-    function decryptargv() {
-        $argv = count($_POST) > 0 ? $_POST : $_GET;
-        if (isset($argv["t"]) && $this->is_md5($argv["t"]) == 32 && isset($argv["j"])) {
-            //TODO:
+    /**
+     * @description: 检查数据提交方式是否被允许，并自动选择提交方式获取数据
+     * @param String allowmethod 允许的提交方式数组
+     * @return Array/String 客户端提交的数据
+     */
+    function getarg($allowmethod=["POST","GET"]) {
+        global $nlcore;
+        $argv = null;
+        $jsonlen = -1;
+        if (!isset($_SERVER['REQUEST_METHOD'])) die(header('HTTP/1.1 405 Method Not Allowed'));
+        $method = $_SERVER['REQUEST_METHOD'];
+        if ($method == "POST" && in_array("POST",$allowmethod)) {
+            $argv = $_POST;
+            $jsonlen = $nlcore->cfg->app->jsonlen_post;
+        } else if ($method == "GET" && in_array("GET",$allowmethod)) {
+            $argv = $_GET;
+            $jsonlen = $nlcore->cfg->app->jsonlen_get;
+        } else if ($method == "FILES" && in_array("FILES",$allowmethod)) {
+            $argv = $_FILES;
+        } else if ($method == "PUT" && in_array("PUT",$allowmethod)) {
+            $argv = $_PUT;
+        } else if ($method == "DELETE" && in_array("DELETE",$allowmethod)) {
+            $argv = $_SERVER['REQUEST_URI'];
+        } else {
+            die(header('HTTP/1.1 405 Method Not Allowed'));
         }
+        return $argv;
+    }
+    /**
+     * @description: 解析、解密输入的内容
+     * GET/POST参数：t=apptoken，j=JSON内容
+     * @return Array 解析后的JSON内容
+     */
+    function decryptargv() {
+        global $nlcore;
+        //检查IP访问频率
+        $result = $this->frequencylimitation();
+        if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
+        //获取参数
+        $argv = $this->getarg();
+        $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->jsonlen_get : $nlcore->cfg->app->jsonlen_post;
+        if ((isset($argv["t"]) && !$this->is_md5($argv["t"])) || (!isset($argv["t"]) && $nlcore->cfg->app->alwayencrypt) || !isset($argv["j"]) || strlen($argv["j"]) > $jsonlen) {
+            header('Content-Type:application/json;charset=utf-8');
+            $nlcore->msg->http403(2020408);
+        }
+        //检查 IP 是否被封禁
+        $time = time() + $nlcore->cfg->app->timezone;
+        $stime = date("Y-m-d H:i:s", $time);
+        $result = $this->chkip($time);
+        if ($result[0] != 0) $nlcore->msg->http403($result[0]);
+        $ipid = $result[1];
+        $json = "";
+        if (isset($argv["t"])) {
+            //查询apptoken对应的secret
+            $datadic = [
+                "apptoken" => $argv["t"]
+            ];
+            $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["session_totp"],$datadic);
+            //空或查询失败都视为不正确
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0][0])) $nlcore->msg->http403(2020409);
+            $secret = $result[2][0][0];
+            //使用secret生成totp数字
+            $ga = new PHPGangsta_GoogleAuthenticator();
+            $numcode = $ga->getCode($secret);
+            //使用totp数字解密
+            $xxteadata = $this->urlb64decode($argv["j"]);
+            $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
+            if (strlen($decrypt_data) == 0) $nlcore->msg->http403(2020411);
+            $json = json_decode($decrypt_data);
+        } else {
+            $json = json_decode($this->urlb64decode($argv["j"]));
+        }
+        //解析json
+        if (strlen($json) == 0) $nlcore->msg->http403(2020410);
+        return $json;
+    }
+    /**
+     * @description: 进行Base64编码，并取代一些符号
+     * “+”改成“-”, “/”改成“_”, “=”删除
+     * @param Data fdata 需要使用Base64编码的数据
+     * @return Array 加密后的字符串
+     */
+    function urlb64encode($fdata) {
+        $data = str_replace(['+','/','='],['-','_',''],base64_encode($fdata));
+        return $data;
+    }
+    /**
+     * @description: 撤回取代的一些符号，并解析Base64编码
+     * 改回，适量添加“=”
+     * @param String fstring Base64编码后的字符串
+     * @return Array 解析后的字符串
+     */
+    function urlb64decode($fstring) {
+        $data = str_replace(['-','_'],['+','/'],$fstring);
+        $mod4 = strlen($data) % 4;
+        if ($mod4) {
+            $data .= substr('====', $mod4);
+        }
+        return base64_decode($data);
     }
 }
 ?>
