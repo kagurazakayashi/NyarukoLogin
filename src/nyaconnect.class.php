@@ -39,6 +39,7 @@
          * @return mysqli_connect 数据库连接对象
          */
         function initMysqli($selectdbs) {
+            global $nlcore;
             $selectdbscount = count($selectdbs);
             if ($selectdbscount > 0) {
                 $dbid = rand(0, $selectdbscount-1);

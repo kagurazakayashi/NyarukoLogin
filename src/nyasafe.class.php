@@ -116,7 +116,7 @@ class nyasafe {
      * @return Bool 是否正确
      */
     function isIPv4($str) {
-        $checkmail="'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$'";//定义正则表达式
+        $checkmail="/'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$'/";//定义正则表达式
         if(isset($str) && $str!=""){//判断文本框中是否有值
             if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
                return true;
@@ -185,6 +185,20 @@ class nyasafe {
                return false;
             }
         }
+    }
+    /**
+     * @description: 判断是否为Base64字符串
+     * @param String b64string Base64字符串
+     * @param Bool urlmode 是否为转换符号后的Base64字符串
+     * @return Bool 是否为Base64字符串
+     */
+    function isbase64($b64string,$urlmode=false) {
+        if ($urlmode) {
+            if (preg_match("/[^0-9A-Za-z\-_]/",$b64string) > 0) return false;
+        } else {
+            if (preg_match("/[^0-9A-Za-z\+\/\=]/",$b64string) > 0) return false;
+        }
+        return true;
     }
     /**
      * @description: 检查是否包含违禁词汇
@@ -336,10 +350,10 @@ class nyasafe {
         //检查IP访问频率
         $result = $this->frequencylimitation();
         if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
-        //获取参数
+        //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->jsonlen_get : $nlcore->cfg->app->jsonlen_post;
-        if ((isset($argv["t"]) && !$this->is_md5($argv["t"])) || (!isset($argv["t"]) && $nlcore->cfg->app->alwayencrypt) || !isset($argv["j"]) || strlen($argv["j"]) > $jsonlen) {
+        if ((isset($argv["t"]) && !$this->is_md5($argv["t"])) || (!isset($argv["t"]) && $nlcore->cfg->app->alwayencrypt) || !isset($argv["j"]) || strlen($argv["j"]) > $jsonlen || !$this->isbase64($argv["j"],true)) {
             header('Content-Type:application/json;charset=utf-8');
             $nlcore->msg->http403(2020408);
         }
