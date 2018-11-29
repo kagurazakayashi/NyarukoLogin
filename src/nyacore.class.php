@@ -17,6 +17,12 @@ class nyacore {
         $this->msg = new nyainfomsg();
         $this->db = new nyadbconnect();
         $this->safe = new nyasafe();
+        if ($this->cfg->app->debug == 1) {
+            error_reporting(E_ALL);
+            ini_set("display_errors", "On");
+        } else if ($this->cfg->app->debug == 0) {
+            ini_set("display_errors", "Off");
+        }
     }
     function __destruct() {
         $this->cfg = null;
