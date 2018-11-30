@@ -11,13 +11,13 @@ class nyainfomsg {
         // A=1 : 操作成功执行
         // A=1/BB=00 : 通用成功类型
         // A=1/BB=00/CC=00 : 通用成功
-        // A=1/BB=00/CC=00/DD=00 : 
+        // A=1/BB=00/CC=00/DD=00 :
         1000000 => '执行成功。',
         // A=1/BB=01 : 数据库类
         // A=1/BB=01/CC=00 : 数据库相关
-        // A=1/BB=01/CC=00/DD=00 : 
+        // A=1/BB=01/CC=00/DD=00 :
         1010000 => 'SQL语句成功执行。',
-        // A=1/BB=01/CC=00/DD=01 : 
+        // A=1/BB=01/CC=00/DD=01 :
         1010001 => 'SQL语句成功执行，但没有查询到数据。',
         // A=2 : 操作出现问题
         // A=2/BB=00 : 通用
@@ -122,7 +122,7 @@ class nyainfomsg {
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
     function http403($code=null,$showmsg=true) {
-        header('HTTP/1.1 403 Forbidden');
+        // header('HTTP/1.1 403 Forbidden');
         if ($code && $showmsg) {
             global $nlcore;
             $json = $nlcore->msg->m($code);

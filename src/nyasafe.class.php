@@ -26,7 +26,7 @@ class nyasafe {
     }
     /**
      * @description: 是否为MD5
-     * @param String 需要判断的字符串 
+     * @param String 需要判断的字符串
      * @return Int 是否匹配 > 0 || != false
      */
     function is_md5($md5str) {
@@ -42,8 +42,8 @@ class nyasafe {
     function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
         mt_srand($this->seed());
         $password='';
-        while(strlen($password)<$len) 
-            $password.=substr($chars,(mt_rand()%strlen($chars)),1); 
+        while(strlen($password)<$len)
+            $password.=substr($chars,(mt_rand()%strlen($chars)),1);
         return $password;
     }
     /**
@@ -64,7 +64,7 @@ class nyasafe {
         $newsalt = (double)microtime()*1000000*getmypid();
         return $newsalt.$salt;
     }
-    
+
     /**
      * @description: 过滤字符串中的非法字符
      * @param String value 源字符串
@@ -104,9 +104,9 @@ class nyasafe {
         $checkmail="/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";//定义正则表达式
         if(isset($str) && $str!=""){//判断文本框中是否有值
             if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-               return true;
+                return true;
             }else{
-               return false;
+                return false;
             }
         }
     }
@@ -119,9 +119,9 @@ class nyasafe {
         $checkmail="/'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$'/";//定义正则表达式
         if(isset($str) && $str!=""){//判断文本框中是否有值
             if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-               return true;
+                return true;
             }else{
-               return false;
+                return false;
             }
         }
     }
@@ -134,9 +134,9 @@ class nyasafe {
         $checkmail="/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/";
         if(isset($str) && $str!=""){//判断文本框中是否有值
             if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-               return true;
+                return true;
             }else{
-               return false;
+                return false;
             }
         }
     }
@@ -180,9 +180,9 @@ class nyasafe {
         $checkmail="/^1[34578]\d{9}$/";//定义正则表达式
         if(isset($str) && $str!=""){//判断文本框中是否有值
             if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-               return true;
+                return true;
             }else{
-               return false;
+                return false;
             }
         }
     }
@@ -229,7 +229,7 @@ class nyasafe {
         if ($result[0] == 1010000) {
             //如果有数据则比对时间,取ID
             $onedata = $result[2][0];
-            $datatime = strtotime($onedata["closing_time"]); 
+            $datatime = strtotime($onedata["closing_time"]);
             if ($time < $datatime) return [2020403];
             $ipid = $onedata["id"];
         } else if ($result[0] == 1010001) {
@@ -278,10 +278,11 @@ class nyasafe {
     }
     /**
      * @description: 检查当前IP是否到达接口访问频率限制
+     * @param String module 功能名称（$conf->limittime）
      * @return Array<Int,Int> [状态代码,第几次请求]
      * 如果未加载Redis则自动关闭此功能，直接返回通过，请求数返回-1
      */
-    function frequencylimitation() {
+    function frequencylimitation($module) {
         global $nlcore;
         $conf = $nlcore->cfg->iplimit;
         if (!class_exists("Redis") && !$conf->frequency) {
@@ -302,12 +303,12 @@ class nyasafe {
         if($check){
             $redis->incr($key);
             $count = $redis->get($key);
-            if($count > $conf->limittime["getlinktotp"][1]){
+            if($count > $conf->limittime[$module][1]){
                 return [2020407,$count];
             }
         } else {
             $redis->incr($key);
-            $redis->expire($key,$conf->limittime["getlinktotp"][0]);
+            $redis->expire($key,$conf->limittime[$module][0]);
         }
         $count = $redis->get($key);
         return [1000000,$count];
@@ -341,14 +342,32 @@ class nyasafe {
         return $argv;
     }
     /**
-     * @description: 解析、解密输入的内容
-     * GET/POST参数：t=apptoken，j=JSON内容
-     * @return Array 解析后的JSON内容
+     * @description: 从数组创建JSON、加密、base64编码、变体
+     * @param String module 功能名称（$conf->limittime）
+     * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
      */
-    function decryptargv() {
+    function encryptargv($dataarray,$secret="") {
+        //转换为json
+        $json = json_encode($dataarray);
+        if ($secret != "") {
+            //使用secret生成totp数字
+            $ga = new PHPGangsta_GoogleAuthenticator();
+            $numcode = $ga->getCode($secret);
+            //使用totp数字加密
+            $json = xxtea_encrypt($json, $numcode);
+        }
+        return $this->urlb64encode($json);
+    }
+    /**
+     * @description: 解析变体、base64解码、解密、解析JSON到数组
+     * GET/POST参数：t=apptoken，j=JSON内容
+     * @param String module 功能名称（$conf->limittime）
+     * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
+     */
+    function decryptargv($module) {
         global $nlcore;
         //检查IP访问频率
-        $result = $this->frequencylimitation();
+        $result = $this->frequencylimitation($module);
         if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
@@ -363,7 +382,8 @@ class nyasafe {
         $result = $this->chkip($time);
         if ($result[0] != 0) $nlcore->msg->http403($result[0]);
         $ipid = $result[1];
-        $json = "";
+        $jsonarr = null;
+        $secret = "";
         if (isset($argv["t"])) {
             //查询apptoken对应的secret
             $datadic = [
@@ -380,13 +400,13 @@ class nyasafe {
             $xxteadata = $this->urlb64decode($argv["j"]);
             $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
             if (strlen($decrypt_data) == 0) $nlcore->msg->http403(2020411);
-            $json = json_decode($decrypt_data);
+            $jsonarr = json_decode($decrypt_data,true);
         } else {
-            $json = json_decode($this->urlb64decode($argv["j"]));
+            $jsonarr = json_decode($this->urlb64decode($argv["j"]),true);
         }
         //解析json
-        if (strlen($json) == 0) $nlcore->msg->http403(2020410);
-        return $json;
+        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->http403(2020410);
+        return [$jsonarr,$secret];
     }
     /**
      * @description: 进行Base64编码，并取代一些符号
@@ -407,9 +427,7 @@ class nyasafe {
     function urlb64decode($fstring) {
         $data = str_replace(['-','_'],['+','/'],$fstring);
         $mod4 = strlen($data) % 4;
-        if ($mod4) {
-            $data .= substr('====', $mod4);
-        }
+        if ($mod4) $data .= substr('====', $mod4);
         return base64_decode($data);
     }
 }

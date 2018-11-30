@@ -6,7 +6,4 @@ if (isset($argv["n"]) && isset($argv["s"])) {
     $nyatotp = new nyatotp();
     $nyatotp->newdevicetotp($argv["n"],$argv["s"]);
 }
-if (isset($argv["t"]) && isset($argv["j"])) {
-    $nlcore->safe->decryptargv();
-}
 ?>
