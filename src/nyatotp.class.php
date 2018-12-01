@@ -25,7 +25,7 @@ class nyatotp {
     function newdevicetotp($appname,$appsecret) {
         global $nlcore;
         //检查IP访问频率
-        $result = $nlcore->safe->frequencylimitation();
+        $result = $nlcore->safe->frequencylimitation("getlinktotp");
         if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
         //检查 IP 是否被封禁
         $time = time(); // + 8 * 3600
@@ -87,6 +87,14 @@ class nyatotp {
         $garesult = $this->ga->verifyCode($secret,$numcode,$clocktolerance);
         if ($garesult) return true;
         return false;
+    }
+    //验证加密信息
+    function encrypttest() {
+        global $nlcore;
+        $argvarr = $nlcore->safe->decryptargv("encrypttest");
+        $dataarray = $argvarr[0];
+        $secret = $argvarr[1];
+        $nlcore->safe->encryptargv($dataarray,$secret);
     }
     function __destruct() {
         $this->ga = null;

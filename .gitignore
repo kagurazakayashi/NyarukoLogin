@@ -2,3 +2,4 @@ nyaconfig.class.php
 .DS_Store
 vendor
 tests/t*
+.tmp
