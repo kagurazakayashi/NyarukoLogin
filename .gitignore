@@ -1,5 +1,9 @@
 nyaconfig.class.php
+._*
 .DS_Store
+Thumbs.db
 vendor
-tests/t*
+tests/*.json
 .tmp
+tmp*
+__pycache__

@@ -59,6 +59,8 @@
 
 ### tests/
 - `sqlconnect.php`,`sqlconnect.sh` : 测试数据库连接是否正常。
+- `test_core.py` : 加密和解密客户端，以下文件均依赖于此文件。
+  - `test_encrypt.py` : 测试加密传输参数的提交和收到信息的解密。
 
 ## 错误代码表
 
