@@ -1,6 +1,5 @@
 <?php
     class nyadbconnect {
-        //TODO:RW
         private $conR = null; //只读数据库
         private $conW = null; //可写入数据库
         private $conK = null; //关键词数据库

@@ -112,33 +112,40 @@ class nyasafe {
     }
     /**
      * @description: 检查是否为 IPv4 地址
-     * @param String str 源字符串
+     * @param String ip IP地址源字符串
      * @return Bool 是否正确
      */
-    function isIPv4($str) {
-        $checkmail="/'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$'/";//定义正则表达式
-        if(isset($str) && $str!=""){//判断文本框中是否有值
-            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-                return true;
-            }else{
-                return false;
-            }
-        }
+    function isIPv4($ip) {
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
     /**
      * @description: 检查是否为 IPv6 地址
-     * @param String str 源字符串
+     * @param String ip IP地址源字符串
      * @return Bool 是否正确
      */
-    function isIPv6($str) {
-        $checkmail="/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/";
-        if(isset($str) && $str!=""){//判断文本框中是否有值
-            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
-                return true;
-            }else{
-                return false;
-            }
-        }
+    function isIPv6($ip) {
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+    }
+    /**
+     * @description: 检查是否为私有 IP 地址
+     * @param String ip IP地址源字符串
+     * @return Bool 是否正确
+     */
+    function isPubilcIP($ip) {
+        if (filter_var($ip, FILTER_FLAG_NO_PRIV_RANGE) || filter_var($ip, FILTER_FLAG_NO_RES_RANGE)) return false;
+        return true;
+    }
+    /**
+     * @description: 判断IP地址类型，输出为存入数据库的代码
+     * @param String ip IP地址源字符串
+     * @return Int 0:未知,40:v4,60:v6,+1:公共地址
+     */
+    function iptype($ip) {
+        $iptypenum = 0;
+        if ($this->isIPv4($ip)) $iptypenum = 40;
+        else if ($this->isIPv6($ip)) $iptypenum = 60;
+        if ($this->isPubilcIP($ip)) $iptypenum ++;
+        return $iptypenum;
     }
     /**
      * @description: 检查是否为整数数字字符串
@@ -234,7 +241,10 @@ class nyasafe {
             $ipid = $onedata["id"];
         } else if ($result[0] == 1010001) {
             //如果没有则写入IP记录,取ID
+            //区分IP类型
+            $iptype = $this->iptype($ipaddr);
             $datadic = array(
+                "ip_addresscol_category" => $iptype,
                 "ip_address" => $ipaddr,
                 "proxy_ip_address" => $proxyaddr
             );
@@ -347,12 +357,13 @@ class nyasafe {
      * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
      */
     function encryptargv($dataarray,$secret="") {
+        global $nlcore;
         //转换为json
         $json = json_encode($dataarray);
         if ($secret != "") {
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
-            $numcode = $ga->getCode($secret);
+            $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
             //使用totp数字加密
             $json = xxtea_encrypt($json, $numcode);
         }
@@ -395,7 +406,7 @@ class nyasafe {
             $secret = $result[2][0][0];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
-            $numcode = $ga->getCode($secret);
+            $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
             //使用totp数字解密
             $xxteadata = $this->urlb64decode($argv["j"]);
             $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
