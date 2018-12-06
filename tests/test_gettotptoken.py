@@ -7,6 +7,7 @@ from urllib import parse,request
 import demjson
 import time
 print("===== 请求加密密钥 =====")
+# 需要提供与数据库 external_app 表中记录的内容
 postData = {'n':"testapp1",'s':"mipxT4wpGJ7JD29ZwI87AKmRvvCx19rI"}
 postMod = parse.urlencode(postData).encode(encoding='utf-8')
 print("↑ 发送请求:")

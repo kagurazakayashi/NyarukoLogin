@@ -59,8 +59,9 @@
 
 ### tests/
 - `sqlconnect.php`,`sqlconnect.sh` : 测试数据库连接是否正常。
-- `test_core.py` : 加密和解密客户端，以下文件均依赖于此文件。
-  - `test_encrypt.py` : 测试加密传输参数的提交和收到信息的解密。
+- `test_gettotptoken.py` : 获取 `app_secret`，需要修改文件 `postData` 变量，提供与数据库 `external_app` 表中记录的内容。
+- `test_core.py` : 加密和解密客户端，以下文件均依赖于此文件，不要直接执行它。
+  - `test_encrypt.py` : 测试加密传输参数的提交和收到信息的解密，可修改 `udataarr` 变量，自定义提交的测试数据。
 
 ## 错误代码表
 
@@ -72,6 +73,8 @@
 ### TOTP/XXTEA 加密处理流程
 
 #### 1. 获取加密凭证
+
+客户端操作步骤演示文件： `tests/gettotptoken.py`
 
 - 在数据库 `external_app` 表中登记 APP 的 `app_id` 和 `app_secret`。
 - 客户端调用 `nyatotp.php`，提供以下参数：
@@ -95,30 +98,42 @@
 
 #### 2. 将 JSON 加密并上传
 
+客户端操作步骤演示文件： `tests/test_encrypt.py`
+
 1. 将需要提交的内容数组转换为 JSON 字符串。
 2. 使用 totp 验证器，通过保存的 `totp_secret` 生成当前的 `totp_code`。
-3. 使用当前的 `totp_code` 作为密码，对 JSON 字符串进行 `xxtea` 加密。
-4. 使用 `base64` 编码 `xxtea` 加密后的结果。
-5. 对 `base64` 中的部分符号进行替换：
+3. 将 `totp_secret` 和 `totp_code` 两个字符串合并，并计算 MD5。
+4. 使用该 MD5 作为密码，对 JSON 字符串进行 `xxtea` 加密。
+5. 使用 `base64` 编码 `xxtea` 加密后的结果。
+6. 对 `base64` 中的部分符号进行替换：
   - `+` 改成 `-`
   - `/` 改成 `_`
   - 删除 `=`
-6. 检查最终生成的字符串长度，是否低于 `nyaconfig.class.php` 中设置的值。
-7. 客户端调用所需接口，提供以下参数：
+7. 检查最终生成的字符串长度，是否低于 `nyaconfig.class.php` 中设置的值。
+8. 客户端调用所需接口，提供以下参数：
   - `t` : 本地所保存的 totp_token 。
     - 本参数为可选，如果不提供，则不用执行上述第 2 步和第 3 步，在第 4 步使用 `base64` 直接编码 JSON 字符串即可。内容将以
     - `nyaconfig.class.php` 中允许将此项设置为必须。
   - `j` : 第 5 步生成的加密字符串。
 
-服务器将：
-- 检查 IP 访问频率
-- 检验参数格式
-- 检查 IP 是否被封禁
-- 查询 apptoken 对应的 secret
-- 使用 secret 生成 totp 代码
-- 使用 totp 代码对提交的内容解密
+服务器收到请求后将：
+1. 检查 IP 访问频率
+2. 检验参数格式
+3. 检查 IP 是否被封禁
+4. 查询 apptoken 对应的 secret
+5. 使用 secret 生成 totp 代码
+6. 使用 secret+totp代码 计算 md5
+7. 使用 md5 对提交的内容解密
+8. 解析 json
+9. （具体功能逻辑）
+10. 对需要返回的内容包装为 json
+11. 重新执行 步骤5 和 步骤6
+12. 使用 md5 对提交的内容加密
+13. 将加密后的结果(加密JSON)或者错误信息(明文HTML/TXT/JSON或者直接403/500)返回给客户端
 
 #### 3. 解析服务器返回的 JSON 数据
+
+客户端操作步骤演示文件： `tests/test_encrypt.py`
 
 1. 检查是否返回了异常，包括：
   - PHP 报错信息
@@ -129,9 +144,10 @@
   - `-` 改成 `+`
   - `_` 改成 `/`
   - 在末尾补足 `=`：
-    - 需要补充 `=` 的数量为 `字符串长度 % 4` 。
+    - 需要补充 `=` 的数量为 `4 - 字符串长度 % 4` ，如果 `字符串长度 % 4` 为 0 则不补。
     - 可参考 `nyasafe.class.php` 中的 `urlb64decode` 方法中的写法。
 3. 使用 `base64` 解码。
 4. 使用 totp 验证器，通过保存的 `totp_secret` 生成当前的 `totp_code`。
-5. 使用当前的 `totp_code` 作为密码，对 `base64` 解码后的信息进行 `xxtea` 解密，获得 JSON 字符串。
-6. 将 JSON 字符串解析为数组，进行后续操作。
+5. 将 `totp_secret` 和 `totp_code` 两个字符串合并，并计算 MD5。
+6. 使用该 MD5 作为密码，对 `base64` 解码后的信息进行 `xxtea` 解密，获得 JSON 字符串。
+7. 将 JSON 字符串解析为数组，进行后续操作。

@@ -364,6 +364,8 @@ class nyasafe {
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
+            //MD5
+            $numcode = md5($secret.$numcode);
             //使用totp数字加密
             $json = xxtea_encrypt($json, $numcode);
         }
@@ -407,6 +409,8 @@ class nyasafe {
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
+            //MD5
+            $numcode = md5($secret.$numcode);
             //使用totp数字解密
             $xxteadata = $this->urlb64decode($argv["j"]);
             $decrypt_data = xxtea_decrypt($xxteadata, $numcode);

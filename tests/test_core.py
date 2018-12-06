@@ -1,12 +1,13 @@
 # -*- coding:utf-8 -*-
 import sys
-import onetimepass as otp
+import onetimepass as otp # pip3 install onetimepass
 from urllib import parse,request
-import demjson
-import xxtea
+import demjson # pip3 install demjson
+import xxtea # pip3 install xxtea-py cffi
 import base64
 import re
 import datetime
+import hashlib
 
 def tlog(loginfo:"信息内容",send=None):
     """输出前面带时间的信息"""
@@ -30,7 +31,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         totpsecret = filedataarr["totp_secret"]
         totptoken = filedataarr["totp_token"]
     except:
-        tlog("错误：不能打开文件「totpsecret.json」，先运行「python gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
+        tlog("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
     finally:
         if f:
             f.close()
@@ -43,8 +44,16 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     totpcode = otp.get_totp(totpsecret)
     if (showAllInfo) :
         tlog(totpcode)
+        tlog("混合 totpsecret 和 totpcode 并转为 MD5 ...")
+    md5g = hashlib.md5()
+    md5prestr = totpsecret + str(totpcode)
+    md5g.update(md5prestr.encode(encoding='utf-8'))
+    md5str = md5g.hexdigest()
+    if (showAllInfo) :
+        tlog(md5prestr)
+        tlog(md5str)
         tlog("XXTEA 加密 ...")
-    encryptdata = xxtea.encrypt(jsonstr, str(totpcode))
+    encryptdata = xxtea.encrypt(jsonstr, md5str)
     if (showAllInfo) :
         tlog(encryptdata)
         tlog("base64 编码 ...")
@@ -90,11 +99,22 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     totpcode = otp.get_totp(totpsecret)
     if (showAllInfo) :
         tlog(totpcode)
+        tlog("混合 totpsecret 和 totpcode 并转为 MD5 ...")
+    md5g = hashlib.md5()
+    md5prestr = totpsecret + str(totpcode)
+    md5g.update(md5prestr.encode(encoding='utf-8'))
+    md5str = md5g.hexdigest()
+    if (showAllInfo) :
+        tlog(md5prestr)
+        tlog(md5str)
         tlog("XXTEA 解密 ...")
-    jsonstr = xxtea.decrypt_utf8(encryptdata, str(totpcode))
+    jsonstr = xxtea.decrypt_utf8(encryptdata, md5str)
     if (showAllInfo) :
         tlog(jsonstr)
         tlog("JSON 解析 ...")
-    dataarr = demjson.decode(jsonstr)
+    try:
+        dataarr = demjson.decode(jsonstr)
+    except:
+        tlog("错误：解密失败。")
     tlog(dataarr)
     if (showAllInfo) : tlog("完成。")
