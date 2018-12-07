@@ -3,7 +3,8 @@
         private $conR = null; //只读数据库
         private $conW = null; //可写入数据库
         private $conK = null; //关键词数据库
-        private $con = null; //当前数据库（指针变量）
+        private $con = null; //当前 MySQL 数据库（指针变量）
+        public $redis = null; //当前 Redis 数据库
         public $debug = false; //输出SQL语句和连接的建立与断开信息
         /**
          * @description: 初始化可写入数据库，按需建立SQL连接
@@ -141,7 +142,7 @@
         /**
          * @description: 结束SQL连接
          */
-        function close() {
+        function closemysql() {
             if ($this->conR) {
                 if ($this->debug) echo "[/SQL-R]";
                 mysqli_close($this->conR);
@@ -229,15 +230,38 @@
             }
         }
         /**
-         * @description: 析构，结束SQL连接
+         * @description: 初始化 Redis 数据库
+         * @return Bool true:正常 false:失败但是设置为忽略 die:失败
+         */
+        function initRedis() {
+            global $nlcore;
+            $conf = $nlcore->cfg->iplimit;
+            if (!class_exists("Redis") && !$conf->frequency) {
+                if ($conf->ignoreerr) return false;
+                die($nlcore->msg->m(2010200));
+            }
+            $this->redis = new Redis();
+            try {
+                $this->redis->connect($conf->redis_host, $conf->redis_port);
+            } catch (Exception $e){
+                if ($conf->ignoreerr) return false;
+                die($nlcore->msg->m(2010201));
+            }
+            if (!$this->redis->auth($conf->redis_auth)) die($nlcore->msg->m(2010202));
+            return true;
+        }
+        /**
+         * @description: 析构，结束连接
          */
         function __destruct() {
-            $this->close();
+            $this->closemysql();
             $this->mode = null;
             $this->debug = null;
+            $this->redis = null;
             unset($this->con);
             unset($this->mode);
             unset($this->debug);
+            unset($this->redis);
         }
     }
 ?>

@@ -295,19 +295,8 @@ class nyasafe {
     function frequencylimitation($module) {
         global $nlcore;
         $conf = $nlcore->cfg->iplimit;
-        if (!class_exists("Redis") && !$conf->frequency) {
-            if ($conf->ignoreerr) return [1000000,-1];
-            return [2010200];
-        }
-        $redis = new Redis();
-        try {
-            $redis->connect($conf->redis_host, $conf->redis_port);
-        } catch (Exception $e){
-            if ($conf->ignoreerr) return [1000000,-1];
-            echo $e;
-            return [2010201];
-        }
-        $redis->auth($conf->redis_auth);
+        if (!$nlcore->db->initRedis()) return [1000000,-1];
+        $redis = $nlcore->db->redis;
         $key = $this->getip();
         $check = $redis->exists($key);
         if($check){
