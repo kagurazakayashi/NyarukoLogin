@@ -213,7 +213,8 @@ class nyasafe {
      * @return Array<String> 发现的违禁词数组
      */
     function banWord($str) {
-
+        //TODO: 创建敏感词检测
+        return true;
     }
 
     /**
@@ -294,7 +295,7 @@ class nyasafe {
      */
     function frequencylimitation($module) {
         global $nlcore;
-        $conf = $nlcore->cfg->iplimit;
+        $conf = $nlcore->cfg->app;
         if (!$nlcore->db->initRedis()) return [1000000,-1];
         $redis = $nlcore->db->redis;
         $key = $this->getip();

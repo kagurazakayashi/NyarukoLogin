@@ -42,6 +42,7 @@
             global $nlcore;
             $selectdbscount = count($selectdbs);
             if ($selectdbscount > 0) {
+                //TODO: 使用Redis进行顺序式数据库选择
                 $dbid = rand(0, $selectdbscount-1);
                 $selectdb = $selectdbs[$dbid];
                 $newcon = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
@@ -231,23 +232,24 @@
         }
         /**
          * @description: 初始化 Redis 数据库
-         * @return Bool true:正常 false:失败但是设置为忽略 die:失败
+         * @return Bool true:正常 false:功能禁用 die:失败
          */
         function initRedis() {
             global $nlcore;
-            $conf = $nlcore->cfg->iplimit;
-            if (!class_exists("Redis") && !$conf->frequency) {
-                if ($conf->ignoreerr) return false;
+            $appconf = $nlcore->cfg->app;
+            $redisconf = $nlcore->cfg->db->redis;
+            if (!$appconf->frequency || !$redisconf["rdb_enable"]) return false;
+            if (!class_exists("Redis")) {
                 die($nlcore->msg->m(2010200));
             }
             $this->redis = new Redis();
             try {
-                $this->redis->connect($conf->redis_host, $conf->redis_port);
+                $this->redis->connect($redisconf["rdb_host"], $redisconf["rdb_port"]);
             } catch (Exception $e){
-                if ($conf->ignoreerr) return false;
                 die($nlcore->msg->m(2010201));
             }
-            if (!$this->redis->auth($conf->redis_auth)) die($nlcore->msg->m(2010202));
+            if (!$this->redis->auth($redisconf["rdb_password"])) die($nlcore->msg->m(2010202));
+            $this->redis->select($redisconf["rdb_id"]);
             return true;
         }
         /**
