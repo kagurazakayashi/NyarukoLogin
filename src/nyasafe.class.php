@@ -210,13 +210,50 @@ class nyasafe {
     /**
      * @description: 检查是否包含违禁词汇
      * @param String str 源字符串
-     * @return Array<String> 发现的违禁词数组
+     * @return Array<Bool,String,String> [是否包含违禁词,河蟹后的字符串,触发的违禁词] ，如果不包含违禁词，返回 [false,原字符串]
+     * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
      */
-    function banWord($str) {
+    function wordfilter($str) {
         //TODO: 创建敏感词检测
-        return true;
+        global $nlcore;
+        $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
+        $wordjson = ""; //词库
+        if ($wordfilterpcfg["enable"] == 1) { //从 Redis 读入
+            if (!$nlcore->db->initRedis()) $nlcore->msg->http403(2020301);
+            $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
+        } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
+            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->http403(2020302);
+            $wordjson = fread($jfile,filesize($wordfilterpcfg["jsonfile"]));
+            fclose($jfile);
+        } else {
+            return [false,$str];
+        }
+        //删除输入字符串特殊符号
+        $punctuations = $this->mbStrSplit($wordfilterpcfg["punctuations"]);
+        foreach($punctuations as $punctuationword) {
+            $str = str_replace($punctuationword,"",$str);
+        }
+        //把所有字符中的大写字母转换成小写字母
+        $str = strtolower($str);
+        //转为数组
+        $wordjson = json_decode($wordjson);
+        //搜索关键词
+        $nstr = $str;
+        foreach($wordjson as $keyword) {
+            //同时满足多条件
+            $nstr = preg_replace('/'.join(explode($wordfilterpcfg["wildcardchar"], $keyword),'.{1,'.$wordfilterpcfg["maxlength"].'}').'/',$wordfilterpcfg["replacechar"],$nstr);
+            if (strcmp($str,$nstr) != 0) return [true,$nstr,$keyword];
+        }
+        return [false,$str];
     }
-
+    /**
+     * @description: 字符串转字符数组，可以处理中文
+     * @param String str 源字符串
+     * @return Array 字符数组
+     */
+    function mbStrSplit($str){
+        return preg_split('/(?<!^)(?!$)/u' , $str);
+    }
     /**
      * @description: 检查 IP 地址是否处于封禁期内
      * @param time 当前时间time()

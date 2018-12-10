@@ -235,6 +235,7 @@
          * @return Bool true:正常 false:功能禁用 die:失败
          */
         function initRedis() {
+            if ($this->redis) return true;
             global $nlcore;
             $appconf = $nlcore->cfg->app;
             $redisconf = $nlcore->cfg->db->redis;
@@ -246,9 +247,13 @@
             try {
                 $this->redis->connect($redisconf["rdb_host"], $redisconf["rdb_port"]);
             } catch (Exception $e){
+                $this->redis = null;
                 die($nlcore->msg->m(2010201));
             }
-            if (!$this->redis->auth($redisconf["rdb_password"])) die($nlcore->msg->m(2010202));
+            if (!$this->redis->auth($redisconf["rdb_password"])) {
+                $this->redis = null;
+                die($nlcore->msg->m(2010202));
+            }
             $this->redis->select($redisconf["rdb_id"]);
             return true;
         }
