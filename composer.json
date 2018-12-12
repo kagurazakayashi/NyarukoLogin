@@ -1,6 +1,7 @@
 {
     "require": {
         "phpgangsta/googleauthenticator": "dev-master",
-        "xxtea/xxtea": "^1.0"
+        "xxtea/xxtea": "^1.0",
+        "gregwar/captcha": "^1.1"
     }
 }

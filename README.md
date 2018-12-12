@@ -19,6 +19,24 @@
 - IP 地址验证
   - 支持为每个功能设定不同的接口访问频率。
   - 支持 IP 地址黑名单，并且可以设置封禁时长。
+- 敏感词屏蔽
+  - 支持从 json 文件拉取和 Redis 快速拉取词语表
+  - 提供一个转换脚本用于导入其他应用中的逐行 txt 词库
+
+## 所需第三方库
+### 必备库
+```
+composer require phpgangsta/googleauthenticator
+composer require xxtea/xxtea
+composer require gregwar/captcha
+```
+
+### 测试用库
+```
+pip3 install onetimepass
+pip3 install demjson
+pip3 install xxtea-py cffi
+```
 
 ## 通用参数
 
@@ -38,6 +56,8 @@
   - 第一项必为 `code` 字段，内容为整数状态代码，错误代码见 `nyainfomsg` 文件。
 
 ## 文件列表
+
+所有 php 脚本使用 PHP 7 运行，所有 py 脚本使用 Python 3 运行。
 
 - `src/nyacore.class.php`
   - 核心类
@@ -62,6 +82,10 @@
 - `test_gettotptoken.py` : 获取 `app_secret`，需要修改文件 `postData` 变量，提供与数据库 `external_app` 表中记录的内容。
 - `test_core.py` : 加密和解密客户端，以下文件均依赖于此文件，不要直接执行它。
   - `test_encrypt.py` : 测试加密传输参数的提交和收到信息的解密，可修改 `udataarr` 变量，自定义提交的测试数据。
+- `wordfilter.php` 敏感词模块测试，测试敏感词模块是否正常工作，提交 `?w=关键词` ，返回是否为敏感词。
+
+### tools/
+- `filterwords_txt2json.py` : 这个工具可以将从其他地方获取的txt逐行关键词列表转换为本程序可识别的json，并写入redis数据库。详细配置方式见该文件内注释。
 
 ## 错误代码表
 
@@ -81,7 +105,7 @@
   - `n` : app_id
   - `s` : app_secret
 - 服务器将：
-  - 检查 IP 访问频率、是否被封禁、在 `ip_address` 表查询或注册 
+  - 检查 IP 访问频率、是否被封禁、在 `ip_address` 表查询或注册
   - 检查提交的应用名称和密钥的格式
   - 检查应用是否已经注册 `appname` 和 `appsecret`
   - 创建新的 `totp secret`
@@ -117,19 +141,19 @@
   - `j` : 第 5 步生成的加密字符串。
 
 服务器收到请求后将：
-1. 检查 IP 访问频率
-2. 检验参数格式
-3. 检查 IP 是否被封禁
-4. 查询 apptoken 对应的 secret
-5. 使用 secret 生成 totp 代码
-6. 使用 secret+totp代码 计算 md5
-7. 使用 md5 对提交的内容解密
-8. 解析 json
-9. （具体功能逻辑）
-10. 对需要返回的内容包装为 json
-11. 重新执行 步骤5 和 步骤6
-12. 使用 md5 对提交的内容加密
-13. 将加密后的结果(加密JSON)或者错误信息(明文HTML/TXT/JSON或者直接403/500)返回给客户端
+检查 IP 访问频率
+检验参数格式
+检查 IP 是否被封禁
+查询 apptoken 对应的 secret
+使用 secret 生成 totp 代码
+使用 secret+totp代码 计算 md5
+使用 md5 对提交的内容解密
+解析 json
+（具体功能逻辑）
+对需要返回的内容包装为 json
+重新执行 步骤5 和 步骤6
+使用 md5 对提交的内容加密
+将加密后的结果(加密JSON)或者错误信息(明文HTML/TXT/JSON或者直接403/500)返回给客户端
 
 #### 3. 解析服务器返回的 JSON 数据
 
@@ -151,3 +175,6 @@
 5. 将 `totp_secret` 和 `totp_code` 两个字符串合并，并计算 MD5。
 6. 使用该 MD5 作为密码，对 `base64` 解码后的信息进行 `xxtea` 解密，获得 JSON 字符串。
 7. 将 JSON 字符串解析为数组，进行后续操作。
+
+### 用户注册流程
+

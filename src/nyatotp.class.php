@@ -43,7 +43,7 @@ class nyatotp {
         if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->http403(2020401);
         //检查APP是否已经注册 $appname,$appsecret
         $appid = $nlcore->safe->chkappsecret($appname,$appsecret);
-        if ($appid == null) $nlcore->msg->http403(2020500);
+        if ($appid == null) $nlcore->msg->http403(2020401);
         //创建新的 totp secret
         $secret = $this->ga->createSecret();
         $numcode = $this->ga->getCode($secret);

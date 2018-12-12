@@ -5,8 +5,7 @@ require_once $phpfiledir."../nyaconfig.class.php";
 require_once $phpfiledir."nyainfomsg.class.php";
 require_once $phpfiledir."nyaconnect.class.php";
 require_once $phpfiledir."nyasafe.class.php";
-require_once $phpfiledir.'../vendor/phpgangsta/googleauthenticator/PHPGangsta/GoogleAuthenticator.php';
-require_once $phpfiledir.'../vendor/xxtea/xxtea/xxtea.php';
+require_once $phpfiledir.'../vendor/autoload.php';
 class nyacore {
     public $cfg; //设置
     public $msg; //信息
