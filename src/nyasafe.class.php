@@ -214,7 +214,6 @@ class nyasafe {
      * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
      */
     function wordfilter($str) {
-        //TODO: 创建敏感词检测
         global $nlcore;
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordjson = ""; //词库
@@ -297,6 +296,7 @@ class nyasafe {
      * @description: 检查 APP 是否已经注册 appname 和 appsecret
      * @param String appname 已注册的应用名
      * @param String appsecret 已注册的应用密钥app_id
+     * @return String 数据库中的 ID 号 或 null
      */
     function chkappsecret($appname,$appsecret) {
         global $nlcore;
@@ -402,7 +402,7 @@ class nyasafe {
      * @description: 解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
-     * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
+     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token]
      */
     function decryptargv($module) {
         global $nlcore;
@@ -416,6 +416,8 @@ class nyasafe {
             header('Content-Type:application/json;charset=utf-8');
             $nlcore->msg->http403(2020408);
         }
+        //检查是否为重放
+        $this->antireplay($argv["j"]);
         //检查 IP 是否被封禁
         $time = time() + $nlcore->cfg->app->timezone;
         $stime = date("Y-m-d H:i:s", $time);
@@ -448,7 +450,11 @@ class nyasafe {
         }
         //解析json
         if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->http403(2020410);
-        return [$jsonarr,$secret];
+        //检查API版本是否一致
+        if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->http403(2020412);
+        //检查APP是否有效
+        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]) == null) $nlcore->msg->http403(2020401);
+        return [$jsonarr,$secret,$argv["t"]];
     }
     /**
      * @description: 进行Base64编码，并取代一些符号
@@ -471,6 +477,18 @@ class nyasafe {
         $mod4 = strlen($data) % 4;
         if ($mod4) $data .= substr('====', $mod4);
         return base64_decode($data);
+    }
+
+    // function getcaptcha() {
+    //     global $nlcore;
+    // }
+    //TODO: 重放攻击防止机制，利用 Redis 记录相同的指令哈希
+    function antireplay($jstr) {
+        //指令MD5
+        //$jhash = md5($jstr);
+        //查询是否是重放
+        
+        //写入记录
     }
 }
 ?>

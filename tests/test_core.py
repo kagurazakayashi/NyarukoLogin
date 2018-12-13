@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import sys
 import onetimepass as otp # pip3 install onetimepass
-from urllib import parse,request
+from urllib import parse,request,error
 import demjson # pip3 install demjson
 import xxtea # pip3 install xxtea-py cffi
 import base64
@@ -9,14 +9,12 @@ import re
 import datetime
 import hashlib
 
-def tlog(loginfo:"信息内容",send=None):
-    """输出前面带时间的信息"""
-    nowtime = datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S.%f]')
-    print(nowtime,end=' ')
-    print(loginfo)
-
 def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=False):
     """向服务器提交内容并显示返回内容，自动处理加密解密"""
+
+    # 需要提供与数据库 external_app 表中记录的内容
+    apiverAppidSecret = ["1","testapp1","mipxT4wpGJ7JD29ZwI87AKmRvvCx19rI"]
+
     if (showAllInfo) : tlog("准备输入的数据 ...")
     tlog(postUrl)
     tlog(jsonDataArr)
@@ -35,7 +33,13 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     finally:
         if f:
             f.close()
-    if (showAllInfo) : tlog("JSON 编码 ...")
+    if (showAllInfo) : tlog("插入固定提交信息 ...")
+    jsonDataArr["apiver"] = apiverAppidSecret[0]
+    jsonDataArr["appid"] = apiverAppidSecret[1]
+    jsonDataArr["appsecret"] = apiverAppidSecret[2]
+    if (showAllInfo) :
+        tlog(apiverAppidSecret)
+        tlog("JSON 编码 ...")
     jsonstr = demjson.encode(jsonDataArr)
     if (showAllInfo) :
         tlog(jsonstr)
@@ -71,7 +75,15 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         tlog("↑ 发送请求:")
         tlog(postMod.decode())
     postReq = request.Request(url=postUrl,data=postMod)
-    postRes = request.urlopen(postReq)
+    try:
+        postRes = request.urlopen(postReq)
+    except error.HTTPError as e:
+        tlog(e)
+        tlog('curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"')
+        sys.exit(1)
+    except error.URLError as e:
+        tlog(e)
+        sys.exit(1)
     postRes = postRes.read()
     postRes = postRes.decode(encoding='utf-8')
     if (showAllInfo) :
@@ -118,3 +130,9 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         tlog("错误：解密失败。")
     tlog(dataarr)
     if (showAllInfo) : tlog("完成。")
+
+def tlog(loginfo:"信息内容",send=None):
+    """输出前面带时间的信息"""
+    nowtime = datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S.%f]')
+    print(nowtime,end=' ')
+    print(loginfo)
