@@ -16,12 +16,15 @@ class nyacore {
         $this->msg = new nyainfomsg();
         $this->db = new nyadbconnect();
         $this->safe = new nyasafe();
+    }
+    function applyconfig() {
         if ($this->cfg->app->debug == 1) {
             error_reporting(E_ALL);
             ini_set("display_errors", "On");
         } else if ($this->cfg->app->debug == 0) {
             ini_set("display_errors", "Off");
         }
+        if ($this->cfg->app->timezone != "") date_default_timezone_set($this->cfg->app->timezone);
     }
     function __destruct() {
         $this->cfg = null;
@@ -33,4 +36,5 @@ class nyacore {
 }
 global $nlcore;
 if (!isset($nlcore)) $nlcore = new nyacore();
+$nlcore->applyconfig();
 ?>

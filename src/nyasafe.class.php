@@ -419,7 +419,7 @@ class nyasafe {
         //检查是否为重放
         $this->antireplay($argv["j"]);
         //检查 IP 是否被封禁
-        $time = time() + $nlcore->cfg->app->timezone;
+        $time = time();
         $stime = date("Y-m-d H:i:s", $time);
         $result = $this->chkip($time);
         if ($result[0] != 0) $nlcore->msg->http403($result[0]);
