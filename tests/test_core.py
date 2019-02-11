@@ -8,6 +8,7 @@ import base64
 import re
 import datetime
 import hashlib
+import os
 
 def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=False):
     """向服务器提交内容并显示返回内容，自动处理加密解密"""
@@ -78,10 +79,16 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     try:
         postRes = request.urlopen(postReq)
     except error.HTTPError as e:
+        tlog("错误：HTTP 连接遇到问题！")
         tlog(e)
-        tlog('curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"')
+        tlog("使用 cURL 获取原始数据 ...")
+        curlcmd = 'curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"'
+        tlog(curlcmd)
+        output = os.popen(curlcmd)
+        tlog(output.read())
         sys.exit(1)
     except error.URLError as e:
+        tlog("错误：网址不正确！")
         tlog(e)
         sys.exit(1)
     postRes = postRes.read()
@@ -89,10 +96,11 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     if (showAllInfo) :
         tlog("↓ 收到数据:")
         tlog(postRes)
-        tlog("检查返回数据合法性 ...")
+        tlog("错误：检查返回数据合法性 ...")
     matchObj = re.match(r"^[0-9A-Za-z\-_]+$", postRes)
     if matchObj == None:
-        tlog("收到了非预期的数据，中止。")
+        tlog("错误：收到了非预期的数据，中止。")
+        tlog("原始内容：")
         tlog(postRes)
         sys.exit()
     if (showAllInfo) : tlog("base64 撤销变体 ...")
