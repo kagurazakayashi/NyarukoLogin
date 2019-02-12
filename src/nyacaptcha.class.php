@@ -90,6 +90,49 @@ class nyacaptcha {
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
         echo $nlcore->safe->encryptargv($retuenarr,$totpsecret);
     }
-   
+
+    /**
+     * @description: 验证图形验证码是否正确
+     * @param String captchacode 验证码
+     * @param String totpsecret totp关联码
+     * @return Bool 是否可以通行
+     */
+    function verifycaptcha($captchacode,$totpsecret) {
+        global $nlcore;
+        $columnArr = ["id","c_code","c_time"];
+        $tableStr = $nlcore->cfg->db->tables["session_totp"];
+        $whereDic = [
+            "apptoken" => $totpsecret
+        ];
+        $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($dbreturn[0] != 1010000) {
+            die($nlcore->msg->m(2020501));
+        }
+        $cinfo = $dbreturn[2][0];
+        $c_time = strtotime($cinfo["c_time"]);
+        $endtime = $c_time+$nlcore->cfg->verify->captcha["validtime"];
+        if (time() > $endtime) {
+            $this->verifyfailgetnew(2020502,$totpsecret);
+            return false;
+        }
+        if ($captchacode != $cinfo["c_code"]) {
+            $this->verifyfailgetnew(2020503,$totpsecret);
+            return false;
+        }
+        //删除已经验证通过的信息
+        $updateDic = [
+            "c_code" => null,
+            "c_time" => null,
+            "c_img" => null
+        ];
+        $whereDic = [
+            "id" => $cinfo["id"]
+        ];
+        $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
+        return true;
+    }
+
+    //TODO: 检索用户名是否需要验证
+    
 }
 ?>
