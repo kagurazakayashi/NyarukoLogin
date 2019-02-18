@@ -58,7 +58,7 @@
         }
         /**
          * @description: 查询数据
-         * @param Array<String> selectArr 要查询的列名数组
+         * @param Array<String> columnArr 要查询的列名数组
          * @param String tableStr 表名
          * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式（可选，默认空）
@@ -210,7 +210,11 @@
                 $vals = "";
                 foreach ($dic as $key => $val) {
                     $keys .= "`".$key."`, ";
-                    $vals .= "'".$val."', ";
+                    if ($val) {
+                        $vals .= "'".$val."', ";
+                    } else {
+                        $vals .= "NULL, ";
+                    }
                 }
                 $keystr = substr($keys, 0, -2);
                 $valstr = substr($vals, 0, -2);
@@ -225,7 +229,11 @@
                 $modestrlen = strlen($modestr);
                 $keyval = "";
                 foreach ($dic as $key => $val) {
-                    $keyval .= "`".$key."` = '".$val."'".$modestr;
+                    if ($val) {
+                        $keyval .= "`".$key."` = '".$val."'".$modestr;
+                    } else {
+                        $keyval .= "`".$key."` = NULL".$modestr;
+                    }
                 }
                 return substr($keyval, 0, (0-$modestrlen));
             }

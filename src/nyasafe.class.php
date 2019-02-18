@@ -404,11 +404,13 @@ class nyasafe {
      * @param String module 功能名称（$conf->limittime）
      * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token]
      */
-    function decryptargv($module) {
+    function decryptargv($module=null) {
         global $nlcore;
         //检查IP访问频率
-        $result = $this->frequencylimitation($module);
-        if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
+        if ($module) {
+            $result = $this->frequencylimitation($module);
+            if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
+        }
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->jsonlen_get : $nlcore->cfg->app->jsonlen_post;
