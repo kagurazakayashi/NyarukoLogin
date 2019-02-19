@@ -30,7 +30,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         totpsecret = filedataarr["totp_secret"]
         totptoken = filedataarr["totp_token"]
     except:
-        tlog("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
+        tlog("\033[31m错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」\033[0m")
     finally:
         if f:
             f.close()
@@ -79,7 +79,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     try:
         postRes = request.urlopen(postReq)
     except error.HTTPError as e:
-        tlog("错误：HTTP 连接遇到问题！")
+        tlog("\033[31m错误：HTTP 连接遇到问题！\033[0m")
         tlog(e)
         tlog("使用 cURL 获取原始数据 ...")
         curlcmd = 'curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"'
@@ -88,7 +88,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         tlog(output.read())
         sys.exit(1)
     except error.URLError as e:
-        tlog("错误：网址不正确！")
+        tlog("\033[31m错误：网址不正确！\033[0m")
         tlog(e)
         sys.exit(1)
     postRes = postRes.read()
@@ -96,10 +96,10 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     if (showAllInfo) :
         tlog("↓ 收到数据:")
         tlog(postRes)
-        tlog("错误：检查返回数据合法性 ...")
+        tlog("检查返回数据合法性 ...")
     matchObj = re.match(r"^[0-9A-Za-z\-_]+$", postRes)
     if matchObj == None:
-        tlog("错误：收到了非预期的数据，中止。")
+        tlog("\033[31m错误：收到了非预期的数据，中止。\033[0m")
         tlog("原始内容：")
         tlog(postRes)
         sys.exit()
@@ -135,12 +135,21 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     try:
         dataarr = demjson.decode(jsonstr)
     except:
-        tlog("错误：解密失败。")
+        tlog("\033[31m错误：解密失败。\033[0m")
+        tlog("原始内容：")
+        tlog(postRes)
+        sys.exit()
     tlog(dataarr)
-    if (showAllInfo) : tlog("完成。")
+    if (showAllInfo) : tlog("\033[32m"+"完成。"+"\033[0m")
+    return dataarr
 
-def tlog(loginfo:"信息内容",send=None):
+def tlog(loginfo:"信息内容"):
     """输出前面带时间的信息"""
     nowtime = datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S.%f]')
-    print(nowtime,end=' ')
+    print("\033[35m",end='')
+    print(nowtime,end='\033[0m ')
     print(loginfo)
+
+def title(loginfo:"信息内容"):
+    """输出标题"""
+    tlog("\033[1m===== "+loginfo+" =====\033[0m")
