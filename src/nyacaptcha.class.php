@@ -2,7 +2,6 @@
 use Gregwar\Captcha\CaptchaBuilder;
 use Gregwar\Captcha\PhraseBuilder;
 class nyacaptcha {
-    var $nyadbconnect;
     function __construct() {
     }
     /**
@@ -81,10 +80,11 @@ class nyacaptcha {
     /**
      * @description: 验证码没有验证失败后用此函数重新创建一个
      * @param String code 验证码内容
-     * @param String totpsecret totp关联码
+     * @param String totpsecret totp加密码
      * @return Array<String> 验证码相关信息（其中code、msg会不同）
      */
     function verifyfailgetnew($code,$totpsecret) {
+        global $nlcore;
         $retuenarr = $this->getcaptcha(false);
         $retuenarr["code"] = $code;
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
@@ -94,19 +94,19 @@ class nyacaptcha {
     /**
      * @description: 验证图形验证码是否正确
      * @param String captchacode 验证码
-     * @param String totpsecret totp关联码
+     * @param String totpsecret totp加密码
      * @return Bool 是否可以通行
      */
-    function verifycaptcha($captchacode,$totpsecret) {
+    function verifycaptcha($totptoken,$totpsecret,$captchacode) {
         global $nlcore;
         $columnArr = ["id","c_code","c_time"];
         $tableStr = $nlcore->cfg->db->tables["session_totp"];
         $whereDic = [
-            "apptoken" => $totpsecret
+            "apptoken" => $totptoken
         ];
         $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($dbreturn[0] != 1010000) {
-            die($nlcore->msg->m(2020501));
+            die($nlcore->msg->m($totpsecret,2020501));
         }
         $cinfo = $dbreturn[2][0];
         $c_time = strtotime($cinfo["c_time"]);

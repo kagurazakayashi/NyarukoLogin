@@ -48,11 +48,11 @@
                 $newcon = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
                 $sqlerrno = mysqli_connect_errno($newcon);
                 if ($sqlerrno) {
-                    die($nlcore->msg->m(2010100,true,$sqlerrno));
+                    die($nlcore->msg->m(1,2010100,$sqlerrno));
                 }
                 return $newcon;
             } else {
-                die($nlcore->msg->m(2010103,true,$sqlerrno));
+                die($nlcore->msg->m(1,2010103,$sqlerrno));
             }
             return null;
         }
@@ -182,7 +182,7 @@
                         if (count($result_array) > 0) {
                             return [1010000,$insertid,$result_array];
                         } else {
-                            die($nlcore->msg->m(2010102));
+                            die($nlcore->msg->m(1,2010102));
                         }
                     }
                 } else {
@@ -190,7 +190,7 @@
                 }
             } else {
                 if ($this->debug) echo "[SQLERR]".mysqli_connect_error()."[/SQLERR]";
-                die($nlcore->msg->m(2010101));
+                die($nlcore->msg->m(1,2010101));
             }
         }
         /**
@@ -249,18 +249,18 @@
             $redisconf = $nlcore->cfg->db->redis;
             if (!$appconf->frequency || !$redisconf["rdb_enable"]) return false;
             if (!class_exists("Redis")) {
-                die($nlcore->msg->m(2010200));
+                die($nlcore->msg->m(1,2010200));
             }
             $this->redis = new Redis();
             try {
                 $this->redis->connect($redisconf["rdb_host"], $redisconf["rdb_port"]);
             } catch (Exception $e){
                 $this->redis = null;
-                die($nlcore->msg->m(2010201));
+                die($nlcore->msg->m(1,2010201));
             }
             if (!$this->redis->auth($redisconf["rdb_password"])) {
                 $this->redis = null;
-                die($nlcore->msg->m(2010202));
+                die($nlcore->msg->m(1,2010202));
             }
             $this->redis->select($redisconf["rdb_id"]);
             return true;

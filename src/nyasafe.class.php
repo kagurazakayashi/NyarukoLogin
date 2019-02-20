@@ -79,18 +79,18 @@ class nyasafe {
             $value = stripslashes($value);
         }
         if ($value != $ovalue && $errdie == true) {
-            die($nlcore->msg->m(2020101));
+            die($nlcore->msg->m(1,2020101));
         }
         if (!is_numeric($value)) {
             $value = "'" . mysql_real_escape_string($value) . "'";
         }
         if ($value != $ovalue && $errdie == true) {
-            die($nlcore->msg->m(2020102));
+            die($nlcore->msg->m(1,2020102));
         }
         if ($dhtml) {
             $value = htmlspecialchars($value);
             if ($value != $ovalue && $errdie == true) {
-                die($nlcore->msg->m(2020103));
+                die($nlcore->msg->m(1,2020103));
             }
         }
         return $value;
@@ -380,7 +380,8 @@ class nyasafe {
     }
     /**
      * @description: 从数组创建JSON、加密、base64编码、变体
-     * @param String module 功能名称（$conf->limittime）
+     * @param String dataarray 要返回到客户端的内容字典
+     * @param String secret totp加密码
      * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
      */
     function encryptargv($dataarray,$secret="") {

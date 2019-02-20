@@ -120,13 +120,19 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @return String 异常信息提示JSON
      */
-    function m($code = -1,$showmsg = true,$str = "") {
-        if (!$showmsg) return null;
-        return json_encode(array(
+    function m($msgmode = 0,$code = -1,$str = "") {
+        if (is_numeric($msgmode) && $msgmode == 0) return null;
+        $returnarr = array(
             "code" => $code,
             "msg" => $this->imsg[$code],
             "info" => $str
-        ));
+        );
+        if ($msgmode == 2) {
+            return json_encode($returnarr);
+        } else {
+            global $nlcore;
+            return $nlcore->safe->encryptargv($returnarr,$msgmode);
+        }
     }
     /**
      * @description: 返回信息的同时，抛出403错误，结束程序
@@ -137,7 +143,7 @@ class nyainfomsg {
         // header('HTTP/1.1 403 Forbidden');
         if ($code && $showmsg) {
             global $nlcore;
-            $json = $nlcore->msg->m($code);
+            $json = $nlcore->msg->m(1,$code);
             header('Content-Type:application/json;charset=utf-8');
             echo $json;
         }

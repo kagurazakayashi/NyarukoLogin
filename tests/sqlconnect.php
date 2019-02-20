@@ -4,26 +4,14 @@ require_once "../src/nyaconnect.class.php";
 
 class sqltest {
     private $debug = true;
-    /**
-     * @description: 如果开启debug，则JSON转化回数组以便在浏览器输出
-     * @param String jsonstr JSON字符串
-     */
-    function showjson($jsonstr) {
-        if ($this->debug) {
-            header('Content-Type:text/html;charset=utf-8');
-            print_r(json_decode($jsonstr));
-        } else {
-            header('Content-Type:application/json;charset=utf-8');
-            echo $jsonstr;
-        }
-    }
+    
     /**
      * @description: 启动测试
      * POST @param String test 测试类型
      */
     function starttest() {
         global $nlcore;
-        if (!isset($_POST["test"])) die(showjson($nlcore->msg->m(2000100,true)));
+        if (!isset($_POST["test"])) die(showjson($nlcore->msg->m(1,2000100)));
         $test = $_POST["test"];
         $nlcore->db->init(0,$this->debug);
 
@@ -45,7 +33,7 @@ class sqltest {
      */
     function dblink() {
         global $nlcore;
-        $this->showjson($nlcore->msg->m(1010000,true,$nlcore->db->sqltest()));
+        $this->showjson($nlcore->msg->m(1,1010000,$nlcore->db->sqltest()));
     }
 
     /**
