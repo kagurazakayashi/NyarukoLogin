@@ -24,7 +24,7 @@ class nyacaptcha {
         $totpsecret = $jsonarrTotpsecret[1];
         $totptoken = $jsonarrTotpsecret[2];
         $captchaconf = $nlcore->cfg->verify->captcha;
-        $c_time = date('Y-m-d h:i:s', time());
+        $c_time = date('Y-m-d H:i:s', time());
         $c_img = $nlcore->safe->randhash();
         $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
         $imgfile = $captchaconf["imgname"].$c_img.".jpg";
@@ -64,9 +64,10 @@ class nyacaptcha {
         ];
         if ($showcaptcha) {
             $retuenarr["captcha"] = $c_code;
-        } else {
-            if (!$extnow) $retuenarr["file"] = $imgpath;
         }
+        // else {
+            // if (!$extnow) $retuenarr["file"] = $imgpath;
+        // }
         if ($extnow) {
             echo $nlcore->safe->encryptargv($retuenarr,$totpsecret);
         } else {
@@ -89,6 +90,7 @@ class nyacaptcha {
         $retuenarr["code"] = $code;
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
         echo $nlcore->safe->encryptargv($retuenarr,$totpsecret);
+        return $retuenarr;
     }
 
     /**
@@ -115,8 +117,9 @@ class nyacaptcha {
             $this->verifyfailgetnew(2020502,$totpsecret);
             return false;
         }
-        if ($captchacode != $cinfo["c_code"]) {
+        if (strtolower($captchacode) != strtolower($cinfo["c_code"])) {
             $this->verifyfailgetnew(2020503,$totpsecret);
+            echo "[{$cinfo["c_code"]}]";
             return false;
         }
         //删除已经验证通过的信息

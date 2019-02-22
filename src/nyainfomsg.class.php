@@ -71,6 +71,8 @@ class nyainfomsg {
         2020204 => '不是有效的整数数字。',
         ///// A=2\BB=02\CC=02\DD=05 :
         2020205 => '不是有效的中国电话号码。',
+        ///// A=2\BB=02\CC=02\DD=06 :
+        2020206 => '不是有效的邮箱地址或中国电话号码。',
         //// A=2\BB=02\CC=03 : 合规性检查
         ///// A=2\BB=02\CC=03\DD=00 :
         2020300 => '包含违禁词汇。',
@@ -121,7 +123,7 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
-    function m($msgmode = 0,$code = -1,$str = "") {
+    function m($msgmode = 0,$code = 2000000,$str = "") {
         if (is_numeric($msgmode) && $msgmode == 0) return null;
         $returnarr = array(
             "code" => $code,
