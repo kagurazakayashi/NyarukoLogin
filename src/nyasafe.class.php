@@ -101,9 +101,10 @@ class nyasafe {
      * @return Bool 是否正确
      */
     function isEmail($str) {
-        $checkmail="/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";//定义正则表达式
-        if(isset($str) && $str!=""){//判断文本框中是否有值
-            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+        if (strlen($str) > 64) return false;
+        $checkmail="/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";
+        if(isset($str) && $str!=""){
+            if(preg_match($checkmail,$str)){
                 return true;
             }else{
                 return false;
@@ -480,6 +481,24 @@ class nyasafe {
         $mod4 = strlen($data) % 4;
         if ($mod4) $data .= substr('====', $mod4);
         return base64_decode($data);
+    }
+    /**
+     * @description: 检查数组中是否包括指定的一组 key
+     * @param Array nowarray 需要被测试的数组
+     * @param Array<String> keys 需要检查是否有哪些 key 的数组
+     * @param Bool getcount 是否返回不匹配的数量，否则返回具体不匹配的 key 数组
+     * @return Array<String> 不匹配的 key 数组
+     * @return Int 不匹配的数量
+     */
+    function keyinarray($nowarray,$keys,$getcount=true) {
+        $novalkey = array();
+        foreach($keys as $nowkey){
+            if (!isset($nowarray[$nowkey])) {
+                array_push($novalkey,$nowkey);
+            }
+        }
+        if ($getcount) return count($novalkey);
+        return $novalkey;
     }
 
     // function getcaptcha() {
