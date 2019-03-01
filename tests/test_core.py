@@ -143,13 +143,22 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     if (showAllInfo) : tlog("\033[32m"+"完成。"+"\033[0m")
     return dataarr
 
-def tlog(loginfo:"信息内容"):
+def tlog(loginfo:"信息内容",end='\n'):
     """输出前面带时间的信息"""
     nowtime = datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S.%f]')
     print("\033[35m",end='')
     print(nowtime,end='\033[0m ')
-    print(loginfo)
+    print(loginfo,end=end)
 
 def title(loginfo:"信息内容"):
     """输出标题"""
     tlog("\033[1m===== "+loginfo+" =====\033[0m")
+
+def instr(alertinfo:"提示用户要输入的内容",isint=False):
+    """接收用户输入"""
+    tlog("\033[1m"+alertinfo+"\033[4m",'')
+    userinput = input()
+    print("\033[0m",end='')
+    if isint:
+        return int(userinput)
+    return userinput
