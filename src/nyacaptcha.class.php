@@ -119,7 +119,6 @@ class nyacaptcha {
         }
         if (strtolower($captchacode) != strtolower($cinfo["c_code"])) {
             $this->verifyfailgetnew(2020503,$totpsecret);
-            echo "[{$cinfo["c_code"]}]";
             return false;
         }
         //删除已经验证通过的信息
