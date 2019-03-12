@@ -441,13 +441,23 @@ class nyasafe {
             $secret = $result[2][0][0];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
-            $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
-            //MD5
-            $numcode = md5($secret.$numcode);
-            //使用totp数字解密
-            $xxteadata = $this->urlb64decode($argv["j"]);
-            $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
-            if (strlen($decrypt_data) == 0) $nlcore->msg->http403(2020411);
+            $gaisok = false;
+            for ($oldcode=0; $oldcode < $nlcore->cfg->app->totptimeslice; $oldcode++) {
+                $exsecond = time() - ($oldcode * 30);
+                $timeSlice = floor($exsecond / 30);
+                $numcode = $ga->getCode($secret,$timeSlice)+$nlcore->cfg->app->totpcompensate;
+                //MD5
+                $numcode = md5($secret.$numcode);
+                //解密base64
+                $xxteadata = $this->urlb64decode($argv["j"]);
+                //使用totp数字解密
+                $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
+                if (strlen($decrypt_data) > 0) {
+                    $gaisok = true;
+                    break;
+                }
+            }
+            if (!$gaisok) $nlcore->msg->http403(2020411);
             $jsonarr = json_decode($decrypt_data,true);
         } else {
             $jsonarr = json_decode($this->urlb64decode($argv["j"]),true);
