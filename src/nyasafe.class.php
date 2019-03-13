@@ -1,30 +1,6 @@
 <?php
 class nyasafe {
     /**
-     * @description: base64 加密
-     * @param String 明文
-     * @return String 密文
-     */
-    function base_encode($str) {
-        $src  = array("/","+","=");
-        $dist = array("_a","_b","_c");
-        $old  = base64_encode($str);
-        $new  = str_replace($src,$dist,$old);
-        return $new;
-    }
-    /**
-     * @description: base64 解密
-     * @param String 密文
-     * @return String 明文
-     */
-    function base_decode($str) {
-        $src = array("_a","_b","_c");
-        $dist  = array("/","+","=");
-        $old  = str_replace($src,$dist,$str);
-        $new = base64_decode($old);
-        return $new;
-    }
-    /**
      * @description: 是否为MD5
      * @param String 需要判断的字符串
      * @return Int 是否匹配 > 0 || != false
@@ -471,6 +447,22 @@ class nyasafe {
         return [$jsonarr,$secret,$argv["t"]];
     }
     /**
+     * @description: 批量替换指定字符
+     * @param String string 规定被搜索的字符串
+     * @param Array<String:String> findreplace 要替换的内容字典
+     * 例如：Array("find" => "replace")
+     * @param Bool geti 是否返回替换的数量，设置为 true 会返回数组
+     * @return String 经过替换后的字符串
+     * @return String,Int 经过替换后的字符串和替换的数量
+     */
+    function replacestr($string,$findreplace,$geti=false) {
+        $find = array_keys($findreplace);
+        $replace = array_values($findreplace);
+        $newstring = str_replace($find,$replace,$string,$replacei);
+        if ($geti) return [$newstring,$replacei];
+        return $newstring;
+    }
+    /**
      * @description: 进行Base64编码，并取代一些符号
      * “+”改成“-”, “/”改成“_”, “=”删除
      * @param Data fdata 需要使用Base64编码的数据
@@ -509,6 +501,34 @@ class nyasafe {
         }
         if ($getcount) return count($novalkey);
         return $novalkey;
+    }
+    /**
+     * @description: 获得需要使用的语言
+     * 根据配置中设定的语言支持情况和当前浏览器语言，决定当前要使用的语言代码。
+     * 如果找不到所需语言，则采用默认语言。
+     * @param String language 指定一个语言 
+     * @return: 
+     */
+    function getlanguage($language=null) {
+        global $nlcore;
+        $applanguages = $nlcore->cfg->app->language;
+        if ($language) {
+            foreach($applanguages as $nowapplang){
+                if ($language == $nowapplang) {
+                    return $language;
+                }
+            }
+        } else {
+            $browserlanguages = explode(",", strtolower($_SERVER['HTTP_ACCEPT_LANGUAGE']));
+            foreach($browserlanguages as $nowbwrlang) {
+                foreach($applanguages as $nowapplang) {
+                    if ($nowbwrlang == $nowapplang) {
+                        return $nowbwrlang;
+                    }
+                }
+            }
+        }
+        return $applanguages[0];
     }
 
     // function getcaptcha() {
