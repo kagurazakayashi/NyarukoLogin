@@ -112,7 +112,7 @@ class nyacaptcha {
         }
         $cinfo = $dbreturn[2][0];
         $c_time = strtotime($cinfo["c_time"]);
-        $endtime = $c_time+$nlcore->cfg->verify->captcha["validtime"];
+        $endtime = $c_time+$nlcore->cfg->verify->timeout["captcha"];
         if (time() > $endtime) {
             $this->verifyfailgetnew(2020502,$totpsecret);
             return false;

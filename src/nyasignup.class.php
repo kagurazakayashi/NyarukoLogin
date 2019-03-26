@@ -1,5 +1,6 @@
 <?php
 require_once "nyacaptcha.class.php";
+require_once "nyaverification.class.php";
 class nyasignup {
     var $nyadbconnect;
     function __construct() {
@@ -32,7 +33,7 @@ class nyasignup {
         }
         //检查验证码是否正确
         $nyacaptcha = new nyacaptcha();
-        if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
+        // if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         //检查输入的是邮箱还是手机号
         $user = $jsonarr["user"];
         if ($nlcore->safe->isPhoneNumCN($user)) {
@@ -42,6 +43,8 @@ class nyasignup {
         } else {
             die($nlcore->msg->m(1,2020206));
         }
+        $nyaverification = new nyaverification();
+        $nyaverification->getmail();
         //注册该用户，设置有效时长
         echo $nlcore->safe->encryptargv($jsonarr,$totpsecret);
     }
