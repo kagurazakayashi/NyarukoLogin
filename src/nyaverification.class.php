@@ -1,24 +1,14 @@
 <?php
 class nyaverification {
     /**
-     * @description: 将发送的内容记录到数据库
-     * @param String verification_category 发送信息类别
-     * 1:站内信，2:电子邮件，3:短信
-     * @param String recipient 收件人
-     * @param String verification_message 发送的内容
-     * @param Sting api_return_result API结果(可选)
-     * @param String language 使用指定语言发送邮件(可选，默认自动检测)
-     * @return: 
-     */
-    function sendinglog($verification_category,$recipient,$verification_message,$api_return_result=null,$language=null) {
-        
-    }
-    /**
      * @description: 生成邮件内容
+     * @param String userhash 用户哈希
+     * @param String nickname 用户昵称
+     * @param String mailto 收件人邮箱
      * @param String language 使用指定语言发送邮件(可选，默认自动检测)
-     * @return: 
+     * @return Array 多个信息
      */
-    function getmail($nickname,$language=null) {
+    function sendmail($userhash,$nickname,$mailto,$language=null) {
         global $nlcore;
         $language = $nlcore->safe->getlanguage($language);
         $mailtemplatefilepath = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."template".DIRECTORY_SEPARATOR."signupmail.".$language.".html";
@@ -43,12 +33,20 @@ class nyaverification {
             "%%time%%" => $time
         );
         $mailhtml = $nlcore->safe->replacestr($mailhtml,$findreplace);
-        //发送邮件
-
+        //TODO: 发送邮件
+        $api_return_result = null;
         //写入邮件发送记录
-        
-        
-        return [$mailhtml,$appname,$nickname,$endtime,$url,$time];
+        $tableStr = $nlcore->cfg->db->tables["verification_sending_log"];
+        $insertDic = array(
+            "hash" => $userhash,
+            "verification_category" => 2, //1:站内信，2:电子邮件，3:短信
+            "recipient" => $mailto,
+            "verification_message" => $mailhtml,
+            "api_return_result" => $api_return_result
+        );
+        $result = $nlcore->db->insert($tableStr,$insertDic);
+        if ($result[0] >= 2000000) $nlcore->msg->http403(2030101);
+        return [$mailhtml,$vcode];
     }
 }
 ?>

@@ -36,18 +36,42 @@ class nyasignup {
         // if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         //检查输入的是邮箱还是手机号
         $user = $jsonarr["user"];
+        $logintype = 0; //1:手机号 2:邮箱
         if ($nlcore->safe->isPhoneNumCN($user)) {
-            
+            $logintype = 1;
         } else if ($nlcore->safe->isEmail($user)) {
-            
+            $logintype = 2;
         } else {
             die($nlcore->msg->m(1,2020206));
         }
-        $nyaverification = new nyaverification();
-        $nyaverification->getmail();
+        
+
+
+
+
+
+
+        if ($nlcore->safe->isPhoneNumCN($user)) {
+            //注册 users 表
+            //TODO: 短信注册流程
+        } else if ($nlcore->safe->isEmail($user)) {
+            //注册 users 表
+            $nyaverification = new nyaverification();
+            $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
+        } else {
+            die($nlcore->msg->m(1,2020206));
+        }
+
+        //注册 password_protection 表
+
         //注册该用户，设置有效时长
         echo $nlcore->safe->encryptargv($jsonarr,$totpsecret);
     }
+
+    function dbw_users() {
+        
+    }
+
     function isuserempty() {
         global $nlcore;
         $sdata = $nlcore->db->scount($nlcore->cfg->db->tb_user);
