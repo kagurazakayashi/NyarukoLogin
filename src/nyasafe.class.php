@@ -79,10 +79,10 @@ class nyasafe {
     function isEmail($str) {
         if (strlen($str) > 64) return false;
         $checkmail="/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";
-        if(isset($str) && $str!=""){
-            if(preg_match($checkmail,$str)){
+        if(isset($str) && $str!="") {
+            if (preg_match($checkmail,$str)) {
                 return true;
-            }else{
+            } else {
                 return false;
             }
         }

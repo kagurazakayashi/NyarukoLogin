@@ -103,6 +103,27 @@
             return $this->sqlc($sqlcmd);
         }
         /**
+         * @description: 如果有则更新数据，没有则插入数据
+         * @param String tableStr 表名
+         * @param Array<String:String> dataDic 要更新或插入的数据字典
+         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
+        function updateinsert($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
+            $result = $this->scount($tableStr,$whereDic,$customWhere,$whereMode);
+            if ($result[0] >= 2000000) return [$result[0]];
+            $datacount = $result[2][0][0];
+            if ($datacount == 0) {
+                return $this->insert($tableStr,$dataDic);
+            } else if ($datacount == 1) {
+                return $this->update($dataDic,$tableStr,$whereDic,$customWhere,$whereMode);
+            } else {
+                return [2010200];
+            }
+        }
+        /**
          * @description: 删除数据
          * @param String tableStr 表名
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
