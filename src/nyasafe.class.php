@@ -142,6 +142,22 @@ class nyasafe {
         }
     }
     /**
+     * @description: 判断字符类型
+     * @param String str 源字符串
+     * @return Int 0:其他字符 1:数字 2:小写字母 3:大写字母
+     */
+    function chartype($str) {
+        if (preg_match("/^\d*$/",$fgid)) {
+            return 1;
+        } else if (preg_match('/^[a-z]+$/', $str)) {
+            return 2;
+        } else if (preg_match('/^[A-Z]+$/', $str)) {
+            return 3;
+        } else {
+            return 0;
+        }
+    }
+    /**
      * @description: 检查字符串是否仅包含字母和数字并满足指定长度条件
      * @param String str 源字符串
      * @param Int minlen 至少需要多长（可选,默认-1不限制）
@@ -483,6 +499,39 @@ class nyasafe {
         $mod4 = strlen($data) % 4;
         if ($mod4) $data .= substr('====', $mod4);
         return base64_decode($data);
+    }
+    /**
+     * @description: 密码健壮性检查（长度、特定字符长度、字符合法性）
+     * @param String 要检查的密码 
+     * @return Null 有错误直接返回客户端
+     */
+    function strongpassword($password) {
+        global $nlcore;
+        $passwordchar = $this->mbStrSplit($password);
+        $passwordcount = count($passwordchar);
+        $passwordlengthcfg = $nlcore->cfg->verify->passwordlength;
+        if ($passwordcount < $passwordlengthcfg[0] || $passwordcount > $passwordlengthcfg[1]) $nlcore->msg->http403(2030202);
+        $strongpassword = $nlcore->cfg->verify->strongpassword;
+        $passwordsymbol = $nlcore->cfg->verify->passwordsymbol;
+        $passwordsymbol = $this->mbStrSplit($passwordsymbol);
+        $typei = [0,0,0,0]; //0:其他字符 1:数字 2:小写字母 3:大写字母
+        foreach ($passwordchar as $char) {
+            $type = $this->chartype($char);
+            $typei[$type] += 1;
+            if ($type == 0) {
+                $symbolok = false;
+                foreach ($passwordsymbol as $symbol) {
+                    if ($char == $symbol) {
+                        $symbolok = true;
+                        break;
+                    }
+                }
+                if (!$symbolok) $nlcore->msg->http403(2030200); //发现不允许的符号
+            }
+        }
+        if ($typei[0] < $strongpassword["symbol"] || $typei[1] < $strongpassword["num"] || $typei[2] < $strongpassword["lower"] || $typei[3] < $strongpassword["upper"]) {
+            $nlcore->msg->http403(2030201);
+        }
     }
     /**
      * @description: 检查数组中是否包括指定的一组 key

@@ -45,7 +45,7 @@ class nyaverification {
             "api_return_result" => $api_return_result
         );
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->http403(2030101);
+        if ($result[0] >= 2000000) $nlcore->msg->http403(2030201);
         return [$mailhtml,$vcode];
     }
 }
