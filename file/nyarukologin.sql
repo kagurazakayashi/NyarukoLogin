@@ -199,19 +199,19 @@ CREATE TABLE `u1_session_totp` (
 --
 
 CREATE TABLE `u1_users` (
-  `id` int(11) NOT NULL COMMENT 'ID',
+  `id` bigint(20) UNSIGNED NOT NULL COMMENT 'ID',
   `hash` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
-  `name` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户名',
-  `mail` text COLLATE utf8mb4_unicode_520_ci COMMENT '邮箱',
-  `tel` int(11) DEFAULT NULL COMMENT '电话号码',
-  `password_expiration` datetime NOT NULL COMMENT '密码有效期',
-  `2fa` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '两步验证信息',
-  `login_failed_number` int(11) NOT NULL COMMENT '登录失败次数',
-  `session_token` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '会话令牌',
-  `registration_time` datetime NOT NULL COMMENT '账户注册时间',
-  `closing_time` datetime DEFAULT NULL COMMENT '账户到此时间前封禁',
-  `account_error_code` int(11) DEFAULT NULL COMMENT '账户异常状态提示信息ID',
-  `user_group` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '用户组'
+  `name` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户名',
+  `nameid` tinyint(4) UNSIGNED ZEROFILL NOT NULL COMMENT '昵称唯一码',
+  `mail` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '邮箱',
+  `tel` bigint(11) UNSIGNED DEFAULT NULL COMMENT '电话号码',
+  `password_expiration` datetime NOT NULL COMMENT '密码有效期至',
+  `2fa` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '两步验证信息',
+  `login_failed_number` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '登录失败次数',
+  `registration_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户注册时间',
+  `closing_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户到此时间前封禁',
+  `account_error_code` mediumint(7) NOT NULL DEFAULT '0' COMMENT '账户异常状态提示信息ID',
+  `user_group` text COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户组'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户表';
 
 -- --------------------------------------------------------
@@ -423,7 +423,7 @@ ALTER TABLE `u1_session_totp`
 -- 使用表AUTO_INCREMENT `u1_users`
 --
 ALTER TABLE `u1_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID';
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID';
 
 --
 -- 使用表AUTO_INCREMENT `u1_users_information`

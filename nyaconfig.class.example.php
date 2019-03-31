@@ -45,27 +45,45 @@ class nyasetting_db {
         "rdb_password" => "uHJBJd0ZQNh47C9KKlCFBO8y1LXALbUTyZzRakIlTxmy5ja2scR8w3xKpb7s78jA9FwQseFCAO3sz9U0h6jI8IZ9NL1q5XdErsGmyMrjh2XAjai10oboWPYeGx5MrqJ93Hs1IYSsgWTEDTRcLpEazdBNGV32ETmd7ePX78PqgguxkBhHb9p1D9N2Gd6EPz6X5KhrFKilr2rbQTWd1oPexJYSjGLgybjn3UnSUKovXSQkJADihDgpc7MKnXEaBjKuX4ogQrjcJGbxwaMAdYYDdCL0lSggQx7jkVnBEeqxPkk4QyIRbkj1PCEgJIAVv0eauQ88rgUdSlwxYWabw5Dy5kgdjMwkWmD3jeJXRnP5ApHDvgSAhh4JPk3jGsXfn60tkjQPiIkJwsPMLj8nSmyQtDzyOBAZlVvxwCI40DXnc13oAchhoNr5VMLDdG7oSwqyu0BCiYNzleIIQTQc5dBSWMekYhCcLUoeAyZLoHlIRi1nooUYcJUODIOD0gb9MvX3",
         "rdb_id" => 0
     ];
+    var $redis_tables = [
+        "frequencylimitation" => "u1_fl"
+    ];
 }
 
 //应用相关设置
 class nyasetting_app {
     var $debug = 1; //是否输出所有PHP错误,1显示,0禁止,其他数字:按照php.ini中的设定
     var $app = "nyalogin_dev"; //应用名称（纯字母）（预留未实装）
-    var $appname = "nyalogin_test"; //应用描述（预留未实装）
-    var $wwwroot = ""; //所在路径（预留未实装）
+    var $appname = "测试应用1"; //应用描述
+    var $appurl = "http://192.168.2.100/NyarukoLogin/"; //访问网址（/结尾）
     var $jsonlen_get = 2000; //数据（j参数）使用 get 方式提交时允许长度（字节）
     var $jsonlen_post = 1000000; //数据（j参数）使用 post 方式提交时允许长度（字节）
-    var $timezone = 0; //时区补偿（秒），例如 8 * 3600
+    var $timezone = "Asia/Shanghai"; //时区，留空则按照 php.ini
     var $alwayencrypt = false; //强制进行 TOTP/XXTEA 加密
     var $totpcompensate = 0; //TOTP 补偿，需要客户端匹配
-
-    var $frequency = true; //启动接口访问频率限制
+    var $totptimeslice = 1; //TOTP 宽限次数，尝试用之前 x 个验证码尝试解密
+    var $frequency = false; //启动接口访问频率限制
     //各功能时长设定（每个IP地址）：[多少秒内,最多允许访问多少次]
     var $limittime = [
-        "encrypttest" => [60,30],
-        "getlinktotp" => [60,3] //限制 连接加密TOTP申请 接口的访问频率
+        "encrypttest" => [60,30], //测试接口
+        "getlinktotp" => [60,30], //限制 连接加密TOTP申请 接口的访问频率
+        "signup" => [60,30], //提交用户名密码进行注册
+        "captcha" => [60,30], //获取图形验证码
     ];
-
+    //多语言（应和template中的文件名对应），在第一位的为默认语言
+    var $language = ["zh-cn"];
+    //允许使用哪种方式注册，至少开其中一种[邮箱,手机号]
+    var $logintype = [true,true];
+    var $login_mail = true;
+    var $login_phone = true;
+    //默认新用户的
+    var $newuser = [
+        "group" => "user", //用户组
+        "nickname" => "无名氏", //昵称
+        "nicknamelen" => 30, //昵称长度限制
+        "emaillen" => 50, //邮件地址长度限制
+        "pwdexpiration" => 94608000 //密码有效期（秒）
+    ];
     //关键词过滤设置，数据应全转换为小写，将&作为通配符的 json
     //违禁词列表为 JSON 一维数组，每个字符串中可以加「wildcardchar」分隔以同时满足两个条件词。
     var $wordfilter = [
@@ -75,54 +93,51 @@ class nyasetting_app {
         "wildcardchar" => '&', //分隔符，用于同时满足多个条件词。
         "replacechar" => '*', //如果返回和谐后的文字，已屏蔽的字符用此字符替代。
         "maxlength" => 5, //最大分析长度，指定多个条件时，两个条件词之间间隔超过此长度则不判为违规
-        "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]❤❥웃유♋☮✌☏☢☠✔☑♚▲♪✈✞÷↑↓◆◇⊙■□△▽¿─│♥❣♂♀☿Ⓐ✍✉☣☤✘☒♛▼♫⌘☪≈←→◈◎☉★☆⊿※¡━┃♡ღツ☼☁❅♒✎©®™Σ✪✯☭➳卐√↖↗●◐Θ◤◥︻〖〗┄┆℃℉°✿ϟ☃☂✄¢€£∞✫★½✡×↙↘○◑⊕◣◢︼【】┅┇☽☾✚〓▂▃▄▅▆▇█▉▊▋▌▍▎▏↔↕☽☾の•▸◂▴▾┈┊①②③④⑤⑥⑦⑧⑨⑩ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ㍿▓♨♛❖♓☪✙┉┋☹☺☻تヅツッシÜϡﭢ™℠℗©®♥❤❥❣❦❧♡۵웃유ღ♋♂♀☿☼☀☁☂☄☾☽❄☃☈⊙☉℃℉❅✺ϟ☇♤♧♡♢♠♣♥♦☜☞☝✍☚☛☟✌✽✾✿❁❃❋❀⚘☑✓✔√☐☒✗✘ㄨ✕✖✖⋆✢✣✤✥❋✦✧✩✰✪✫✬✭✮✯❂✡★✱✲✳✴✵✶✷✸✹✺✻✼❄❅❆❇❈❉❊†☨✞✝☥☦☓☩☯☧☬☸✡♁✙♆。，、＇：∶；?‘’“”〝〞ˆˇ﹕︰﹔﹖﹑•¨….¸;！´？！～—ˉ｜‖＂〃｀@﹫¡¿﹏﹋﹌︴々﹟#﹩\$﹠﹪%*﹡﹢﹦﹤‐￣¯―﹨ˆ˜﹍﹎+=<＿_-\ˇ~﹉﹊（）〈〉‹›﹛﹜『』〖〗［］《》〔〕{}「」【】︵︷︿︹︽_﹁﹃︻︶︸﹀︺︾ˉ﹂﹄︼☩☨☦✞✛✜✝✙✠✚†‡◉○◌◍◎●◐◑◒◓◔◕◖◗❂☢⊗⊙◘◙◍⅟½⅓⅕⅙⅛⅔⅖⅚⅜¾⅗⅝⅞⅘≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩⊰⊱⋛⋚∫∬∭∮∯∰∱∲∳%℅‰‱㊣㊎㊍㊌㊋㊏㊐㊊㊚㊛㊤㊥㊦㊧㊨㊒㊞㊑㊒㊓㊔㊕㊖㊗㊘㊜㊝㊟㊠㊡㊢㊩㊪㊫㊬㊭㊮㊯㊰㊙㉿囍♔♕♖♗♘♙♚♛♜♝♞♟ℂℍℕℙℚℝℤℬℰℯℱℊℋℎℐℒℓℳℴ℘ℛℭ℮ℌℑℜℨ♪♫♩♬♭♮♯°øⒶ☮✌☪✡☭✯卐✐✎✏✑✒✍✉✁✂✃✄✆✉☎☏➟➡➢➣➤➥➦➧➨➚➘➙➛➜➝➞➸♐➲➳⏎➴➵➶➷➸➹➺➻➼➽←↑→↓↔↕↖↗↘↙↚↛↜↝↞↟↠↡↢↣↤↥↦↧↨➫➬➩➪➭➮➯➱↩↪↫↬↭↮↯↰↱↲↳↴↵↶↷↸↹↺↻↼↽↾↿⇀⇁⇂⇃⇄⇅⇆⇇⇈⇉⇊⇋⇌⇍⇎⇏⇐⇑⇒⇓⇔⇕⇖⇗⇘⇙⇚⇛⇜⇝⇞⇟⇠⇡⇢⇣⇤⇥⇦⇧⇨⇩⇪➀➁➂➃➄➅➆➇➈➉➊➋➌➍➎➏➐➑➒➓㊀㊁㊂㊃㊄㊅㊆㊇㊈㊉ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ⒜⒝⒞⒟⒠⒡⒢⒣⒤⒥⒦⒧⒨⒩⒪⒫⒬⒭⒮⒯⒰⒱⒲⒳⒴⒵ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅬⅭⅮⅯⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹⅺⅻⅼⅽⅾⅿ┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬◤◥◄►▶◀◣◢▲▼◥▸◂▴▾△▽▷◁⊿▻◅▵▿▹◃❏❐❑❒▀▁▂▃▄▅▆▇▉▊▋█▌▍▎▏▐░▒▓▔▕■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯㋀㋁㋂㋃㋄㋅㋆㋇㋈㋉㋊㋋㏠㏡㏢㏣㏤㏥㏦㏧㏨㏩㏪㏫㏬㏭㏮㏯㏰㏱㏲㏳㏴㏵㏶㏷㏸㏹㏺㏻㏼㏽㏾㍙㍚㍛㍜㍝㍞㍟㍠㍡㍢㍣㍤㍥㍦㍧㍨㍩㍪㍫㍬㍭㍮㍯㍰㍘☰☲☱☴☵☶☳☷☯" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
+        "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
     ];
 }
-//邮件发送设置
-class nyasetting_mail {
-    var $enable = false;
-    var $fromEmail = "";
-    var $fromName = "";
-    var $smtpHost = "";
-    var $smtpPort = "";
-    var $fromMail = "";
-    var $username = "";
-    var $password = "";
-    var $charSet = "UTF-8";
-    var $encoding = "base64";
+
+class nyasetting_verify {
+    //图形验证码设置
+    var $captcha = [
+        "captcha" => true, //进行验证码验证
+        "charset" => "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890", //可抽选字符
+        "codelen" => 4, //验证码长度
+        "imgdir" => "tmp", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
+        "imgname" => "captcha_" //验证码图片前缀
+    ];
+    //各种验证码的超时时间
+    var $timeout = [
+        "captcha" => 20, //图形验证码
+        "mail" => 86400
+    ];
+    //密码强度设置，设置的密码必须要有 key 至少 val 个：
+    var $strongpassword = [
+        "upper" => 1,
+        "lower" => 1,
+        "num" => 1,
+        "symbol" => 1
+    ];
+    //密码只能包括以下符号
+    var $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";
+    //密码长度要求，[最少,最多]多少位
+    var $passwordlength = [6,1024];
 }
-//验证码设置
-class nyasetting_vcode {
-    var $verification = true; //进行验证码验证
-	//基于php/内字体路径，可从多个字体中抽选
-    var $font = array("../font/SourceCodePro-Regular.ttf");
-    var $fontsize = 20; //字体大小
-    var $bgchar = "poi"; //背景干扰字符
-    var $charset = "abcdefghkmnprstuvwxyzABCDEFGHKMNPRSTUVWXYZ23456789"; //可抽选字符
-    var $codelen = 4; //验证码长度
-    var $width = 130; //宽度
-    var $height = 50; //高度
-    var $imageformat = "jpg"; // png / jpg / gif / wbmp(不推荐) / xbm(不推荐)
-    var $line_density = 6; //背景线条密度
-    var $bgchar_density = 33; //背景干扰字符密度
-}
+
 //初始化，不要修改
 class nyasetting {
     var $db;
     var $app;
-    var $mail;
-    var $vcode;
+    var $verify;
     function __construct() {
         $this->db = new nyasetting_db();
         $this->app = new nyasetting_app();
-        $this->mail = new nyasetting_mail();
-        $this->vcode = new nyasetting_vcode();
+        $this->verify = new nyasetting_verify();
     }
     function __destruct() {
         $this->db = null; unset($this->db);
         $this->app = null; unset($this->app);
-        $this->mail = null; unset($this->mail);
-        $this->vcode = null; unset($this->vcode);
+        $this->verify = null; unset($this->verify);
     }
 }
 ?>
