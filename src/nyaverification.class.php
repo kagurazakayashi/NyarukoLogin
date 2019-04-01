@@ -17,13 +17,13 @@ class nyaverification {
         $mailhtml = fread($mailtemplatefile,filesize($mailtemplatefilepath));
         fclose($mailtemplatefile);
         //生成结束时间
-        $endtime = date('Y-m-d H:i:s', time()+$nlcore->cfg->verify->timeout["mail"]);
+        $endtime = $nlcore->safe->getdatetime(null,time()+$nlcore->cfg->verify->timeout["mail"])[1];
         //生成验证代码
         $vcode = $nlcore->safe->randstr();
         //生成验证网址
         $url = $nlcore->cfg->app->$appurl.DIRECTORY_SEPARATOR."nyaverification.php?code=".$vcode;
         $appname = $nlcore->cfg->app->appname;
-        $time = date('Y-m-d H:i:s', time());
+        $time = $nlcore->safe->getdatetime()[1];
         //替换字符
         $findreplace = Array(
             "%%appname%%" => $appname,

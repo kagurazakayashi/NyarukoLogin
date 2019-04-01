@@ -24,7 +24,7 @@ class nyacaptcha {
         $totpsecret = $jsonarrTotpsecret[1];
         $totptoken = $jsonarrTotpsecret[2];
         $captchaconf = $nlcore->cfg->verify->captcha;
-        $c_time = date('Y-m-d H:i:s', time());
+        $c_time = $nlcore->safe->getdatetime()[1];
         $c_img = $nlcore->safe->randhash();
         $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
         $imgfile = $captchaconf["imgname"].$c_img.".jpg";

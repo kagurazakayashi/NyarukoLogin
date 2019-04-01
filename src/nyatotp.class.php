@@ -28,8 +28,9 @@ class nyatotp {
         $result = $nlcore->safe->frequencylimitation("getlinktotp");
         if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
         //检查 IP 是否被封禁
-        $time = time(); // + 8 * 3600
-        $stime = date("Y-m-d H:i:s", $time);
+        $time = $nlcore->safe->getdatetime();
+        $stime = $time[1];
+        $time = $time[0];
         $result = $nlcore->safe->chkip($time);
         if ($result[0] != 0) $nlcore->msg->http403($result[0]);
         $ipid = $result[1];

@@ -8,7 +8,6 @@ class nyasafe {
     function is_md5($md5str) {
         return preg_match("/^[a-z0-9]{32}$/", $md5str);
     }
-
     /**
      * @description: 生成一段随机文本
      * @param Int len 生成长度
@@ -17,9 +16,8 @@ class nyasafe {
      */
     function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
         mt_srand($this->seed());
-        $password='';
-        while(strlen($password)<$len)
-            $password.=substr($chars,(mt_rand()%strlen($chars)),1);
+        $password = "";
+        while(strlen($password)<$len) $password .= substr($chars, (mt_rand()%strlen($chars)), 1);
         return $password;
     }
     /**
@@ -40,7 +38,22 @@ class nyasafe {
         $newsalt = (double)microtime()*1000000*getmypid();
         return $newsalt.$salt;
     }
-
+    /**
+     * @description: 获得当前时间
+     * @param String PHP时区代码（可选，默认为配置文件中配置的时区）
+     * @param Int 自定义时间戳（秒）
+     * @return Array[Datetime,String] 返回时间日期对象和时间日期字符串
+     */
+    function getdatetime($timezone=null,$settime=null) {
+        if ($timezone) {
+            $timezone_out = date_default_timezone_get();
+            date_default_timezone_set($timezone);
+        }
+        $timestamp = $settime ? $settime : time();
+        $timestr = date('Y-m-d H:i:s', $timestamp);
+        if ($timezone) date_default_timezone_set($timezone_out);
+        return [$time,$timestr];
+    }
     /**
      * @description: 过滤字符串中的非法字符
      * @param String value 源字符串
@@ -177,14 +190,13 @@ class nyasafe {
      * @return Bool 是否正确
      */
     function isPhoneNumCN($str) {
-        $checkmail="/^1[34578]\d{9}$/";//定义正则表达式
-        if(isset($str) && $str!=""){//判断文本框中是否有值
-            if(preg_match($checkmail,$str)){//用正则表达式函数进行判断
+        $checktel="/^1[34578]\d{9}$/";
+        if(isset($str) && $str != ""){
+            if(preg_match($checktel,$str)){
                 return true;
-            }else{
-                return false;
             }
         }
+        return false;
     }
     /**
      * @description: 判断是否为Base64字符串
@@ -415,8 +427,7 @@ class nyasafe {
         //检查是否为重放
         $this->antireplay($argv["j"]);
         //检查 IP 是否被封禁
-        $time = time();
-        $stime = date("Y-m-d H:i:s", $time);
+        $stime = $nlcore->safe->getdatetime()[1];
         $result = $this->chkip($time);
         if ($result[0] != 0) $nlcore->msg->http403($result[0]);
         $ipid = $result[1];
@@ -556,7 +567,7 @@ class nyasafe {
      * 根据配置中设定的语言支持情况和当前浏览器语言，决定当前要使用的语言代码。
      * 如果找不到所需语言，则采用默认语言。
      * @param String language 指定一个语言 
-     * @return: 
+     * @return String i18n 语言代码
      */
     function getlanguage($language=null) {
         global $nlcore;
