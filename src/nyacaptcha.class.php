@@ -135,6 +135,6 @@ class nyacaptcha {
     }
 
     //TODO: 检索用户名是否需要验证
-    
+
 }
 ?>
