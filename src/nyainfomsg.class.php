@@ -158,6 +158,7 @@ class nyainfomsg {
      * @param String msgmode 输入 totp secret 而不是数字的话，会用此 secret 加密并返回。
      * @param Int code 错误代码
      * @param String str 附加错误信息
+     * @param String totpsecret 加密用secret（不加则自动）
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
     function m($msgmode = 0,$code = 2000000,$str = "") {
@@ -167,7 +168,7 @@ class nyainfomsg {
             "msg" => $this->imsg[$code],
             "info" => $str
         );
-        if ($msgmode == 1) {
+        if (is_numeric($msgmode) && $msgmode == 1) {
             return json_encode($returnarr);
         } else {
             global $nlcore;
@@ -175,17 +176,21 @@ class nyainfomsg {
         }
     }
     /**
-     * @description: 返回信息的同时，抛出403错误，结束程序
+     * @description: 返回信息，或抛出403错误，结束程序
      * @param Int code 错误代码
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
-    function http403($code=null,$showmsg=true) {
-        // header('HTTP/1.1 403 Forbidden');
-        if ($code && $showmsg) {
+    function stopmsg($code=null,$totpsecret=null,$str="",$showmsg=true) {
+        if ($code && $showmsg > 0) {
             global $nlcore;
-            $json = $this->m(1,$code);
+            $msgmode = $totpsecret ? $totpsecret : 1;
+            $json = $this->m($msgmode,$code,"",$totpsecret);
             header('Content-Type:application/json;charset=utf-8');
             echo $json;
+        } else {
+            header('HTTP/1.1 403 Forbidden');
         }
         die();
     }

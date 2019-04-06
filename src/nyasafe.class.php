@@ -52,7 +52,7 @@ class nyasafe {
         $timestamp = $settime ? $settime : time();
         $timestr = date('Y-m-d H:i:s', $timestamp);
         if ($timezone) date_default_timezone_set($timezone_out);
-        return [$time,$timestr];
+        return [$timestamp,$timestr];
     }
     /**
      * @description: 过滤字符串中的非法字符
@@ -223,10 +223,10 @@ class nyasafe {
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordjson = ""; //词库
         if ($wordfilterpcfg["enable"] == 1) { //从 Redis 读入
-            if (!$nlcore->db->initRedis()) $nlcore->msg->http403(2020301);
+            if (!$nlcore->db->initRedis()) $nlcore->msg->stopmsg(2020301);
             $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
         } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
-            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->http403(2020302);
+            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302);
             $wordjson = fread($jfile,filesize($wordfilterpcfg["jsonfile"]));
             fclose($jfile);
         } else {
@@ -386,14 +386,14 @@ class nyasafe {
     /**
      * @description: 从数组创建JSON、加密、base64编码、变体
      * @param String dataarray 要返回到客户端的内容字典
-     * @param String secret totp加密码
+     * @param String secret totp加密码（可选，不加不进行加密，）
      * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
      */
-    function encryptargv($dataarray,$secret="") {
+    function encryptargv($dataarray,$secret=null) {
         global $nlcore;
         //转换为json
         $json = json_encode($dataarray);
-        if ($secret != "") {
+        if ($secret) {
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $numcode = $ga->getCode($secret)+$nlcore->cfg->app->totpcompensate;
@@ -401,8 +401,10 @@ class nyasafe {
             $numcode = md5($secret.$numcode);
             //使用totp数字加密
             $json = xxtea_encrypt($json, $numcode);
+            $returndata = $this->urlb64encode($json);
+            return $returndata;
         }
-        return $this->urlb64encode($json);
+        return $json;
     }
     /**
      * @description: 解析变体、base64解码、解密、解析JSON到数组
@@ -415,21 +417,22 @@ class nyasafe {
         //检查IP访问频率
         if ($module) {
             $result = $this->frequencylimitation($module);
-            if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->jsonlen_get : $nlcore->cfg->app->jsonlen_post;
         if ((isset($argv["t"]) && !$this->is_md5($argv["t"])) || (!isset($argv["t"]) && $nlcore->cfg->app->alwayencrypt) || !isset($argv["j"]) || strlen($argv["j"]) > $jsonlen || !$this->isbase64($argv["j"],true)) {
             header('Content-Type:application/json;charset=utf-8');
-            $nlcore->msg->http403(2020408);
+            $nlcore->msg->stopmsg(2020408);
         }
         //检查是否为重放
         $this->antireplay($argv["j"]);
         //检查 IP 是否被封禁
-        $stime = $nlcore->safe->getdatetime()[1];
-        $result = $this->chkip($time);
-        if ($result[0] != 0) $nlcore->msg->http403($result[0]);
+        $stime = $nlcore->safe->getdatetime();
+        $result = $this->chkip($stime[0]);
+        $stime = $stime[1];
+        if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
         $jsonarr = null;
         $secret = "";
@@ -440,7 +443,7 @@ class nyasafe {
             ];
             $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["session_totp"],$datadic);
             //空或查询失败都视为不正确
-            if (!$result || $result[0] != 1010000 || !isset($result[2][0][0])) $nlcore->msg->http403(2020409);
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0][0])) $nlcore->msg->stopmsg(2020409);
             $secret = $result[2][0][0];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
@@ -460,17 +463,17 @@ class nyasafe {
                     break;
                 }
             }
-            if (!$gaisok) $nlcore->msg->http403(2020411);
+            if (!$gaisok) $nlcore->msg->stopmsg(2020411);
             $jsonarr = json_decode($decrypt_data,true);
         } else {
             $jsonarr = json_decode($this->urlb64decode($argv["j"]),true);
         }
         //解析json
-        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->http403(2020410);
+        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->stopmsg(2020410);
         //检查API版本是否一致
-        if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->http403(2020412);
+        if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
-        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]) == null) $nlcore->msg->http403(2020401);
+        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]) == null) $nlcore->msg->stopmsg(2020401);
         return [$jsonarr,$secret,$argv["t"]];
     }
     /**
@@ -521,7 +524,7 @@ class nyasafe {
         $passwordchar = $this->mbStrSplit($password);
         $passwordcount = count($passwordchar);
         $passwordlengthcfg = $nlcore->cfg->verify->passwordlength;
-        if ($passwordcount < $passwordlengthcfg[0] || $passwordcount > $passwordlengthcfg[1]) $nlcore->msg->http403(2030202);
+        if ($passwordcount < $passwordlengthcfg[0] || $passwordcount > $passwordlengthcfg[1]) $nlcore->msg->stopmsg(2030202);
         $strongpassword = $nlcore->cfg->verify->strongpassword;
         $passwordsymbol = $nlcore->cfg->verify->passwordsymbol;
         $passwordsymbol = $this->mbStrSplit($passwordsymbol);
@@ -537,11 +540,11 @@ class nyasafe {
                         break;
                     }
                 }
-                if (!$symbolok) $nlcore->msg->http403(2030200); //发现不允许的符号
+                if (!$symbolok) $nlcore->msg->stopmsg(2030200); //发现不允许的符号
             }
         }
         if ($typei[0] < $strongpassword["symbol"] || $typei[1] < $strongpassword["num"] || $typei[2] < $strongpassword["lower"] || $typei[3] < $strongpassword["upper"]) {
-            $nlcore->msg->http403(2030201);
+            $nlcore->msg->stopmsg(2030201);
         }
     }
     /**

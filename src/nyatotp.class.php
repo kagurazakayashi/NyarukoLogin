@@ -26,25 +26,25 @@ class nyatotp {
         global $nlcore;
         //检查IP访问频率
         $result = $nlcore->safe->frequencylimitation("getlinktotp");
-        if ($result[0] >= 2000000) $nlcore->msg->http403($result[0]);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
         //检查 IP 是否被封禁
         $time = $nlcore->safe->getdatetime();
         $stime = $time[1];
         $time = $time[0];
         $result = $nlcore->safe->chkip($time);
-        if ($result[0] != 0) $nlcore->msg->http403($result[0]);
+        if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
         //检查应用名称和密钥
-        if (!$nlcore->safe->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $nlcore->msg->http403(2020400);
+        if (!$nlcore->safe->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $nlcore->msg->stopmsg(2020400);
         $datadic = [
             "app_id" => $appname,
             "app_secret" => $appsecret
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["external_app"],$datadic);
-        if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->http403(2020401);
+        if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->stopmsg(2020401);
         //检查APP是否已经注册 $appname,$appsecret
         $appid = $nlcore->safe->chkappsecret($appname,$appsecret);
-        if ($appid == null) $nlcore->msg->http403(2020401);
+        if ($appid == null) $nlcore->msg->stopmsg(2020401);
         //创建新的 totp secret
         $secret = $this->ga->createSecret();
         $numcode = $this->ga->getCode($secret);
@@ -57,7 +57,7 @@ class nyatotp {
         ];
         //如果 secret 或者 apptoken 已存在则删除
         $result = $nlcore->db->delete($nlcore->cfg->db->tables["session_totp"],$datadic,"","OR");
-        if ($result[0] >= 2000000) $nlcore->msg->http403(2020405);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020405);
         //写入 session_totp 表
         $datadic = array(
             "secret" => $secret,
@@ -67,7 +67,7 @@ class nyatotp {
             "time" => $stime
         );
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["session_totp"],$datadic);
-        if ($result[0] >= 2000000) $nlcore->msg->http403(2020406);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
         header('Content-Type:application/json;charset=utf-8');
         echo json_encode(array(
             "code" => 1000000,

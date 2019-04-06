@@ -38,15 +38,15 @@ class nyasignup {
         //检查输入的是邮箱还是手机号
         $nyauser = new nyauser();
         $user = $jsonarr["user"];
-        $logintype = $nyauser->logintype($user); //0:邮箱 1:手机号
+        $logintype = $nyauser->logintype($user,$totpsecret); //0:邮箱 1:手机号
         //检查是否允许使用这种方式注册
-        if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->http403(2040103);
+        if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->stopmsg(2040103,$totpsecret);
         //检查输入格式是否正确
         $newuserconf = $nlcore->cfg->app->newuser;
         if ($logintype == 0 && !$nlcore->safe->isNumberOrEnglishChar(5,$newuserconf["emaillen"],$user)) {
-            $nlcore->msg->http403(2020207);
+            $nlcore->msg->stopmsg(2020207,$totpsecret);
         } else if ($logintype == 1 && !$nlcore->safe->isNumberOrEnglishChar(11,11,$user)) {
-            $nlcore->msg->http403(2020205);
+            $nlcore->msg->stopmsg(2020205,$totpsecret);
         }
         //检查密码强度是否符合规则
         $password = $jsonarr["password"];
@@ -62,7 +62,7 @@ class nyasignup {
                 $nickname = $newuserconf["nickname"].rand(100, 999);
             }
         } else if ($nicknamelen > $newuserconf["nicknamelen"]) { //检查昵称是否太长
-            $nlcore->msg->http403(2040105);
+            $nlcore->msg->stopmsg(2040105,$totpsecret);
         } else {
             $nlcore->safe->wordfilter($nickname); //检查敏感词
         }
@@ -71,32 +71,45 @@ class nyasignup {
         for ($i=0; $i < 10; $i++) { 
             $nameid = rand(0, 9999);
             //检查昵称和状态代码是否重复
-            if (!$nyauser->useralreadyexists(null,$nickname,$nameid)) break;
-            if ($i == 10) $nlcore->msg->http403(2040200);
+            if (!$nyauser->useralreadyexists(null,$nickname,$nameid,$totpsecret)) break;
+            if ($i == 10) $nlcore->msg->stopmsg(2040200,$totpsecret);
         }
         //检查邮箱或者手机号是否已经重复
-        $isalreadyexists = $nyauser->isalreadyexists($logintype,$user);
-        if ($isalreadyexists == 1) $nlcore->msg->http403(2040102);
+        $isalreadyexists = $nyauser->isalreadyexists($logintype,$user,$totpsecret);
+        if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret);
         //分配预设的用户组
         $user_group = $newuserconf["group"];
         //生成密码到期时间
         $password_expiration = time() + $newuserconf["pwdexpiration"];
         $password_expiration = $nyauser->getdatetime(null,$password_expiration)[1];
-        //注册 users,password_protection 表
-
-
-        if ($nlcore->safe->isPhoneNumCN($user)) {
-            
+        //注册 users 表
+        if ($logintype == 0) {
+            // $insertDic["mail"] = $user; //邮件注册流程
+            // $nyaverification = new nyaverification();
+            // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
+        } else if ($logintype == 1) {
+            $insertDic["tel"] = $user; //短信注册流程
             //TODO: 短信注册流程
-        } else if ($nlcore->safe->isEmail($user)) {
-
-            $nyaverification = new nyaverification();
-            $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
-        } else {
-            die($nlcore->msg->m(1,2020206));
         }
 
         //注册 password_protection 表
+        
+
+
+        // $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
+
+
+        // if ($nlcore->safe->isPhoneNumCN($user)) {
+            
+        //     
+        // } else if ($nlcore->safe->isEmail($user)) {
+
+            
+        // } else {
+        //     die($nlcore->msg->m(1,2020206));
+        // }
+
+        
 
         //注册该用户，设置有效时长
         echo $nlcore->safe->encryptargv($jsonarr,$totpsecret);

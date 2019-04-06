@@ -3,16 +3,17 @@ class nyauser {
     /**
      * @description: 检查登录凭据是邮箱还是手机号
      * @param String loginstr 要检查的登录凭据字符串
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Int 0:直接将错误返回给客户端 0:邮箱 1:手机号
      */
-    function logintype($loginstr) {
+    function logintype($loginstr,$totpsecret=null) {
         global $nlcore;
-        if ($nlcore->safe->isPhoneNumCN($user)) {
+        if ($nlcore->safe->isPhoneNumCN($loginstr)) {
             return 1;
-        } else if ($nlcore->safe->isEmail($user)) {
+        } else if ($nlcore->safe->isEmail($loginstr)) {
             return 0;
         } else {
-            die($nlcore->msg->m(1,2020206));
+            $nlcore->msg->stopmsg(2020206,$totpsecret);
             return -1;
         }
     }
@@ -20,23 +21,24 @@ class nyauser {
      * @description: 检查指定信息地址是否已经存在于数据库
      * @param Int logintype 要检查的凭据类型 0:邮箱 1:手机号
      * @param String loginstr 要检查的登录凭据字符串
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Bool 是否已经存在。如果出现多个结果则直接将错误返回客户端
      */
-    function isalreadyexists($logintype,$loginstr) {
+    function isalreadyexists($logintype,$loginstr,$totpsecret=null) {
         global $nlcore;
         $logintypearr = ["mail","tel"];
         $logintypestr = $logintypearr[$logintype];
         $whereDic = [$logintype => $loginstr];
         $result = $this->scount($nlcore->cfg->db->tables["users"],$whereDic);
-        if ($result[0] >= 2000000) $nlcore->msg->http403(2040100);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100,$totpsecret);
         $datacount = $result[2][0][0];
         if ($datacount == 0) {
             return false;
         } else if ($datacount == 1) {
-            // $nlcore->msg->http403(2040102);
+            // $nlcore->msg->stopmsg(2040102,$totpsecret);
             return true;
         } else {
-            $nlcore->msg->http403(2040101);
+            $nlcore->msg->stopmsg(2040101,$totpsecret);
         }
     }
     /**
@@ -45,9 +47,10 @@ class nyauser {
      * 或使用：
      * @param String name 昵称
      * @param String nameid 四位代码
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Bool 是否有此用户
      */
-    function useralreadyexists($mergename=null,$name=null,$nameid=null) {
+    function useralreadyexists($mergename=null,$name=null,$nameid=null,$totpsecret=null) {
         global $nlcore;
         if ($mergename) {
             $namearr = explode("#", $mergename);
@@ -64,7 +67,7 @@ class nyauser {
                 "nameid" => $nameid
             ];
             $result = $this->scount($nlcore->cfg->db->tables["users"],$whereDic);
-            if ($result[0] >= 2000000) $nlcore->msg->http403(2040200);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
             $datacount = $result[2][0][0];
             if ($datacount > 0) return true;
         }
