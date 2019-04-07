@@ -5,7 +5,7 @@ require_once "nyauser.class.php";
 class nyasignup {
     var $nyadbconnect;
     function __construct() {
-        
+
         //TODO: 判断输入的是邮箱还是手机号
         //TODO: 检查验证码是否正确
         //TODO: 检查邮箱或者手机号、昵称格式、长度是否正确
@@ -19,7 +19,7 @@ class nyasignup {
         //TODO: 发送邮件或手机验证码
         //TODO: 注册该用户，提示查收验证码
     }
-    
+
     function adduser() {
         global $nlcore;
         //IP检查和解密客户端提交的信息
@@ -44,9 +44,9 @@ class nyasignup {
         //检查输入格式是否正确
         $newuserconf = $nlcore->cfg->app->newuser;
         if ($logintype == 0 && !$nlcore->safe->isNumberOrEnglishChar(5,$newuserconf["emaillen"],$user)) {
-            $nlcore->msg->stopmsg(2020207,$totpsecret);
+            $nlcore->msg->stopmsg(2020207,$totpsecret,$user);
         } else if ($logintype == 1 && !$nlcore->safe->isNumberOrEnglishChar(11,11,$user)) {
-            $nlcore->msg->stopmsg(2020205,$totpsecret);
+            $nlcore->msg->stopmsg(2020205,$totpsecret,$user);
         }
         //检查密码强度是否符合规则
         $password = $jsonarr["password"];
@@ -62,61 +62,78 @@ class nyasignup {
                 $nickname = $newuserconf["nickname"].rand(100, 999);
             }
         } else if ($nicknamelen > $newuserconf["nicknamelen"]) { //检查昵称是否太长
-            $nlcore->msg->stopmsg(2040105,$totpsecret);
+            $nlcore->msg->stopmsg(2040105,$totpsecret,$nickname);
         } else {
             $nlcore->safe->wordfilter($nickname); //检查敏感词
         }
         //生成账户代码，遇到重复的重试10次
         $nameid = 0;
-        for ($i=0; $i < 10; $i++) { 
+        for ($i=0; $i < 10; $i++) {
             $nameid = rand(0, 9999);
             //检查昵称和状态代码是否重复
             if (!$nyauser->useralreadyexists(null,$nickname,$nameid,$totpsecret)) break;
-            if ($i == 10) $nlcore->msg->stopmsg(2040200,$totpsecret);
+            if ($i == 10) $nlcore->msg->stopmsg(2040200,$totpsecret,$nickname."#".$nameid);
         }
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nyauser->isalreadyexists($logintype,$user,$totpsecret);
-        if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret);
+        if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret,$user);
         //分配预设的用户组
-        $user_group = $newuserconf["group"];
+        $usergroup = $newuserconf["group"];
         //生成密码到期时间
-        $password_expiration = time() + $newuserconf["pwdexpiration"];
-        $password_expiration = $nyauser->getdatetime(null,$password_expiration)[1];
+        $datetime = $nlcore->safe->getdatetime();
+        $pwdend = $datetime[0] + $newuserconf["pwdexpiration"];
+        $pwdend = $nyauser->getdatetime(null,$pwdend)[1];
+        $timestr = $datetime[1];
+        //加密密码: 原文+自定义盐+注册时间戳 的 MD6
+        $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($datetime[0]);
+        $passwordhash = $nlcore->safe->md6($passwordhash);
         //注册 users 表
         if ($logintype == 0) {
-            // $insertDic["mail"] = $user; //邮件注册流程
+            $insertDic["mail"] = $user; //邮件注册流程
             // $nyaverification = new nyaverification();
             // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
+
         } else if ($logintype == 1) {
             $insertDic["tel"] = $user; //短信注册流程
             //TODO: 短信注册流程
         }
+        //生成唯一哈希
+        $hash = $nlcore->safe->randstr(64);
+        // $hash = $nlcore->safe->md6($datetime[0]);
+        // 检查哈希是否存在
+        $insertDic = [
+            "hash" => $hash,
+            "name" => $nickname,
+            "nameid" => $nameid,
+            "pwd" => $passwordhash,
+            "pwdend" => $pwdend,
+            "regtime" => $timestr,
+            "enabletime" => $timestr,
+            "usergroup" => $usergroup
+        ];
+        // $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
 
         //注册 password_protection 表
-        
-
-
-        // $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
 
 
         // if ($nlcore->safe->isPhoneNumCN($user)) {
-            
-        //     
+
+        //
         // } else if ($nlcore->safe->isEmail($user)) {
 
-            
+
         // } else {
         //     die($nlcore->msg->m(1,2020206));
         // }
 
-        
+
 
         //注册该用户，设置有效时长
         echo $nlcore->safe->encryptargv($jsonarr,$totpsecret);
     }
 
     function dbw_users() {
-        
+
     }
 
     function isuserempty() {

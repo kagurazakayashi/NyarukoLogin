@@ -5,8 +5,25 @@ class nyasafe {
      * @param String 需要判断的字符串
      * @return Int 是否匹配 > 0 || != false
      */
-    function is_md5($md5str) {
-        return preg_match("/^[a-z0-9]{32}$/", $md5str);
+    function is_md5($str) {
+        return preg_match("/^[a-z0-9]{32}$/", $str);
+    }
+    /**
+     * @description: 是否为MD6
+     * @param String 需要判断的字符串
+     * @return Int 是否匹配 > 0 || != false
+     */
+    function is_md6($str) {
+        return preg_match("/^[a-z0-9]{64}$/", $str);
+    }
+    /**
+     * @description: 取MD6哈希值
+     * @param String 要进行哈希的字符串
+     * @return String 64位MD6哈希值
+     */
+    function md6($str) {
+        $md6 = new md6hash();
+        return $md6->hex($str);
     }
     /**
      * @description: 生成一段随机文本
@@ -516,7 +533,7 @@ class nyasafe {
     }
     /**
      * @description: 密码健壮性检查（长度、特定字符长度、字符合法性）
-     * @param String 要检查的密码 
+     * @param String 要检查的密码
      * @return Null 有错误直接返回客户端
      */
     function strongpassword($password) {
@@ -569,7 +586,7 @@ class nyasafe {
      * @description: 获得需要使用的语言
      * 根据配置中设定的语言支持情况和当前浏览器语言，决定当前要使用的语言代码。
      * 如果找不到所需语言，则采用默认语言。
-     * @param String language 指定一个语言 
+     * @param String language 指定一个语言
      * @return String i18n 语言代码
      */
     function getlanguage($language=null) {
@@ -602,7 +619,7 @@ class nyasafe {
         //指令MD5
         //$jhash = md5($jstr);
         //查询是否是重放
-        
+
         //写入记录
     }
 }

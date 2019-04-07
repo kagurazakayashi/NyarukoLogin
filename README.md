@@ -39,4 +39,4 @@ pip3 install xxtea-py cffi
 ```
 
 # 更多信息
-[请转至 Wiki](wiki)
+## [请转至 Wiki](https://github.com/kagurazakayashi/NyarukoLogin/wiki)

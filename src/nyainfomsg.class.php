@@ -186,7 +186,7 @@ class nyainfomsg {
         if ($code && $showmsg > 0) {
             global $nlcore;
             $msgmode = $totpsecret ? $totpsecret : 1;
-            $json = $this->m($msgmode,$code,"",$totpsecret);
+            $json = $this->m($msgmode,$code,$str,$totpsecret);
             header('Content-Type:application/json;charset=utf-8');
             echo $json;
         } else {
