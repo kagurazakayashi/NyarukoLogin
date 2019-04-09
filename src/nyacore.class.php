@@ -28,8 +28,7 @@ class nyacore {
         if ($this->cfg->app->timezone != "") date_default_timezone_set($this->cfg->app->timezone);
     }
     function __destruct() {
-        $this->cfg = null;
-        unset($this->cfg);
+        $this->cfg = null; unset($this->cfg);
         $this->msg = null; unset($this->msg);
         $this->db = null; unset($this->db);
         $this->safe = null; unset($this->safe);

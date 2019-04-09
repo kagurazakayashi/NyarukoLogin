@@ -16,33 +16,6 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- 表的结构 `stopword`
---
-
-CREATE TABLE `stopword` (
-  `id` int(11) NOT NULL COMMENT '序号',
-  `word` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '敏感词',
-  `time` date NOT NULL COMMENT '添加日期',
-  `enable` tinyint(1) NOT NULL COMMENT '是否启用'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='敏感词表';
-
--- --------------------------------------------------------
-
---
--- 表的结构 `test`
---
-
-CREATE TABLE `test` (
-  `id` int(11) NOT NULL COMMENT 'ID',
-  `t_name` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '名称',
-  `t_value` int(11) DEFAULT '0' COMMENT '值',
-  `t_text` text COLLATE utf8mb4_unicode_520_ci COMMENT '描述',
-  `t_time` datetime DEFAULT NULL COMMENT '时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='测试';
-
--- --------------------------------------------------------
-
---
 -- 表的结构 `u1_business`
 --
 
@@ -83,6 +56,31 @@ CREATE TABLE `u1_external_app` (
   `app_secret` varchar(32) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT 'APP密钥',
   `app_allback_secretc` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT 'APP回调密钥'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='外部程序表';
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `u1_group_list`
+--
+
+CREATE TABLE `u1_group_list` (
+  `id` int(11) NOT NULL COMMENT 'ID',
+  `user_group_name` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户组唯一名称',
+  `user_group_describe` text COLLATE utf8mb4_unicode_520_ci COMMENT '用户组描述',
+  `jurisdiction` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '该用户组所具有的权限'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户组表';
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `u1_group_user`
+--
+
+CREATE TABLE `u1_group_user` (
+  `id` bigint(20) NOT NULL,
+  `userhash` char(64) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `groupid` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户组成员表';
 
 -- --------------------------------------------------------
 
@@ -133,24 +131,29 @@ CREATE TABLE `u1_jurisdiction` (
 
 CREATE TABLE `u1_password_protection` (
   `id` int(11) NOT NULL COMMENT 'ID',
-  `hash` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
-  `mail` text COLLATE utf8mb4_unicode_520_ci COMMENT '邮箱',
-  `mail_verification_code` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '邮箱验证码',
-  `mail_verification_code_term_of_validity` datetime DEFAULT NULL COMMENT '邮箱验证码审核有效期',
-  `mail_verification_date_of_success` datetime DEFAULT NULL COMMENT '邮箱验证成功日期',
-  `phone_number` int(11) DEFAULT NULL COMMENT '手机号码',
-  `phone_numbe_verification_code` int(6) DEFAULT NULL COMMENT '手机验证码',
-  `phone_numbe_verification_code_term_of_validity` datetime DEFAULT NULL COMMENT '手机验证码审核有效期',
-  `phone_number_verification_date_of_success` datetime DEFAULT NULL COMMENT '手机验证成功日期',
-  `password` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '密码',
-  `password_protectioncol_problem` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护问题',
-  `password_protectioncol_answer` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护回答',
-  `dynamic_password_token` varchar(45) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '动态密码Token',
-  `dynamic_password_verification_code_term_of_validity` datetime DEFAULT NULL COMMENT '动态密码审核有效期',
-  `dynamic_password_verification_date_of_success` datetime DEFAULT NULL COMMENT '动态密码成功日期',
-  `recovery_code1` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `recovery_code2` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `recovery_code3` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL
+  `userhash` char(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
+  `realname` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '真实姓名',
+  `idtype` tinyint(3) UNSIGNED DEFAULT '0' COMMENT '身份证明类别',
+  `idok` datetime DEFAULT NULL COMMENT '实名认证通过日期',
+  `idnumber` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '身份证号',
+  `mailvcode` char(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '邮箱验证码',
+  `mailvcodeend` datetime DEFAULT NULL COMMENT '邮箱验证码审核有效期',
+  `mailvcodeok` datetime DEFAULT NULL COMMENT '邮箱验证成功日期',
+  `smsvcode` int(6) UNSIGNED ZEROFILL DEFAULT NULL COMMENT '手机验证码',
+  `smsvcodeend` datetime DEFAULT NULL COMMENT '手机验证码审核有效期',
+  `smsvcodeok` datetime DEFAULT NULL COMMENT '手机验证成功日期',
+  `question1` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护问题1',
+  `question2` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护问题2',
+  `question3` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护问题3',
+  `answer1` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护答案1',
+  `answer2` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护答案2',
+  `answer3` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '密码保护答案3',
+  `totp` char(32) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT 'TOTP验证码',
+  `recovery1` char(25) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '恢复代码1',
+  `recovery2` char(25) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '恢复代码2',
+  `recovery3` char(25) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '恢复代码3',
+  `recovery4` char(25) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '恢复代码4',
+  `recovery5` char(25) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '恢复代码5'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='密保表';
 
 -- --------------------------------------------------------
@@ -200,18 +203,16 @@ CREATE TABLE `u1_session_totp` (
 
 CREATE TABLE `u1_users` (
   `id` bigint(20) UNSIGNED NOT NULL COMMENT 'ID',
-  `hash` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
-  `name` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户名',
-  `nameid` tinyint(4) UNSIGNED ZEROFILL NOT NULL COMMENT '昵称唯一码',
+  `hash` char(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
   `mail` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '邮箱',
   `tel` bigint(11) UNSIGNED DEFAULT NULL COMMENT '电话号码',
-  `password_expiration` datetime NOT NULL COMMENT '密码有效期至',
+  `pwd` char(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '密码',
+  `pwdend` datetime NOT NULL COMMENT '密码有效期至',
   `2fa` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '两步验证信息',
-  `login_failed_number` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '登录失败次数',
-  `registration_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户注册时间',
-  `closing_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户到此时间前封禁',
-  `account_error_code` mediumint(7) NOT NULL DEFAULT '0' COMMENT '账户异常状态提示信息ID',
-  `user_group` text COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户组'
+  `fail` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '登录失败次数',
+  `regtime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户注册时间',
+  `enabletime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账户到此时间前封禁',
+  `errorcode` mediumint(7) NOT NULL DEFAULT '0' COMMENT '账户异常状态提示信息ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户表';
 
 -- --------------------------------------------------------
@@ -222,28 +223,17 @@ CREATE TABLE `u1_users` (
 
 CREATE TABLE `u1_users_information` (
   `id` int(11) NOT NULL COMMENT 'ID',
-  `hash` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
-  `nickname` varchar(30) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '昵称',
+  `type` tinyint(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '账户哈希类型',
+  `userhash` char(64) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
+  `name` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '昵称',
+  `nameid` tinyint(4) UNSIGNED ZEROFILL NOT NULL COMMENT '昵称唯一码',
   `genders` tinyint(2) NOT NULL DEFAULT '0' COMMENT '性别',
   `address` text COLLATE utf8mb4_unicode_520_ci COMMENT '地址',
-  `brief_introduction` text COLLATE utf8mb4_unicode_520_ci COMMENT '简介',
-  `introduction` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '介绍',
+  `profile` text COLLATE utf8mb4_unicode_520_ci COMMENT '签名',
+  `description` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '个人介绍',
   `image_file` text COLLATE utf8mb4_unicode_520_ci COMMENT '头像文件路径',
   `background_file` text COLLATE utf8mb4_unicode_520_ci COMMENT '横幅图片文件路径'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户信息表';
-
--- --------------------------------------------------------
-
---
--- 表的结构 `u1_user_group`
---
-
-CREATE TABLE `u1_user_group` (
-  `id` int(11) NOT NULL COMMENT 'ID',
-  `user_group_name` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '用户组唯一名称',
-  `user_group_describe` text COLLATE utf8mb4_unicode_520_ci COMMENT '用户组描述',
-  `jurisdiction` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '该用户组所具有的权限'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户组表';
 
 -- --------------------------------------------------------
 
@@ -266,18 +256,6 @@ CREATE TABLE `u1_verification_sending_log` (
 --
 
 --
--- 表的索引 `stopword`
---
-ALTER TABLE `stopword`
-  ADD PRIMARY KEY (`id`);
-
---
--- 表的索引 `test`
---
-ALTER TABLE `test`
-  ADD PRIMARY KEY (`id`,`t_name`);
-
---
 -- 表的索引 `u1_business`
 --
 ALTER TABLE `u1_business`
@@ -294,6 +272,18 @@ ALTER TABLE `u1_change`
 --
 ALTER TABLE `u1_external_app`
   ADD PRIMARY KEY (`id`,`app_id`);
+
+--
+-- 表的索引 `u1_group_list`
+--
+ALTER TABLE `u1_group_list`
+  ADD PRIMARY KEY (`id`,`user_group_name`);
+
+--
+-- 表的索引 `u1_group_user`
+--
+ALTER TABLE `u1_group_user`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- 表的索引 `u1_integral`
@@ -317,7 +307,7 @@ ALTER TABLE `u1_jurisdiction`
 -- 表的索引 `u1_password_protection`
 --
 ALTER TABLE `u1_password_protection`
-  ADD PRIMARY KEY (`id`,`hash`);
+  ADD PRIMARY KEY (`id`,`userhash`);
 
 --
 -- 表的索引 `u1_session_token`
@@ -341,13 +331,7 @@ ALTER TABLE `u1_users`
 -- 表的索引 `u1_users_information`
 --
 ALTER TABLE `u1_users_information`
-  ADD PRIMARY KEY (`id`,`hash`);
-
---
--- 表的索引 `u1_user_group`
---
-ALTER TABLE `u1_user_group`
-  ADD PRIMARY KEY (`id`,`user_group_name`);
+  ADD PRIMARY KEY (`id`,`userhash`);
 
 --
 -- 表的索引 `u1_verification_sending_log`
@@ -358,12 +342,6 @@ ALTER TABLE `u1_verification_sending_log`
 --
 -- 在导出的表使用AUTO_INCREMENT
 --
-
---
--- 使用表AUTO_INCREMENT `test`
---
-ALTER TABLE `test`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID';
 
 --
 -- 使用表AUTO_INCREMENT `u1_business`
@@ -382,6 +360,12 @@ ALTER TABLE `u1_change`
 --
 ALTER TABLE `u1_external_app`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID';
+
+--
+-- 使用表AUTO_INCREMENT `u1_group_user`
+--
+ALTER TABLE `u1_group_user`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- 使用表AUTO_INCREMENT `u1_integral`

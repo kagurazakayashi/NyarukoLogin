@@ -33,7 +33,8 @@ class nyasetting_db {
         "session_token" => "u1_session_token", //会话令牌表
         "users" => "u1_users", //用户表
         "users_information" => "u1_users_information", //用户信息表
-        "user_group" => "u1_user_group", //用户组表
+        "group_list" => "u1_group_list", //用户组列表
+        "group_user" => "u1_group_user", //用户组成员表
         "verification_sending_log" => "u1_verification_sending_log", //验证信息发送日志
         "session_totp" => "u1_session_totp", //通信动态密码
     ];

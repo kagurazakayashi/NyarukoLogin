@@ -66,17 +66,30 @@ class nyasignup {
         } else {
             $nlcore->safe->wordfilter($nickname); //检查敏感词
         }
-        //生成账户代码，遇到重复的重试10次
-        $nameid = 0;
-        for ($i=0; $i < 10; $i++) {
-            $nameid = rand(0, 9999);
-            //检查昵称和状态代码是否重复
-            if (!$nyauser->useralreadyexists(null,$nickname,$nameid,$totpsecret)) break;
-            if ($i == 10) $nlcore->msg->stopmsg(2040200,$totpsecret,$nickname."#".$nameid);
-        }
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nyauser->isalreadyexists($logintype,$user,$totpsecret);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret,$user);
+        //生成账户代码，遇到重复的重试10次
+        $nameid = null;
+        for ($i=0; $i < 10; $i++) {
+            $nameid = rand(0, 9999);
+            //检查昵称和状态代码是否重复
+            $exists = $nyauser->useralreadyexists(null,$nickname,$nameid,$totpsecret);
+            if ($exists) $nameid = null;
+            else break;
+        }
+        if ($nameid == null) $nlcore->msg->stopmsg(2040200,$totpsecret,$nickname."#".$nameid);
+        //生成唯一哈希，遇到重复的重试10次
+        $hash = null;
+        for ($i=0; $i < 10; $i++) {
+            $hash = $nlcore->safe->randstr(64);
+            // $hash = $nlcore->safe->md6($datetime[0]);
+            // 检查哈希是否存在
+            $exists = $nyauser->isalreadyexists(2,$hash,$totpsecret);
+            if ($exists) $hash = null;
+            else break;
+        }
+        if ($hash == null) $nlcore->msg->stopmsg(2040107,$totpsecret);
         //分配预设的用户组
         $usergroup = $newuserconf["group"];
         //生成密码到期时间
@@ -88,39 +101,48 @@ class nyasignup {
         $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($datetime[0]);
         $passwordhash = $nlcore->safe->md6($passwordhash);
         //注册 users 表
+        $insertDic = [
+            "hash" => $hash,
+            "pwd" => $passwordhash,
+            "pwdend" => $pwdend,
+            "regtime" => $timestr,
+            "enabletime" => $timestr
+        ];
         if ($logintype == 0) {
             $insertDic["mail"] = $user; //邮件注册流程
             // $nyaverification = new nyaverification();
             // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
-
         } else if ($logintype == 1) {
             $insertDic["tel"] = $user; //短信注册流程
             //TODO: 短信注册流程
         }
-        //生成唯一哈希
-        $hash = $nlcore->safe->randstr(64);
-        // $hash = $nlcore->safe->md6($datetime[0]);
-        // 检查哈希是否存在
-        $insertDic = [
-            "hash" => $hash,
-            "name" => $nickname,
-            "nameid" => $nameid,
-            "pwd" => $passwordhash,
-            "pwdend" => $pwdend,
-            "regtime" => $timestr,
-            "enabletime" => $timestr,
-            "usergroup" => $usergroup
-        ];
         // $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
 
-        //注册 password_protection 表
+        //注册 group_user 表
+        $insertDic = [
+            "userhash" => $hash,
+            "groupid" => $usergroup
+        ];
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["group_list"],$insertDic);
 
+        //注册 password_protection 表
+        $insertDic = [
+            "userhash" => $hash
+        ];
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["password_protection"],$insertDic);
+
+        //注册 users_information 表
+        $insertDic = [
+            "userhash" => $hash,
+            "name" => $nickname,
+            "nameid" => $nameid
+        ];
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["users_information"],$insertDic);
 
         // if ($nlcore->safe->isPhoneNumCN($user)) {
 
         //
         // } else if ($nlcore->safe->isEmail($user)) {
-
 
         // } else {
         //     die($nlcore->msg->m(1,2020206));

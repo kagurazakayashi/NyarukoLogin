@@ -19,14 +19,14 @@ class nyauser {
     }
     /**
      * @description: 检查指定信息地址是否已经存在于数据库
-     * @param Int logintype 要检查的凭据类型 0:邮箱 1:手机号
+     * @param Int logintype 要检查的凭据类型 0:邮箱 1:手机号 2:哈希
      * @param String loginstr 要检查的登录凭据字符串
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Bool 是否已经存在。如果出现多个结果则直接将错误返回客户端
      */
     function isalreadyexists($logintype,$loginstr,$totpsecret=null) {
         global $nlcore;
-        $logintypearr = ["mail","tel"];
+        $logintypearr = ["mail","tel","hash"];
         $logintypestr = $logintypearr[$logintype];
         $whereDic = [$logintype => $loginstr];
         $result = $this->scount($nlcore->cfg->db->tables["users"],$whereDic);
@@ -66,7 +66,7 @@ class nyauser {
                 "name" => $nickname,
                 "nameid" => $nameid
             ];
-            $result = $this->scount($nlcore->cfg->db->tables["users"],$whereDic);
+            $result = $this->scount($nlcore->cfg->db->tables["users_information"],$whereDic);
             if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
             $datacount = $result[2][0][0];
             if ($datacount > 0) return true;
