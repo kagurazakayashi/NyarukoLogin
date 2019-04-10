@@ -66,7 +66,7 @@ class nyauser {
                 "name" => $nickname,
                 "nameid" => $nameid
             ];
-            $result = $this->scount($nlcore->cfg->db->tables["users_information"],$whereDic);
+            $result = $this->scount($nlcore->cfg->db->tables["info"],$whereDic);
             if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
             $datacount = $result[2][0][0];
             if ($datacount > 0) return true;

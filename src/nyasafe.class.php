@@ -289,7 +289,7 @@ class nyasafe {
         //检查IP是否被封禁
         $datadic = ["ip_address" => $_SERVER['REMOTE_ADDR']];
         if ($proxyaddr != "") $datadic["proxy_ip_address"] = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        $table = $nlcore->cfg->db->tables["ip_address"];
+        $table = $nlcore->cfg->db->tables["ip"];
         $result = $nlcore->db->select(["id","closing_time"],$table,$datadic,"","OR");
         $ipid = null;
         if ($result[0] == 1010000) {
@@ -322,7 +322,7 @@ class nyasafe {
      */
     function chkappsecret($appname,$appsecret) {
         global $nlcore;
-        $table = $nlcore->cfg->db->tables["external_app"];
+        $table = $nlcore->cfg->db->tables["app"];
         $whereDic = array(
             "app_id" => $appname,
             "app_secret" => $appsecret
@@ -458,7 +458,7 @@ class nyasafe {
             $datadic = [
                 "apptoken" => $argv["t"]
             ];
-            $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["session_totp"],$datadic);
+            $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
             //空或查询失败都视为不正确
             if (!$result || $result[0] != 1010000 || !isset($result[2][0][0])) $nlcore->msg->stopmsg(2020409);
             $secret = $result[2][0][0];

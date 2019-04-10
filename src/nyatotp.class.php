@@ -40,7 +40,7 @@ class nyatotp {
             "app_id" => $appname,
             "app_secret" => $appsecret
         ];
-        $result = $nlcore->db->scount($nlcore->cfg->db->tables["external_app"],$datadic);
+        $result = $nlcore->db->scount($nlcore->cfg->db->tables["app"],$datadic);
         if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->stopmsg(2020401);
         //检查APP是否已经注册 $appname,$appsecret
         $appid = $nlcore->safe->chkappsecret($appname,$appsecret);
@@ -56,7 +56,7 @@ class nyatotp {
             "apptoken" => $apptoken
         ];
         //如果 secret 或者 apptoken 已存在则删除
-        $result = $nlcore->db->delete($nlcore->cfg->db->tables["session_totp"],$datadic,"","OR");
+        $result = $nlcore->db->delete($nlcore->cfg->db->tables["totp"],$datadic,"","OR");
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020405);
         //写入 session_totp 表
         $datadic = array(
@@ -66,7 +66,7 @@ class nyatotp {
             "appid" => $appid,
             "time" => $stime
         );
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["session_totp"],$datadic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"],$datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
         header('Content-Type:application/json;charset=utf-8');
         echo json_encode(array(

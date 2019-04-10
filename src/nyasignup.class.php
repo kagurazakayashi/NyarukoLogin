@@ -116,28 +116,36 @@ class nyasignup {
             $insertDic["tel"] = $user; //短信注册流程
             //TODO: 短信注册流程
         }
-        // $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
 
-        //注册 group_user 表
+        //注册 usergroup 表
         $insertDic = [
             "userhash" => $hash,
             "groupid" => $usergroup
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["group_list"],$insertDic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["usergroup"],$insertDic);
 
-        //注册 password_protection 表
+        //注册 protection 表
         $insertDic = [
             "userhash" => $hash
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["password_protection"],$insertDic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["protection"],$insertDic);
 
-        //注册 users_information 表
+        //注册 info 表
         $insertDic = [
             "userhash" => $hash,
             "name" => $nickname,
             "nameid" => $nameid
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["users_information"],$insertDic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["info"],$insertDic);
+
+        //记录 history 表
+        $insertDic = [
+            "userhash" => $hash,
+            "name" => $nickname,
+            "nameid" => $nameid
+        ];
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["history"],$insertDic);
 
         // if ($nlcore->safe->isPhoneNumCN($user)) {
 
