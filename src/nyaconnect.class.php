@@ -4,14 +4,14 @@
         private $conW = null; //可写入数据库
         private $conK = null; //关键词数据库
         private $con = null; //当前 MySQL 数据库（指针变量）
+        private $logtofile = false; //记录详细调试信息到文件
         public $redis = null; //当前 Redis 数据库
-        public $debug = false; //输出SQL语句和连接的建立与断开信息
         /**
          * @description: 初始化可写入数据库，按需建立SQL连接
          */
         function initWriteDbs() {
             global $nlcore;
-            if ($this->debug) echo "[SQL-W]";
+            $this->log("[CONNECT] read-write mode.");
             if (!$this->conW) $this->conW = $this->initMysqli($nlcore->cfg->db->write_dbs);
             $this->con = &$this->conW;
         }
@@ -20,7 +20,7 @@
          */
         function initReadDbs() {
             global $nlcore;
-            if ($this->debug) echo "[SQL-R]";
+            $this->log("[CONNECT] read-only mode.");
             if (!$this->conR) $this->conR = $this->initMysqli($nlcore->cfg->db->read_dbs);
             $this->con = &$this->conR;
         }
@@ -29,7 +29,7 @@
          */
         function initStopwordDbs() {
             global $nlcore;
-            if ($this->debug) echo "[SQL-K]";
+            $this->log("[CONNECT] stopword db.");
             if (!$this->conK) $this->conK = $this->initMysqli($nlcore->cfg->db->stopword_dbs);
             $this->con = &$this->conK;
         }
@@ -45,16 +45,36 @@
                 //TODO: 使用Redis进行顺序式数据库选择
                 $dbid = rand(0, $selectdbscount-1);
                 $selectdb = $selectdbs[$dbid];
+                $this->log("[CONNECT] ".$selectdb["db_user"]."@".$selectdb["db_host"].":".$selectdb["db_port"]."/".$selectdb["db_name"]);
                 $newcon = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
                 $sqlerrno = mysqli_connect_errno($newcon);
                 if ($sqlerrno) {
+                    $this->log("[ERROR] ".$sqlerrno);
                     die($nlcore->msg->m(1,2010100,$sqlerrno));
                 }
                 return $newcon;
             } else {
+                $this->log("[ERROR] ".$sqlerrno);
                 die($nlcore->msg->m(1,2010103,$sqlerrno));
             }
             return null;
+        }
+        /**
+         * @description: 将每条SQL语句和返回内容记录在日志文件中，通过 nyaconfig 中的此项设置来进行调试。
+         * @param String logstr 要记录的字符串
+         */
+        function log($logstr) {
+            global $nlcore;
+            if (!isset($nlcore->cfg->db->logfile)) return;
+            $logfile = $nlcore->cfg->db->logfile;
+            if ($logfile) {
+                $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
+                $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
+                $logstr = "[".$nlcore->safe->getdatetime()[1]."][".$ipaddr.$proxyaddr."]".$logstr.PHP_EOL;
+                $fp = fopen($logfile,"a");
+                fwrite($fp,$logstr.PHP_EOL);
+                fclose($fp);
+            }
         }
         /**
          * @description: 查询数据
@@ -166,17 +186,17 @@
          */
         function closemysql() {
             if ($this->conR) {
-                if ($this->debug) echo "[/SQL-R]";
+                $this->log("[CLOSE] read-only mode.");
                 mysqli_close($this->conR);
                 $this->conR = null;
             }
             if ($this->conW) {
-                if ($this->debug) echo "[/SQL-W]";
+                $this->log("[CLOSE] read-write mode.");
                 mysqli_close($this->conW);
                 $this->conW = null;
             }
             if ($this->conK) {
-                if ($this->debug) echo "[/SQL-K]";
+                $this->log("[CLOSE] stopword db.");
                 mysqli_close($this->conK);
                 $this->conK = null;
             }
@@ -188,7 +208,7 @@
          */
         function sqlc($sqlcmd) {
             global $nlcore;
-            if ($this->debug) echo "[SQL]".$sqlcmd."[/SQL]";
+            $this->log("[QUERY] ".$sqlcmd);
             $result = mysqli_query($this->con,$sqlcmd);
             if ($result) {
                 $insertid = mysqli_insert_id($this->con);
@@ -201,16 +221,21 @@
                     }
                     if($result_array) {
                         if (count($result_array) > 0) {
+                            $this->log("[INFO] CODE:1010000, ID:".$insertid);
+                            $this->log("[RESULT] ".var_export($result_array,true));
                             return [1010000,$insertid,$result_array];
                         } else {
+                            $this->log("[ERROR] arraycount == 0");
                             die($nlcore->msg->m(1,2010102));
                         }
                     }
                 } else {
+                    $this->log("[INFO] CODE:1010001, ID:".$insertid);
+                    $this->log("[RESULT] (null)");
                     return [1010001,$insertid];
                 }
             } else {
-                if ($this->debug) echo "[SQLERR]".mysqli_connect_error()."[/SQLERR]";
+                $this->log("[ERROR] ".mysqli_connect_error());
                 die($nlcore->msg->m(1,2010101));
             }
         }
@@ -291,13 +316,10 @@
          */
         function __destruct() {
             $this->closemysql();
-            $this->mode = null;
-            $this->debug = null;
-            $this->redis = null;
-            unset($this->con);
-            unset($this->mode);
-            unset($this->debug);
-            unset($this->redis);
+            $this->con = null; unset($this->con);
+            $this->mode = null; unset($this->mode);
+            $this->redis = null; unset($this->redis);
+            $this->logtofile = null; unset($this->logtofile);
         }
     }
 ?>

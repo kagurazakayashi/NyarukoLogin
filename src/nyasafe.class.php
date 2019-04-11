@@ -57,8 +57,8 @@ class nyasafe {
     }
     /**
      * @description: 获得当前时间
-     * @param String PHP时区代码（可选，默认为配置文件中配置的时区）
-     * @param Int 自定义时间戳（秒）
+     * @param String timezone PHP时区代码（可选，默认为配置文件中配置的时区）
+     * @param Int settime 自定义时间戳（秒）
      * @return Array[Datetime,String] 返回时间日期对象和时间日期字符串
      */
     function getdatetime($timezone=null,$settime=null) {
