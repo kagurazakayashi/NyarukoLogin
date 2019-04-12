@@ -11,6 +11,6 @@ $timestamp = time();
 $argv["time"] = date('Y-m-d H:i:s', $timestamp);
 $argv["timestamp"] = $timestamp;
 if (isset($_SERVER['HTTP_USER_AGENT'])) $argv["ua"] = $_SERVER['HTTP_USER_AGENT'];
-header('Content-Type:application/json;charset=utf-8');
+// header('Content-Type:application/json;charset=utf-8');
 echo json_encode($argv);
 ?>

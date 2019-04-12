@@ -21,8 +21,9 @@ class nyatotp {
      * @description: 创建设备动态验证码
      * @param String appname 已注册的应用名称
      * @param String<32> appsecret 应用密钥
+     * @param Int timestamp 时间戳
      */
-    function newdevicetotp($appname,$appsecret) {
+    function newdevicetotp($appname,$appsecret,$timestamp=null) {
         global $nlcore;
         //检查IP访问频率
         $result = $nlcore->safe->frequencylimitation("getlinktotp");
@@ -45,11 +46,17 @@ class nyatotp {
         //检查APP是否已经注册 $appname,$appsecret
         $appid = $nlcore->safe->chkappsecret($appname,$appsecret);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
+        //检查客户端提供的时间差异，没有问题则用客户端时间
+        $timeSlice = null;
+        if ($timestamp) {
+            $nlcore->safe->timestampdiff($time,$timestamp);
+            $timeSlice = floor($timestamp / 30);
+        }
         //创建新的 totp secret
-        $secret = $this->ga->createSecret();
-        $numcode = $this->ga->getCode($secret);
+        $secret = $this->ga->createSecret(64);
+        $numcode = $this->ga->getCode($secret,$timeSlice);
         //创建 apptoken
-        $apptoken = $nlcore->safe->randhash($secret);
+        $apptoken = $nlcore->safe->randhash($secret,true);
         //检查 session_totp 表
         $datadic = [
             "secret" => $secret,
@@ -74,7 +81,9 @@ class nyatotp {
             "totp_secret" => $secret,
             "totp_code" => intval($numcode),
             "totp_token" => $apptoken,
-            "time" => intval($time),
+            "time" => $stime,
+            "timestamp" => $time,
+            "timezone" => date_default_timezone_get(),
             "appname" => $appname
         ));
     }

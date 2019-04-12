@@ -4,6 +4,7 @@ require_once 'src/nyatotp.class.php';
 $argv = count($_POST) > 0 ? $_POST : $_GET;
 if (isset($argv["n"]) && isset($argv["s"])) {
     $nyatotp = new nyatotp();
-    $nyatotp->newdevicetotp($argv["n"],$argv["s"]);
+    $p = isset($argv["p"]) ? intval($argv["p"]) : null;
+    $nyatotp->newdevicetotp($argv["n"],$argv["s"],$p);
 }
 ?>
