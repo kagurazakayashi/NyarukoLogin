@@ -28,8 +28,8 @@ class nyauser {
         global $nlcore;
         $logintypearr = ["mail","tel","hash"];
         $logintypestr = $logintypearr[$logintype];
-        $whereDic = [$logintype => $loginstr];
-        $result = $this->scount($nlcore->cfg->db->tables["users"],$whereDic);
+        $whereDic = [$logintypearr[$logintype] => $loginstr];
+        $result = $nlcore->db->scount($nlcore->cfg->db->tables["users"],$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100,$totpsecret);
         $datacount = $result[2][0][0];
         if ($datacount == 0) {
@@ -61,16 +61,15 @@ class nyauser {
             } else {
                 $name = $namearr[0];
             }
-        } else if ($name && $nameid) {
-            $whereDic = [
-                "name" => $nickname,
-                "nameid" => $nameid
-            ];
-            $result = $this->scount($nlcore->cfg->db->tables["info"],$whereDic);
-            if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
-            $datacount = $result[2][0][0];
-            if ($datacount > 0) return true;
         }
+        $whereDic = [
+            "name" => $name,
+            "nameid" => $nameid
+        ];
+        $result = $nlcore->db->scount($nlcore->cfg->db->tables["info"],$whereDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
+        $datacount = $result[2][0][0];
+        if ($datacount > 0) return true;
         return false;
     }
 }
