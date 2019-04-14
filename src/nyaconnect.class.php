@@ -12,7 +12,10 @@
         function initWriteDbs() {
             global $nlcore;
             $this->log("[CONNECT] read-write mode.");
-            if (!$this->conW) $this->conW = $this->initMysqli($nlcore->cfg->db->write_dbs);
+            if (!$this->conW) {
+                $this->conW = $this->initMysqli($nlcore->cfg->db->write_dbs);
+                mysqli_set_charset($this->conW,$nlcore->cfg->db->charset);
+            }
             $this->con = &$this->conW;
         }
         /**
@@ -21,7 +24,10 @@
         function initReadDbs() {
             global $nlcore;
             $this->log("[CONNECT] read-only mode.");
-            if (!$this->conR) $this->conR = $this->initMysqli($nlcore->cfg->db->read_dbs);
+            if (!$this->conR) {
+                $this->conR = $this->initMysqli($nlcore->cfg->db->read_dbs);
+                mysqli_set_charset($this->conR,$nlcore->cfg->db->charset);
+            }
             $this->con = &$this->conR;
         }
         /**
@@ -30,7 +36,10 @@
         function initStopwordDbs() {
             global $nlcore;
             $this->log("[CONNECT] stopword db.");
-            if (!$this->conK) $this->conK = $this->initMysqli($nlcore->cfg->db->stopword_dbs);
+            if (!$this->conK) {
+                $this->conK = $this->initMysqli($nlcore->cfg->db->stopword_dbs);
+                mysqli_set_charset($this->conK,$nlcore->cfg->db->charset);
+            }
             $this->con = &$this->conK;
         }
         /**
@@ -291,9 +300,9 @@
         function initRedis() {
             if ($this->redis) return true;
             global $nlcore;
-            $appconf = $nlcore->cfg->app;
             $redisconf = $nlcore->cfg->db->redis;
-            if (!$appconf->frequency || !$redisconf["rdb_enable"]) return false;
+            if (!$redisconf["rdb_enable"]) return false;
+            $appconf = $nlcore->cfg->app;
             if (!class_exists("Redis")) {
                 die($nlcore->msg->m(1,2010200));
             }

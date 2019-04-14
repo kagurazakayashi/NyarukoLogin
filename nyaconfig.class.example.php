@@ -1,6 +1,8 @@
 <?php
 class nyasetting_db {
     //数据库连接设置
+    //MySQL编码
+    var $charset = "utf8mb4";
     //只读库，可指定多个数据库
     var $read_dbs = [
         [
@@ -24,19 +26,17 @@ class nyasetting_db {
     //数据库表设置
     var $tables = [
         "business" => "u1_business", //业务表
-        "change" => "u1_change", //信息和积分变更日志
-        "external_app" => "u1_external_app", //外部程序表
+        "app" => "u1_app", //外部程序表
         "integral" => "u1_integral", //积分表
-        "ip_address" => "u1_ip_address", //IP地址表
+        "ip" => "u1_ip", //IP地址表
         "jurisdiction" => "u1_jurisdiction", //权限表
-        "password_protection" => "u1_password_protection", //密保表
-        "session_token" => "u1_session_token", //会话令牌表
+        "protection" => "u1_protection", //密保表
+        "session" => "u1_session", //会话令牌表
         "users" => "u1_users", //用户表
-        "users_information" => "u1_users_information", //用户信息表
-        "group_list" => "u1_group_list", //用户组列表
-        "group_user" => "u1_group_user", //用户组成员表
-        "verification_sending_log" => "u1_verification_sending_log", //验证信息发送日志
-        "session_totp" => "u1_session_totp", //通信动态密码
+        "info" => "u1_info", //用户信息表
+        "usergroup" => "u1_usergroup", //用户组表
+        "history" => "u1_history", //日志
+        "totp" => "u1_totp", //通信动态密码
     ];
     //Redis数据库设定
     var $redis = [
@@ -46,9 +46,12 @@ class nyasetting_db {
         "rdb_password" => "uHJBJd0ZQNh47C9KKlCFBO8y1LXALbUTyZzRakIlTxmy5ja2scR8w3xKpb7s78jA9FwQseFCAO3sz9U0h6jI8IZ9NL1q5XdErsGmyMrjh2XAjai10oboWPYeGx5MrqJ93Hs1IYSsgWTEDTRcLpEazdBNGV32ETmd7ePX78PqgguxkBhHb9p1D9N2Gd6EPz6X5KhrFKilr2rbQTWd1oPexJYSjGLgybjn3UnSUKovXSQkJADihDgpc7MKnXEaBjKuX4ogQrjcJGbxwaMAdYYDdCL0lSggQx7jkVnBEeqxPkk4QyIRbkj1PCEgJIAVv0eauQ88rgUdSlwxYWabw5Dy5kgdjMwkWmD3jeJXRnP5ApHDvgSAhh4JPk3jGsXfn60tkjQPiIkJwsPMLj8nSmyQtDzyOBAZlVvxwCI40DXnc13oAchhoNr5VMLDdG7oSwqyu0BCiYNzleIIQTQc5dBSWMekYhCcLUoeAyZLoHlIRi1nooUYcJUODIOD0gb9MvX3",
         "rdb_id" => 0
     ];
+    //Redis数据库表设置
     var $redis_tables = [
         "frequencylimitation" => "u1_fl"
     ];
+    //将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
+    var $logfile = "B:\\db.log";
 }
 
 //应用相关设置
@@ -61,6 +64,7 @@ class nyasetting_app {
     var $jsonlen_post = 1000000; //数据（j参数）使用 post 方式提交时允许长度（字节）
     var $timezone = "Asia/Shanghai"; //时区，留空则按照 php.ini
     var $alwayencrypt = false; //强制进行 TOTP/XXTEA 加密
+    var $timestamplimit = 15; //允许客户端与服务端的时间差异（秒；如果客户端报告的话）
     var $totpcompensate = 0; //TOTP 补偿，需要客户端匹配
     var $totptimeslice = 1; //TOTP 宽限次数，尝试用之前 x 个验证码尝试解密
     var $frequency = false; //启动接口访问频率限制
@@ -79,7 +83,7 @@ class nyasetting_app {
     var $login_phone = true;
     //默认新用户的
     var $newuser = [
-        "group" => "user", //用户组
+        "group" => 1, //用户组 (group_list 表中的 ID)
         "nickname" => "无名氏", //昵称
         "nicknamelen" => 30, //昵称长度限制
         "emaillen" => 50, //邮件地址长度限制
@@ -96,6 +100,7 @@ class nyasetting_app {
         "maxlength" => 5, //最大分析长度，指定多个条件时，两个条件词之间间隔超过此长度则不判为违规
         "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
     ];
+    var $passwordsalt = "6yJv1R2TxyBVKOToumDbfBmqlDWr3PMK"; //密码盐
 }
 
 class nyasetting_verify {
@@ -114,10 +119,10 @@ class nyasetting_verify {
     ];
     //密码强度设置，设置的密码必须要有 key 至少 val 个：
     var $strongpassword = [
-        "upper" => 1,
-        "lower" => 1,
-        "num" => 1,
-        "symbol" => 1
+        "upper" => 0,
+        "lower" => 0,
+        "num" => 0,
+        "symbol" => 0
     ];
     //密码只能包括以下符号
     var $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";

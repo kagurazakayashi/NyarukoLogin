@@ -39,16 +39,17 @@ class nyasafe {
     }
     /**
      * @description: 生成随机哈希值
-     * @param String salt 盐（可选信息）
-     * @return String 生成的随机MD5码
+     * @param String salt 盐（可选）
+     * @param Boolean md6 使用MD6进行哈希（可选）
+     * @return String 生成的随机MD5/MD6码
      */
-    function randhash($salt="") {
+    function randhash($salt="",$md6=false) {
         $data = (double)microtime().$salt.$this->randstr(32);
         return md5($data);
     }
     /**
      * @description: 生成随机数发生器种子
-     * @param String salt 盐（可选信息）
+     * @param String salt 盐（可选）
      * @return String 种子
      */
     function seed($salt="") {
@@ -70,6 +71,17 @@ class nyasafe {
         $timestr = date('Y-m-d H:i:s', $timestamp);
         if ($timezone) date_default_timezone_set($timezone_out);
         return [$timestamp,$timestr];
+    }
+    /**
+     * @description: 检查时间戳差异是否大于配置文件中的值
+     * 差异太大直接返回错误信息到客户端
+     */
+    function timestampdiff($timestamp1,$timestamp2) {
+        global $nlcore;
+        $timestampabs = abs($timestamp1 - $timestamp2);
+        if ($timestampabs > $nlcore->cfg->app->timestamplimit) {
+            $nlcore->msg->stopmsg(2020413);
+        }
     }
     /**
      * @description: 过滤字符串中的非法字符
@@ -177,7 +189,7 @@ class nyasafe {
      * @return Int 0:其他字符 1:数字 2:小写字母 3:大写字母
      */
     function chartype($str) {
-        if (preg_match("/^\d*$/",$fgid)) {
+        if (preg_match("/^\d*$/",$str)) {
             return 1;
         } else if (preg_match('/^[a-z]+$/', $str)) {
             return 2;
@@ -240,7 +252,11 @@ class nyasafe {
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordjson = ""; //词库
         if ($wordfilterpcfg["enable"] == 1) { //从 Redis 读入
-            if (!$nlcore->db->initRedis()) $nlcore->msg->stopmsg(2020301);
+            if (!$nlcore->db->initRedis()) {
+                // 没有启用 Redis ，跳过敏感词检查
+                // $nlcore->msg->stopmsg(2020301);
+                return true;
+            }
             $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
         } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
             $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302);
@@ -401,9 +417,9 @@ class nyasafe {
         return $argv;
     }
     /**
-     * @description: 从数组创建JSON、加密、base64编码、变体
+     * @description: [数据发送]从数组创建JSON、加密、base64编码、变体
      * @param String dataarray 要返回到客户端的内容字典
-     * @param String secret totp加密码（可选，不加不进行加密，）
+     * @param String secret totp加密码（可选，不加不进行加密）
      * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
      */
     function encryptargv($dataarray,$secret=null) {
@@ -424,10 +440,10 @@ class nyasafe {
         return $json;
     }
     /**
-     * @description: 解析变体、base64解码、解密、解析JSON到数组
+     * @description: [数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
-     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token]
+     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token,IP地址ID]
      */
     function decryptargv($module=null) {
         global $nlcore;
@@ -491,7 +507,7 @@ class nyasafe {
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
         if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]) == null) $nlcore->msg->stopmsg(2020401);
-        return [$jsonarr,$secret,$argv["t"]];
+        return [$jsonarr,$secret,$argv["t"],$ipid];
     }
     /**
      * @description: 批量替换指定字符
@@ -561,7 +577,7 @@ class nyasafe {
             }
         }
         if ($typei[0] < $strongpassword["symbol"] || $typei[1] < $strongpassword["num"] || $typei[2] < $strongpassword["lower"] || $typei[3] < $strongpassword["upper"]) {
-            $nlcore->msg->stopmsg(2030201);
+            $nlcore->msg->stopmsg(2030101);
         }
     }
     /**
