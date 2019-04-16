@@ -2,7 +2,6 @@
     class nyadbconnect {
         private $conR = null; //只读数据库
         private $conW = null; //可写入数据库
-        private $conK = null; //关键词数据库
         private $con = null; //当前 MySQL 数据库（指针变量）
         private $logtofile = false; //记录详细调试信息到文件
         public $redis = null; //当前 Redis 数据库
@@ -31,18 +30,6 @@
             $this->con = &$this->conR;
         }
         /**
-         * @description: 初始化关键词数据库，按需建立SQL连接
-         */
-        function initStopwordDbs() {
-            global $nlcore;
-            $this->log("[CONNECT] stopword db.");
-            if (!$this->conK) {
-                $this->conK = $this->initMysqli($nlcore->cfg->db->stopword_dbs);
-                mysqli_set_charset($this->conK,$nlcore->cfg->db->charset);
-            }
-            $this->con = &$this->conK;
-        }
-        /**
          * @description: 初始化数据库
          * @param String selectdbs 数据库配置数组($nlcore->cfg->db->*)
          * @return mysqli_connect 数据库连接对象
@@ -67,6 +54,25 @@
                 die($nlcore->msg->m(1,2010103,$sqlerrno));
             }
             return null;
+        }
+        /**
+         * @description: 清理提交数据中的注入语句
+         * @param String/Array data 要进行清理的内容，支持多维数组、字符串，其他类型（如 int）不清理
+         * @return String/Array 清理后的数组/字符串
+         */
+        function safe($data) {
+            $newdata;
+            if (is_array($data)) {
+                $newdata = [];
+                foreach ($data as $key => $value) {
+                    $newdata[$key] = $this->safe($value);
+                }
+            } else if (is_string($data)) {
+                $newdata = mysqli_real_escape_string($this->con,$data);
+            } else {
+                $newdata = $data;
+            }
+            return $newdata;
         }
         /**
          * @description: 将每条SQL语句和返回内容记录在日志文件中，通过 nyaconfig 中的此项设置来进行调试。
@@ -96,6 +102,8 @@
          */
         function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initReadDbs();
+            $columnArr = $this->safe($columnArr);
+            $whereDic = $this->safe($whereDic);
             $columnStr = implode('`,`',$columnArr);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
@@ -110,6 +118,7 @@
          */
         function insert($tableStr,$insertDic) {
             $this->initWriteDbs();
+            $insertDic = $this->safe($insertDic);
             $insertStr = $this->dic2sql($insertDic,0);
             $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
             return $this->sqlc($sqlcmd);
@@ -125,6 +134,8 @@
          */
         function update($updateDic,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
+            $updateDic = $this->safe($updateDic);
+            $whereDic = $this->safe($whereDic);
             $update = $this->dic2sql($updateDic,1);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
@@ -162,6 +173,7 @@
          */
         function delete($tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
+            $whereDic = $this->safe($whereDic);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
@@ -177,6 +189,7 @@
          */
         function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND") {
             $this->initReadDbs();
+            $whereDic = $this->safe($whereDic);
             $whereStr = $this->dic2sql($whereDic,2);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
@@ -203,11 +216,6 @@
                 $this->log("[CLOSE] read-write mode.");
                 mysqli_close($this->conW);
                 $this->conW = null;
-            }
-            if ($this->conK) {
-                $this->log("[CLOSE] stopword db.");
-                mysqli_close($this->conK);
-                $this->conK = null;
             }
         }
         /**
