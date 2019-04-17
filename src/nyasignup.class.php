@@ -15,11 +15,11 @@ class nyasignup {
         //检查参数输入是否齐全
         $getkeys = ["captcha","password","user","nickname"];
         if ($nlcore->safe->keyinarray($jsonarr,$getkeys) > 0) {
-            die($nlcore->msg->m(1,2000101));
+            $nlcore->msg->stopmsg(2000101,$totpsecret);
         }
         //检查验证码是否正确
         $nyacaptcha = new nyacaptcha();
-        // if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
+        if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         //检查输入的是邮箱还是手机号
         $nyauser = new nyauser();
         $user = $jsonarr["user"];
@@ -31,7 +31,7 @@ class nyasignup {
         $userstrlen = strlen($user);
         if ($logintype == 0 && ($userstrlen < 5 || $userstrlen > $newuserconf["emaillen"] || !$nlcore->safe->isEmail($user))) {
             $nlcore->msg->stopmsg(2020207,$totpsecret,$user);
-        } else if ($logintype == 1 && ($userstrlen != 11 || !$nlcore->safe->isEmail($user))) {
+        } else if ($logintype == 1 && $userstrlen != 11) {
             $nlcore->msg->stopmsg(2020205,$totpsecret,$user);
         }
         //检查密码强度是否符合规则
@@ -47,10 +47,14 @@ class nyasignup {
             } else {
                 $nickname = $newuserconf["nickname"].rand(100, 999);
             }
-        } else if ($nicknamelen > $newuserconf["nicknamelen"]) { //检查昵称是否太长
+        } else if ($nicknamelen > $newuserconf["nicknamelen"]) {
+            //昵称太长
             $nlcore->msg->stopmsg(2040105,$totpsecret,$nickname);
         } else {
-            $nlcore->safe->wordfilter($nickname); //检查敏感词
+            //检查异常符号
+            $nlcore->safe->safestr($nickname,true,false,$totpsecret);
+            //检查敏感词
+            $nlcore->safe->wordfilter($nickname,true,$totpsecret);
         }
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nyauser->isalreadyexists($logintype,$user,$totpsecret);
@@ -80,7 +84,8 @@ class nyasignup {
         $usergroup = $newuserconf["group"];
         //生成密码到期时间
         $datetime = $nlcore->safe->getdatetime();
-        $pwdend = $datetime[0] + $newuserconf["pwdexpiration"];
+        $timestamp = $datetime[0];
+        $pwdend = $timestamp + $newuserconf["pwdexpiration"];
         $pwdend = $nlcore->safe->getdatetime(null,$pwdend)[1];
         $timestr = $datetime[1];
         //加密密码: 原文+自定义盐+注册时间戳 的 MD6
@@ -94,16 +99,16 @@ class nyasignup {
             "regtime" => $timestr,
             "enabletime" => $timestr
         ];
-        $jsonarr["code"] = 1020000;
+        $returnjson["code"] = 1020000;
         if ($logintype == 0) {
             $insertDic["mail"] = $user; //邮件注册流程
             // $nyaverification = new nyaverification();
             // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
-            $jsonarr["code"] = 1020001;
+            $returnjson["code"] = 1020001;
         } else if ($logintype == 1) {
             $insertDic["tel"] = $user; //短信注册流程
             //TODO: 短信注册流程
-            $jsonarr["code"] = 1020002;
+            $returnjson["code"] = 1020002;
         }
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040108,$totpsecret);
@@ -139,13 +144,16 @@ class nyasignup {
             "operation" => "USER_SIGN_UP",
             "sender" => $user,
             "ipid" => $ipid,
-            "result" => $jsonarr["code"]
+            "result" => $returnjson["code"]
         ];
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["history"],$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
 
+        $returnjson["msg"] = $nlcore->msg->imsg[$returnjson["code"]];
+        $returnjson["username"] = $nickname."#".$nameid;
+        $returnjson["timestamp"] = $timestamp;
         //返回到客户端
-        echo $nlcore->safe->encryptargv($jsonarr,$totpsecret);
+        echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 
     // function isuserempty() {

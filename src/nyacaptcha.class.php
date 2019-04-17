@@ -24,7 +24,9 @@ class nyacaptcha {
         $totpsecret = $jsonarrTotpsecret[1];
         $totptoken = $jsonarrTotpsecret[2];
         $captchaconf = $nlcore->cfg->verify->captcha;
-        $c_time = $nlcore->safe->getdatetime()[1];
+        $c_time = $nlcore->safe->getdatetime();
+        $timestamp = $c_time[0];
+        $c_time = $c_time[1];
         $c_img = $nlcore->safe->randhash();
         $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
         $imgfile = $captchaconf["imgname"].$c_img.".jpg";
@@ -60,7 +62,7 @@ class nyacaptcha {
         $retuenarr = [
             "code" => 1000000,
             "img" => $imgurl,
-            "time" => $c_time
+            "timestamp" => $timestamp
         ];
         if ($showcaptcha) {
             $retuenarr["captcha"] = $c_code;
