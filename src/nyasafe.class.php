@@ -397,15 +397,12 @@ class nyasafe {
     function getarg($allowmethod=["POST","GET"]) {
         global $nlcore;
         $argv = null;
-        $jsonlen = -1;
         if (!isset($_SERVER['REQUEST_METHOD'])) die(header('HTTP/1.1 405 Method Not Allowed'));
         $method = $_SERVER['REQUEST_METHOD'];
         if ($method == "POST" && in_array("POST",$allowmethod)) {
             $argv = $_POST;
-            $jsonlen = $nlcore->cfg->app->jsonlen_post;
         } else if ($method == "GET" && in_array("GET",$allowmethod)) {
             $argv = $_GET;
-            $jsonlen = $nlcore->cfg->app->jsonlen_get;
         } else if ($method == "FILES" && in_array("FILES",$allowmethod)) {
             $argv = $_FILES;
         } else if ($method == "PUT" && in_array("PUT",$allowmethod)) {
@@ -436,9 +433,10 @@ class nyasafe {
             //使用totp数字加密
             $json = xxtea_encrypt($json, $numcode);
             $returndata = $this->urlb64encode($json);
+            header('Content-Type:text/plain;charset=utf-8');
             return $returndata;
         }
-        header('Content-Type:text/plain;charset=utf-8');
+        header('Content-Type:application/json;charset=utf-8');
         return $json;
     }
     /**
@@ -456,15 +454,20 @@ class nyasafe {
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
-        $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->jsonlen_get : $nlcore->cfg->app->jsonlen_post;
-        if ((isset($argv["t"]) && !$this->is_md5($argv["t"]))) {
-            $nlcore->msg->stopmsg(2020408,null,$argv["t"]);
+        //被要求强制进行 TOTP/XXTEA 加密
+        if (!isset($argv["j"]) && $nlcore->cfg->app->alwayencrypt) {
+            $nlcore->msg->stopmsg(2020415);
         }
-        if ((isset($argv["t"]) && !$this->is_md5($argv["t"])) || (!isset($argv["t"]) && $nlcore->cfg->app->alwayencrypt) || !isset($argv["j"]) || strlen($argv["j"]) > $jsonlen || !$this->isbase64($argv["j"],true)) {
+        if (!isset($argv["t"])) { //检查应用令牌
             $nlcore->msg->stopmsg(2020408);
         }
-        //检查是否为重放
-        $this->antireplay($argv["j"]);
+        if (!$this->is_md5($argv["t"])) { //检查应用令牌格式
+            $nlcore->msg->stopmsg(2020409);
+        }
+        //检查数据超长
+        $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->maxlen_get : $nlcore->cfg->app->maxlen_post;
+        $arglen = strlen(implode("", $argv));
+        if ($arglen > $jsonlen) $nlcore->msg->stopmsg(2020414,null,$arglen);
         //检查 IP 是否被封禁
         $stime = $nlcore->safe->getdatetime();
         $result = $this->chkip($stime[0]);
@@ -472,8 +475,12 @@ class nyasafe {
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
         $jsonarr = null;
-        $secret = "";
-        if (isset($argv["t"])) {
+        $secret = null;
+        if (isset($argv["j"])) { //已加密，需要解密
+            //检查加密字串是否有非法字符
+            if (!$this->isbase64($argv["j"],true)) {
+                $nlcore->msg->stopmsg(2020410);
+            }
             //查询apptoken对应的secret
             $datadic = [
                 "apptoken" => $argv["t"]
@@ -503,11 +510,12 @@ class nyasafe {
             }
             if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$timestamp);
             $jsonarr = json_decode($decrypt_data,true);
-        } else {
-            $jsonarr = json_decode($this->urlb64decode($argv["j"]),true);
+        } else { //未加密
+            $jsonarr = $argv;
+            unset($jsonarr["t"]);
         }
         //解析json
-        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->stopmsg(2020410);
+        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->stopmsg(2020400);
         //检查API版本是否一致
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
@@ -632,16 +640,5 @@ class nyasafe {
         return $applanguages[0];
     }
 
-    // function getcaptcha() {
-    //     global $nlcore;
-    // }
-    //TODO: 重放攻击防止机制，利用 Redis 记录相同的指令哈希
-    function antireplay($jstr) {
-        //指令MD5
-        //$jhash = md5($jstr);
-        //查询是否是重放
-
-        //写入记录
-    }
 }
 ?>

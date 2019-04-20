@@ -113,9 +113,9 @@ class nyainfomsg {
         ///// A=2\BB=02\CC=04\DD=07 :
         2020407 => '错误：访问过于频繁',
         ///// A=2\BB=02\CC=04\DD=08 :
-        2020408 => '内部错误：用于解密的参数不正确',
+        2020408 => '内部错误：没有提供应用令牌',
         ///// A=2\BB=02\CC=04\DD=09 :
-        2020409 => '内部错误：apptoken不正确',
+        2020409 => '内部错误：应用令牌不正确',
         ///// A=2\BB=02\CC=04\DD=10 :
         2020410 => '内部错误：json解析失败',
         ///// A=2\BB=02\CC=04\DD=11 :
@@ -124,6 +124,10 @@ class nyainfomsg {
         2020412 => '错误：客户端版本不匹配',
         ///// A=2\BB=02\CC=04\DD=13 :
         2020413 => '错误：客户端和服务器时差较大，请校准时间',
+        ///// A=2\BB=02\CC=04\DD=14 :
+        2020414 => '内部错误：单次提交数据过大',
+        ///// A=2\BB=02\CC=04\DD=15 :
+        2020415 => '内部错误：服务器要求必须加密传输',
         //// A=2\BB=02\CC=05 : 验证码
         ///// A=2\BB=02\CC=05\DD=01 :
         2020501 => '错误：验证码检查失败',
@@ -186,13 +190,13 @@ class nyainfomsg {
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
     function m($msgmode = 0,$code = 2000000,$str = "") {
-        if (is_numeric($msgmode) && $msgmode == 0) return null;
+        if (is_numeric($msgmode) && $msgmode === 0) return null;
         $returnarr = array(
             "code" => $code,
             "msg" => $this->imsg[$code],
             "info" => $str
         );
-        if (is_numeric($msgmode) && $msgmode == 1) {
+        if (is_numeric($msgmode) && $msgmode === 1) {
             return json_encode($returnarr);
         } else {
             global $nlcore;
