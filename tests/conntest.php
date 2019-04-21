@@ -1,6 +1,5 @@
 <?php
 require_once "../src/nyacore.class.php";
-$argv = count($_POST) > 0 ? $_POST : $_GET;
 global $nlcore;
 $jsonarrTotpsecret = $nlcore->safe->decryptargv("encrypttest");
 $jsonarr = $jsonarrTotpsecret[0];

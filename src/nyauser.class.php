@@ -72,5 +72,18 @@ class nyauser {
         if ($datacount > 0) return true;
         return false;
     }
+    /**
+     * @description: 对明文密码进行加密以便存储到数据库
+     * 原文+自定义盐+注册时间戳 的 MD6
+     * @param String password 明文密码
+     * @param String timestamp 密码到期时间时间戳
+     * @return 加密后的密码
+     */
+    function passwordhash($password,$timestamp) {
+        global $nlcore;
+        $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($timestamp);
+        $passwordhash = $nlcore->safe->md6($passwordhash);
+        return $passwordhash;
+    }
 }
 ?>

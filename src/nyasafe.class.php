@@ -469,7 +469,7 @@ class nyasafe {
         $arglen = strlen(implode("", $argv));
         if ($arglen > $jsonlen) $nlcore->msg->stopmsg(2020414,null,$arglen);
         //检查 IP 是否被封禁
-        $stime = $nlcore->safe->getdatetime();
+        $stime = $this->getdatetime();
         $result = $this->chkip($stime[0]);
         $stime = $stime[1];
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);

@@ -5,7 +5,7 @@ import sys
 test_core.title("注册用户测试")
 udataarr = {}
 udataarr["user"] = test_core.instr("请输入邮箱或手机号码(默认值 cxchope@163.com): ")
-if (udataarr["user"] == ""): udataarr["user"] = "cxchope@163.com"
+if (udataarr["user"] == ""): udataarr["user"] = "testmail@uuu.moe"
 test_core.tlog("用户名: "+udataarr["user"])
 udataarr["password"] = test_core.instr("请输入新密码(默认值 testpassword): ")
 if (udataarr["password"] == ""): udataarr["password"] = "testpassword"

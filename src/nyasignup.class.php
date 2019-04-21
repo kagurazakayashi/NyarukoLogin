@@ -88,9 +88,8 @@ class nyasignup {
         $pwdend = $timestamp + $newuserconf["pwdexpiration"];
         $pwdend = $nlcore->safe->getdatetime(null,$pwdend)[1];
         $timestr = $datetime[1];
-        //加密密码: 原文+自定义盐+注册时间戳 的 MD6
-        $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($datetime[0]);
-        $passwordhash = $nlcore->safe->md6($passwordhash);
+        //加密密码
+        $passwordhash = $nyauser->passwordhash($password,$datetime[0]);
         //注册 users 表
         $insertDic = [
             "hash" => $hash,
@@ -155,11 +154,15 @@ class nyasignup {
         //返回到客户端
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
-
-    // function isuserempty() {
-    //     global $nlcore;
-    //     $sdata = $nlcore->db->scount($nlcore->cfg->db->tb_user);
-    //     print_r($sdata);
-    // }
+    /**
+     * @description: 仅做测试用，生成加密后密码
+     * @param String password 明文密码
+     * @param String timestr 密码到期时间的时间文本
+     * @return 直接返回加密后的内容到客户端
+     */
+    function passwordhashtest($password,$timestr) {
+        $nyauser = new nyauser();
+        echo $nyauser->passwordhash($password,strtotime($timestr));
+    }
 }
 ?>
