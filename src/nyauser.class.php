@@ -8,7 +8,8 @@ class nyauser {
      */
     function logintype($loginstr,$totpsecret=null) {
         global $nlcore;
-        if ($nlcore->safe->isPhoneNumCN($loginstr)) {
+        $telareaarr = $nlcore->safe->telarea($loginstr);
+        if ($nlcore->safe->isPhoneNumCN($telareaarr[1])) {
             return 1;
         } else if ($nlcore->safe->isEmail($loginstr)) {
             return 0;
