@@ -223,6 +223,40 @@ class nyasafe {
         return false;
     }
     /**
+     * @description: 分离手机号码中的国别码（如果没有国别码默认+86），并去除所有符号
+     * @param String telstr 电话号码字符串
+     * @return Array[String,String] 国别码字符串和电话号码字符串
+     */
+    function telarea($telstr) {
+        $area = "86";
+        $tel = "";
+        if (!preg_match("/^[\+a-z\d\-( )]*$/i",$telstr)) {
+            return ["",""];
+        }
+        if (substr($telstr, 0, 1) == '+' || substr($telstr, 0, 2) == '00') {
+            $telarr = explode(" ", $telstr);
+            $area = array_shift($telarr);
+            $tel = implode("", $telarr);
+        } else {
+            $tel = $telstr;
+        }
+        return [$this->findNum($area),$this->findNum($tel)];
+    }
+    /**
+     * @description: 取出字符串中的所有数字
+     * @param String str 原字符串
+     * @return String 纯数字字符串
+     */
+    function findNum($str='') {
+        $str = trim($str);
+        if (empty($str)) return '';
+        $result = '';
+        for($i = 0; $i < strlen($str); $i++) {
+            if (is_numeric($str[$i])) $result.=$str[$i];
+        }
+        return $result;
+    }
+    /**
      * @description: 判断是否为Base64字符串
      * @param String b64string Base64字符串
      * @param Bool urlmode 是否为转换符号后的Base64字符串

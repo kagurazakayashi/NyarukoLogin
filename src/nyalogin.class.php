@@ -15,6 +15,13 @@ class nyalogin {
         if ($nlcore->safe->keyinarray($jsonarr,$getkeys) > 0) {
             $nlcore->msg->stopmsg(2000101,$totpsecret); //TODO: 验证代码
         }
+        //检查是邮箱还是手机号
+        $nyauser = new nyauser();
+        $user = $jsonarr["user"];
+        $logintype = $nyauser->logintype($user,$totpsecret); //0:邮箱 1:手机号
+        if ($logintype == 0) {
+
+        }
 
         //检查用户名和密码
 
