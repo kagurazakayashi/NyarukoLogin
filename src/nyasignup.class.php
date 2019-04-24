@@ -105,11 +105,15 @@ class nyasignup {
             // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
             $returnjson["code"] = 1020001;
         } else if ($logintype == 1) {
-            $insertDic["tel"] = $user; //短信注册流程
+            //短信注册流程
+            $nlcore->safe->telarea = $user;
+            $insertDic["telarea"] = $user[0];
+            $insertDic["tel"] = $user[1];
             //TODO: 短信注册流程
             $returnjson["code"] = 1020002;
         }
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["users"],$insertDic);
+        $tableStr = $nlcore->cfg->db->tables["users"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040108,$totpsecret);
 
         //注册 usergroup 表
@@ -117,14 +121,16 @@ class nyasignup {
             "userhash" => $hash,
             "groupid" => $usergroup
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["usergroup"],$insertDic);
+        $tableStr = $nlcore->cfg->db->tables["usergroup"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040109,$totpsecret);
 
         //注册 protection 表
         $insertDic = [
             "userhash" => $hash
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["protection"],$insertDic);
+        $tableStr = $nlcore->cfg->db->tables["protection"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040110,$totpsecret);
 
         //注册 info 表
@@ -133,7 +139,8 @@ class nyasignup {
             "name" => $nickname,
             "nameid" => $nameid
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["info"],$insertDic);
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111,$totpsecret);
 
         //记录 history 表
@@ -145,7 +152,8 @@ class nyasignup {
             "ipid" => $ipid,
             "result" => $returnjson["code"]
         ];
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["history"],$insertDic);
+        $tableStr = $nlcore->cfg->db->tables["history"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
 
         $returnjson["msg"] = $nlcore->msg->imsg[$returnjson["code"]];
@@ -162,7 +170,7 @@ class nyasignup {
      */
     function passwordhashtest($password,$timestr) {
         $nyauser = new nyauser();
-        echo $nyauser->passwordhash($password,strtotime($timestr));
+        echo $nyauser->passwordhash($password,$timestr);
     }
 }
 ?>

@@ -8,7 +8,7 @@ class nyainfomsg {
         CC: 错误类型
         DD: 详细错误
         */
-        // A=1 : 操作成功执行
+        // A=1 : 正常
         /// A=1\BB=00 : 通用成功类型
         //// A=1\BB=00\CC=00 : 通用成功
         ///// A=1\BB=00\CC=00\DD=00 :
@@ -27,7 +27,7 @@ class nyainfomsg {
         1020001 => '注册成功，进一步验证邮件已发送到邮箱',
         ///// A=1\BB=02\CC=00\DD=02 :
         1020002 => '注册成功，请查收手机验证码进行进一步验证',
-        // A=2 : 操作出现问题
+        // A=2 : 错误
         /// A=2\BB=00 : 通用
         //// A=2\BB=00\CC=00 : 未知问题
         ///// A=2\BB=00\CC=00\DD=00 :
@@ -176,27 +176,48 @@ class nyainfomsg {
         2040111 => '内部错误：创建用户信息没有成功',
         ///// A=2\BB=04\CC=01\DD=12 :
         2040112 => '内部错误：未能写入操作历史记录',
-        //// A=2\BB=04\CC=2 : 用户查询
+        //// A=2\BB=04\CC=2 : 用户登入
         ///// A=2\BB=04\CC=02\DD=00 :
         2040200 => '内部错误：查询用户是否存在没有成功',
+        ///// A=2\BB=04\CC=02\DD=01 :
+        2040201 => '错误：用户不存在',
+        ///// A=2\BB=04\CC=02\DD=02 :
+        2040202 => '需要更多信息：请提供验证码',
+        ///// A=2\BB=04\CC=02\DD=03 :
+        2040203 => '内部错误：不受支持的验证方式',
+        ///// A=2\BB=04\CC=02\DD=04 :
+        2040204 => '内部错误：用户名或密码不正确',
+        ///// A=2\BB=04\CC=02\DD=05 :
+        2040205 => '错误：账户已被锁定。', //同时返回：封禁到日期和原因
+        // A=3 : 警告
+        /// A=3\BB=00 : 用户
+        //// A=3\BB=00\CC=00 : 允许用户登录
+        ///// A=3\BB=00\CC=00\DD=00 :
+        3000000 => '提示：你的账户没有对邮箱或手机号进行验证，请尽快验证以确保正常使用。',
+        //// A=3\BB=00\CC=01 : 不允许用户登录
+        ///// A=3\BB=00\CC=01\DD=00 :
+        3000100 => "提示：由于你在使用中有不友好或违规行为，你的账户已被冻结。",
+        ///// A=3\BB=00\CC=01\DD=01 :
+        3000101 => "提示：根据相关法律法规或政策，无法继续操作。",
     );
     /**
      * @description: 创建异常信息提示JSON
-     * @param Int msgmode 错误信息输出方式：0返回空，1返回JSON
+     * @param Int msgmode 错误信息输出方式：0返回数组，1返回JSON
      * @param String msgmode 输入 totp secret 而不是数字的话，会用此 secret 加密并返回。
      * @param Int code 错误代码
-     * @param String str 附加错误信息
+     * @param String/Array info 附加错误信息
      * @param String totpsecret 加密用secret（不加则自动）
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
-    function m($msgmode = 0,$code = 2000000,$str = "") {
-        if (is_numeric($msgmode) && $msgmode === 0) return null;
+    function m($msgmode = 0,$code = 2000000,$info = null) {
         $returnarr = array(
             "code" => $code,
-            "msg" => $this->imsg[$code],
-            "info" => $str
+            "msg" => $this->imsg[$code]
         );
-        if (is_numeric($msgmode) && $msgmode === 1) {
+        if ($info) $returnarr["info"] = $info;
+        if (is_numeric($msgmode) && $msgmode === 0) {
+            return $returnarr;
+        } else if (is_numeric($msgmode) && $msgmode === 1) {
             return json_encode($returnarr);
         } else {
             global $nlcore;

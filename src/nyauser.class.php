@@ -77,14 +77,34 @@ class nyauser {
      * @description: 对明文密码进行加密以便存储到数据库
      * 原文+自定义盐+注册时间戳 的 MD6
      * @param String password 明文密码
-     * @param String timestamp 密码到期时间时间戳
+     * @param Int timestamp 密码到期时间时间戳
+     * @param String timestamp 密码到期时间字符串（将自动转时间戳）
      * @return 加密后的密码
      */
     function passwordhash($password,$timestamp) {
         global $nlcore;
+        if (!is_int($timestamp)) $timestamp = strtotime($timestamp);
         $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($timestamp);
         $passwordhash = $nlcore->safe->md6($passwordhash);
         return $passwordhash;
+    }
+    /**
+     * @description: 检查是否需要输入验证码，并根据配置决定显示哪种验证码
+     * @param Int 失败次数计数
+     * @return String 需要的验证方式
+     */
+    function needcaptcha($loginfail) {
+        global $nlcore;
+        $needcaptcha = $nlcore->cfg->verify->needcaptcha;
+        $nowmode = "";
+        $nownum = 0;
+        foreach($needcaptcha as $key => $value){
+            if ($loginfail >= $value && $value > $nownum) {
+                $nowmode = $key;
+                $nownum = $value;
+            }
+        }
+        return $nowmode;
     }
 }
 ?>
