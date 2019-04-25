@@ -78,6 +78,62 @@ class nyalogin {
             //同时返回：封禁到日期和原因
             $nlcore->msg->stopmsg(2040205,$totpsecret,$baninfo);
         }
+
+        //检查是否需要两步验证
+        $fa = $userinfoarr["2fa"];
+        if ($fa || $fa != "") {
+            $faarr = explode(",", $fa);
+            if (!isset($jsonarr["2famode"]) || !isset($jsonarr["2fa"])) {
+                $returnjson = $nlcore->msg->m(0,2040300);
+                $returnjson["supported2fa"] = $faarr;
+                if (in_array("qa", $faarr)) {
+                    $returnjson["question"] = getqa($userhash,$totpsecret);
+                }
+                echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
+                die();
+            }
+            if (!in_array($jsonarr["2famode"], $faarr)) {
+                $nlcore->msg->stopmsg(2040302,$totpsecret);
+            }
+            $faval = $jsonarr["2fa"];
+            if ($jsonarr["2famode"] == "ga") {
+                //TOTP码
+                if (!is_numeric($faval) || strlen($faval) != 6) $nlcore->msg->stopmsg(2040303,$totpsecret);
+                //TODO: 检查TOTP
+            } else if ($jsonarr["2famode"] == "qa") {
+                //密码提示问题
+                // $nlcore->msg->stopmsg(2040304,$totpsecret);
+                //TODO: 检查密码提示问题
+            } else if ($jsonarr["2famode"] == "rc") {
+                //恢复代码
+                if (strlen($faval) != 25) $nlcore->msg->stopmsg(2040305,$totpsecret);
+                //TODO: 检查恢复代码，没问题则删除代码
+            }
+        }
+    }
+
+    /**
+     * @description: 取出密码提示问题
+     * @param String userhash 用户哈希
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @param Boolean all : true=顺序全部取出 false=乱序取出随机两个
+     * @return Array<String> 密码提示问题数组
+     */
+    function getqa($userhash,$totpsecret,$all=false) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["protection"];
+        $columnArr = ["question1","question2","question3"];
+        $whereDic = ["userhash" => $userhash];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040301,$totpsecret);
+        $questions = $result[2][0];
+        if (!isset($questions["question1"]) || $questions["question1"] == "" || !isset($questions["question2"]) || $questions["question2"] == "" || !isset($questions["question3"]) || $questions["question3"] == "") {
+            $nlcore->msg->stopmsg(2040301,$totpsecret);
+        }
+        $returnarr = [$questions["question1"],$questions["question2"],$questions["question3"]];
+        shuffle($returnarr);
+        array_pop($returnarr);
+        return $returnarr;
     }
 }
 
