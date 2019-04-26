@@ -38,8 +38,8 @@ class nyatotp {
         //检查应用名称和密钥
         if (!$nlcore->safe->isNumberOrEnglishChar($appname,1,64) || !$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $nlcore->msg->stopmsg(2020400);
         $datadic = [
-            "app_id" => $appname,
-            "app_secret" => $appsecret
+            "name" => $appname,
+            "secret" => $appsecret
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["app"],$datadic);
         if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->stopmsg(2020401);

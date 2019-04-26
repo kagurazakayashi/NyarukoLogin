@@ -338,15 +338,15 @@ class nyasafe {
         $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : "";
         if ($ipaddr == "") return [2020402];
         //检查IP是否被封禁
-        $datadic = ["ip_address" => $_SERVER['REMOTE_ADDR']];
-        if ($proxyaddr != "") $datadic["proxy_ip_address"] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        $datadic = ["ip" => $_SERVER['REMOTE_ADDR']];
+        if ($proxyaddr != "") $datadic["proxy"] = $_SERVER['HTTP_X_FORWARDED_FOR'];
         $table = $nlcore->cfg->db->tables["ip"];
-        $result = $nlcore->db->select(["id","closing_time"],$table,$datadic,"","OR");
+        $result = $nlcore->db->select(["id","enabletime"],$table,$datadic,"","OR");
         $ipid = null;
         if ($result[0] == 1010000) {
             //如果有数据则比对时间,取ID
             $onedata = $result[2][0];
-            $datatime = strtotime($onedata["closing_time"]);
+            $datatime = strtotime($onedata["enabletime"]);
             if ($time < $datatime) return [2020403];
             $ipid = $onedata["id"];
         } else if ($result[0] == 1010001) {
@@ -354,9 +354,9 @@ class nyasafe {
             //区分IP类型
             $iptype = $this->iptype($ipaddr);
             $datadic = array(
-                "ip_addresscol_category" => $iptype,
-                "ip_address" => $ipaddr,
-                "proxy_ip_address" => $proxyaddr
+                "type" => $iptype,
+                "ip" => $ipaddr,
+                "proxy" => $proxyaddr
             );
             $result = $nlcore->db->insert($table,$datadic);
             if ($result[0] != 1010001) return [2020404];
@@ -375,8 +375,8 @@ class nyasafe {
         global $nlcore;
         $table = $nlcore->cfg->db->tables["app"];
         $whereDic = array(
-            "app_id" => $appname,
-            "app_secret" => $appsecret
+            "name" => $appname,
+            "secret" => $appsecret
         );
         $result = $nlcore->db->select(["id"],$table,$whereDic);
         if (isset($result[2][0]["id"]) && intval($result[2][0]["id"]) > 0) return $result[2][0]["id"];
@@ -477,7 +477,7 @@ class nyasafe {
      * @description: [数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
-     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token,IP地址ID]
+     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token,IP地址ID,APPID]
      */
     function decryptargv($module=null) {
         global $nlcore;
@@ -553,8 +553,9 @@ class nyasafe {
         //检查API版本是否一致
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
-        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]) == null) $nlcore->msg->stopmsg(2020401);
-        return [$jsonarr,$secret,$argv["t"],$ipid];
+        $appid = $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]);
+        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $appid == null) $nlcore->msg->stopmsg(2020401);
+        return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
     }
     /**
      * @description: 批量替换指定字符

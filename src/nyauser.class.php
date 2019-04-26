@@ -106,5 +106,29 @@ class nyauser {
         }
         return $nowmode;
     }
+    /**
+     * @description: 写入历史记录
+     * @param String userhash 用户哈希
+     * @param String totptoken 应用识别码
+     * @param String code 错误代码
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @param String process 过程记录
+     * @param String session 当前会话
+     */
+    function writehistory($operation,$code,$userhash,$totptoken,$totpsecret,$process=null,$session=null) {
+        //记录 history 表
+        $insertDic = [
+            "userhash" => $userhash,
+            "apptoken" => $totptoken,
+            "operation" => "USER_SIGN_IN",
+            "sender" => $user,
+            "ipid" => $ipid,
+            "process" => $process,
+            "result" => $code
+        ];
+        $tableStr = $nlcore->cfg->db->tables["history"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
+    }
 }
 ?>
