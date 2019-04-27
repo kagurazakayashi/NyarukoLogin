@@ -76,15 +76,15 @@ class nyalogin {
         if ($password != $userinfoarr["pwd"]) {
             //密码错误。记录历史记录。
             $this->loginfailuretimes($userid,$totpsecret,$userfail);
-            $nyauser->writehistory("USER_SIGN_IN",2040204,$userhash,$totptoken,$totpsecret,$process);
+            $nyauser->writehistory("USER_SIGN_IN",2040204,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
             $nlcore->msg->stopmsg(2040204,$totpsecret);
         }
         $process .= ",password=ok";
         //检查账户是否异常
-        $alertinfo = null;
-        $process .= ",errorcode=".$userinfoarr["errorcode"];
+        $alertinfo = [null,null];
+        $process .= ",alertcode=".$userinfoarr["errorcode"];
         if ($userinfoarr["errorcode"] != 0) {
-            $alertinfo = $nlcore->msg->imsg[$userinfoarr["errorcode"]];
+            $alertinfo = [$userinfoarr["errorcode"],$nlcore->msg->imsg[$userinfoarr["errorcode"]]];
         }
         //检查账户是否被封禁
         $datetime = $nlcore->safe->getdatetime();
@@ -94,15 +94,14 @@ class nyalogin {
         if (strtotime($userinfoarr["enabletime"]) > $timestamp) {
             //发现封禁。记录历史记录。同时返回：封禁到日期和原因。
             $this->loginfailuretimes($userid,$totpsecret,$userfail);
-            $nyauser->writehistory("USER_SIGN_IN",2040205,$userhash,$totptoken,$totpsecret,$process);
-            $returnjson = $nlcore->msg->m(0,2040205,$alertinfo);
+            $nyauser->writehistory("USER_SIGN_IN",2040205,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
+            $returnjson = $nlcore->msg->m(0,2040205,$alertinfo[1]);
             $returnjson["enabletime"] = $userinfoarr["enabletime"];
             echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
             die();
         }
 
         //检查是否需要两步验证
-
         $fa = $userinfoarr["2fa"];
         if ($fa || $fa != "") {
             $process .= ",2fa=".$userinfoarr["2fa"];
@@ -112,7 +111,7 @@ class nyalogin {
                 $returnjson = $nlcore->msg->m(0,2040300);
                 $returnjson["supported2fa"] = $faarr;
                 if (in_array("qa", $faarr)) {
-                    $returnjson["question"] = getquestion($userhash,$totpsecret);
+                    $returnjson["question"] = $nyauser->getquestion($userhash,$totpsecret);
                 }
                 echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
                 die();
@@ -126,14 +125,14 @@ class nyalogin {
                 if (!is_numeric($faval) || strlen($faval) != 6) {
                     //TOTP代码错误。记录历史记录。
                     $this->loginfailuretimes($userid,$totpsecret,$userfail);
-                    $nyauser->writehistory("USER_SIGN_IN",2040303,$userhash,$totptoken,$totpsecret,$process);
+                    $nyauser->writehistory("USER_SIGN_IN",2040303,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
                     $nlcore->msg->stopmsg(2040303,$totpsecret);
                 }
                 //TODO: 检查TOTP
             } else if ($jsonarr["2famode"] == "qa") {
                 //密码提示问题
                 // $this->loginfailuretimes($userid,$totpsecret,$userfail);
-                // $nyauser->writehistory("USER_SIGN_IN",2040304,$userhash,$totptoken,$totpsecret,$process);
+                // $nyauser->writehistory("USER_SIGN_IN",2040304,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
                 // $nlcore->msg->stopmsg(2040304,$totpsecret);
                 //TODO: 检查密码提示问题
             } else if ($jsonarr["2famode"] == "rc") {
@@ -141,7 +140,7 @@ class nyalogin {
                 if (strlen($faval) != 25) {
                     //恢复代码错误。记录历史记录。
                     $this->loginfailuretimes($userid,$totpsecret,$userfail);
-                    $nyauser->writehistory("USER_SIGN_IN",2040305,$userhash,$totptoken,$totpsecret,$process);
+                    $nyauser->writehistory("USER_SIGN_IN",2040305,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
                     $nlcore->msg->stopmsg(2040305,$totpsecret);
                 }
                 //TODO: 检查恢复代码，没问题则删除恢复代码
@@ -150,9 +149,52 @@ class nyalogin {
             $process .= ",2fa=no";
         }
 
-        //写入历史记录
-        $nyauser->writehistory("USER_SIGN_IN",1030000,$userhash,$totptoken,$totpsecret,$process,$token);
+        //分配 token
+        $token = $nlcore->safe->md6($userhash.$timestamp);
+        $tokentimeout = 0;
+        if (isset($jsonarr["timeout"])) {
+            $tokentimeout = intval($jsonarr["timeout"]);
+        } else {
+            $tokentimeout = $nlcore->cfg->verify->tokentimeout;
+        }
+        $tokentimeout += $timestamp;
+        $tokentimeoutstr = $nlcore->safe->getdatetime(null,$tokentimeout)[1];
+        $insertDic = [
+            "token" => $token,
+            "apptoken" => $totptoken,
+            "ipid" => $ipid,
+            "appid" => $appid,
+            "time" => $timestr,
+            "endtime" => $tokentimeoutstr
+        ];
+        $tableStr = $nlcore->cfg->db->tables["session"];
+        $result = $nlcore->db->insert($tableStr,$insertDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040113,$totpsecret);
 
+        //查询用户具体资料
+        $userexinfoarr = $nyauser->getuserinfo($userhash,$totpsecret);
+
+        //写入成功历史记录
+        $nyauser->writehistory("USER_SIGN_IN",1030000,$userhash,$totptoken,$totpsecret,$ipid,$user,$process,$token);
+
+        //返回到客户端
+        $returnjson = $nlcore->msg->m(0,1030000);
+        $returnjson = [
+            "token" => $token,
+            "time" => $timestamp,
+            "endtime" => $tokentimeout,
+            "mail" => $userinfoarr["mail"],
+            "telarea" => $userinfoarr["telarea"],
+            "tel" => $userinfoarr["tel"],
+            "userinfo" => $userexinfoarr
+        ];
+        if ($alertinfo[0] == 3000000) {
+            $insertDic["code"] = 1030001;
+        } else if ($alertinfo[0] != null) {
+            $insertDic["code"] = 1030002;
+            $insertDic["msg"] = $insertDic["msg"].$alertinfo[1];
+        }
+        echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 
     /**
@@ -160,7 +202,6 @@ class nyalogin {
      * @param Int users 数据表 ID
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @param Int/String fail 当前登录失败次数，-1 则清除失败次数
-     * @return:
      */
     function loginfailuretimes($id,$totpsecret,$fail=-1) {
         $f = intval($fail) + 1;
@@ -169,30 +210,6 @@ class nyalogin {
         $whereDic = ["id" => $id];
         $result = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
-    }
-
-    /**
-     * @description: 取出密码提示问题
-     * @param String userhash 用户哈希
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
-     * @param Boolean all : true=顺序全部取出 false=乱序取出随机两个
-     * @return Array<String> 密码提示问题数组
-     */
-    function getquestion($userhash,$totpsecret,$all=false) {
-        global $nlcore;
-        $tableStr = $nlcore->cfg->db->tables["protection"];
-        $columnArr = ["question1","question2","question3"];
-        $whereDic = ["userhash" => $userhash];
-        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040301,$totpsecret);
-        $questions = $result[2][0];
-        if (!isset($questions["question1"]) || $questions["question1"] == "" || !isset($questions["question2"]) || $questions["question2"] == "" || !isset($questions["question3"]) || $questions["question3"] == "") {
-            $nlcore->msg->stopmsg(2040301,$totpsecret);
-        }
-        $returnarr = [$questions["question1"],$questions["question2"],$questions["question3"]];
-        shuffle($returnarr);
-        array_pop($returnarr);
-        return $returnarr;
     }
 }
 

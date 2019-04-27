@@ -115,13 +115,13 @@ class nyauser {
      * @param String process 过程记录
      * @param String session 当前会话
      */
-    function writehistory($operation,$code,$userhash,$totptoken,$totpsecret,$process=null,$session=null) {
-        //记录 history 表
+    function writehistory($operation,$code,$userhash,$totptoken,$totpsecret,$ipid,$sender,$process=null,$session=null) {
+        global $nlcore;
         $insertDic = [
             "userhash" => $userhash,
             "apptoken" => $totptoken,
-            "operation" => "USER_SIGN_IN",
-            "sender" => $user,
+            "operation" => $operation,
+            "sender" => $sender,
             "ipid" => $ipid,
             "process" => $process,
             "result" => $code
@@ -129,6 +129,57 @@ class nyauser {
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
+    }
+
+    /**
+     * @description: 取出密码提示问题
+     * @param String userhash 用户哈希
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @param Boolean all : true=顺序全部取出 false=乱序取出随机两个
+     * @return Array<String> 密码提示问题数组
+     */
+    function getquestion($userhash,$totpsecret,$all=false) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["protection"];
+        $columnArr = ["question1","question2","question3"];
+        $whereDic = ["userhash" => $userhash];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040301,$totpsecret);
+        $questions = $result[2][0];
+        if (!isset($questions["question1"]) || $questions["question1"] == "" || !isset($questions["question2"]) || $questions["question2"] == "" || !isset($questions["question3"]) || $questions["question3"] == "") {
+            $nlcore->msg->stopmsg(2040301,$totpsecret);
+        }
+        $returnarr = [$questions["question1"],$questions["question2"],$questions["question3"]];
+        shuffle($returnarr);
+        array_pop($returnarr);
+        return $returnarr;
+    }
+    /**
+     * @description: 取得用户个性化信息
+     * @param String userhash 用户哈希
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @return Array<Array> 用户信息数组（一个用户可以关联多条信息，但唯一的主信息一直在数组第一位）
+     */
+    function getuserinfo($userhash,$totpsecret) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $columnArr = ["type","name","nameid","genders","address","profile","description","image_file","background_file"];
+        $whereDic = ["userhash" => $userhash];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040206,$totpsecret);
+        $userinfos = $result[2];
+        $newuserinfos = [];
+        $maininfo = [];
+        for ($i = 0; $i < count($userinfos); $i++) {
+            $nowuserinfo = $userinfos[$i];
+            if ($nowuserinfo["type"] == 0) {
+                array_push($maininfo,$nowuserinfo);
+            } else {
+                array_push($newuserinfos,$nowuserinfo);
+            }
+        }
+        if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);
+        return array_merge($maininfo,$newuserinfos);
     }
 }
 ?>
