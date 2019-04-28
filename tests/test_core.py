@@ -14,7 +14,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     """向服务器提交内容并显示返回内容，自动处理加密解密"""
 
     # 需要提供与数据库 external_app 表中记录的内容
-    apiverAppidSecret = ["1","testapp1","mipxT4wpGJ7JD29ZwI87AKmRvvCx19rI"]
+    apiverAppidSecret = ["1","mipxT4wpGJ7JD29ZwI87AKmRvvCx19rI"]
 
     if (showAllInfo) : tlog("准备输入的数据 ...")
     tlog(postUrl)
@@ -36,8 +36,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
             f.close()
     if (showAllInfo) : tlog("插入固定提交信息 ...")
     jsonDataArr["apiver"] = apiverAppidSecret[0]
-    jsonDataArr["appid"] = apiverAppidSecret[1]
-    jsonDataArr["appsecret"] = apiverAppidSecret[2]
+    jsonDataArr["appsecret"] = apiverAppidSecret[1]
     if (showAllInfo) :
         tlog(apiverAppidSecret)
         tlog("JSON 编码 ...")

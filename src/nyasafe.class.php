@@ -367,15 +367,13 @@ class nyasafe {
     }
     /**
      * @description: 检查 APP 是否已经注册 appname 和 appsecret
-     * @param String appname 已注册的应用名
      * @param String appsecret 已注册的应用密钥app_id
      * @return String 数据库中的 ID 号 或 null
      */
-    function chkappsecret($appname,$appsecret) {
+    function chkappsecret($appsecret) {
         global $nlcore;
         $table = $nlcore->cfg->db->tables["app"];
         $whereDic = array(
-            "name" => $appname,
             "secret" => $appsecret
         );
         $result = $nlcore->db->select(["id"],$table,$whereDic);
@@ -553,8 +551,8 @@ class nyasafe {
         //检查API版本是否一致
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
-        $appid = $this->chkappsecret($jsonarr["appid"],$jsonarr["appsecret"]);
-        if (!isset($jsonarr["appid"]) || !isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appid"],1,64) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $appid == null) $nlcore->msg->stopmsg(2020401);
+        $appid = $this->chkappsecret($jsonarr["appsecret"]);
+        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $appid == null) $nlcore->msg->stopmsg(2020401);
         return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
     }
     /**

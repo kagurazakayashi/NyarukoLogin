@@ -3,7 +3,6 @@ nyaconfig.class.php
 .DS_Store
 Thumbs.db
 vendor
-tests/*.json
 .tmp
 tmp*
 __pycache__
