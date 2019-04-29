@@ -56,15 +56,21 @@ class nyalogin {
             //不需要验证码
             $process .= ",usecaptcha=no";
         } else if ($needcaptcha == "captcha") { //需要图形验证码
-            //没有验证码
             $process .= ",usecaptcha=yes";
-            if (!isset($userinfoarr["captcha"])) {
-                $nlcore->msg->stopmsg(2040202,$totpsecret);
-                //TODO:发放一个新的验证码
-            }
-            //检查验证码是否正确
             $nyacaptcha = new nyacaptcha();
-            if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$userinfoarr["captcha"])) die();
+            //没有验证码
+            if (!isset($userinfoarr["captcha"])) {
+                $returnjson = $nlcore->msg->m(0,2040202);
+                //发放一个新的验证码
+                $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
+                $returnjson["img"] = $newcaptcha["img"];
+                $returnjson["timestamp"] = $newcaptcha["timestamp"];
+                echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
+                die();
+            }
+            //检查验证码是否正确，不正确重新发放一个
+            $nyacaptcha = new nyacaptcha();
+            if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         } else {
             $nlcore->msg->stopmsg(2040203,$totpsecret);
         }
@@ -144,6 +150,10 @@ class nyalogin {
                     $nlcore->msg->stopmsg(2040305,$totpsecret);
                 }
                 //TODO: 检查恢复代码，没问题则删除恢复代码
+            } else if ($jsonarr["2famode"] == "sm") {
+                //TODO: 检查短信验证码，如果没有则发送一条
+            } else if ($jsonarr["2famode"] == "ma") {
+                //TODO: 检查邮件验证码，如果没有则发送一条
             }
         } else {
             $process .= ",2fa=no";
@@ -181,7 +191,7 @@ class nyalogin {
         $returnjson = $nlcore->msg->m(0,1030000);
         $returnjson = [
             "token" => $token,
-            "time" => $timestamp,
+            "timestamp" => $timestamp,
             "endtime" => $tokentimeout,
             "mail" => $userinfoarr["mail"],
             "telarea" => $userinfoarr["telarea"],

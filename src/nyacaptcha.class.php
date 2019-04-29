@@ -81,8 +81,8 @@ class nyacaptcha {
     }
 
     /**
-     * @description: 验证码没有验证失败后用此函数重新创建一个
-     * @param String code 验证码内容
+     * @description: 验证码验证失败后用此函数重新创建一个
+     * @param String code 错误代码
      * @param String totpsecret totp加密码
      * @return Array<String> 验证码相关信息（其中code、msg会不同）
      */
