@@ -519,8 +519,8 @@ class nyasafe {
             ];
             $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
             //空或查询失败都视为不正确
-            if (!$result || $result[0] != 1010000 || !isset($result[2][0][0])) $nlcore->msg->stopmsg(2020409);
-            $secret = $result[2][0][0];
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409);
+            $secret = $result[2][0]["secret"];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $gaisok = false;

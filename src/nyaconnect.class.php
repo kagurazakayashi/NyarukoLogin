@@ -232,7 +232,7 @@
                 if(@mysqli_num_rows($result)) {
                     $result_array = array();
                     $rowi = 0;
-                    while ($row = mysqli_fetch_array($result)) {
+                    while ($row = mysqli_fetch_array($result,MYSQLI_ASSOC)) {
                         $result_array[$rowi] = $row;
                         $rowi++;
                     }
