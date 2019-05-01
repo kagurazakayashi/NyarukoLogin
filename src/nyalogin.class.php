@@ -16,7 +16,7 @@ class nyalogin {
         //检查参数输入是否齐全
         $getkeys = ["password","user"];
         if ($nlcore->safe->keyinarray($jsonarr,$getkeys) > 0) {
-            $nlcore->msg->stopmsg(2000101,$totpsecret); //TODO: 验证代码
+            $nlcore->msg->stopmsg(2000101,$totpsecret);
         }
         //检查是邮箱还是手机号
         $nyauser = new nyauser();
@@ -57,18 +57,11 @@ class nyalogin {
             $process .= ",usecaptcha=no";
         } else if ($needcaptcha == "captcha") { //需要图形验证码
             $process .= ",usecaptcha=yes";
-            $nyacaptcha = new nyacaptcha();
             //没有验证码
             if (!isset($userinfoarr["captcha"])) {
-                $returnjson = $nlcore->msg->m(0,2040202);
-                //发放一个新的验证码
-                $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
-                $returnjson["img"] = $newcaptcha["img"];
-                $returnjson["timestamp"] = $newcaptcha["timestamp"];
-                echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
-                die();
+                $this->getcaptcha(2040202,$totpsecret); //发放一个新的验证码
             }
-            //检查验证码是否正确，不正确重新发放一个
+            //有验证码，检查验证码是否正确，不正确重新发放一个
             $nyacaptcha = new nyacaptcha();
             if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         } else {
@@ -83,6 +76,11 @@ class nyalogin {
             //密码错误。记录历史记录。
             $this->loginfailuretimes($userid,$totpsecret,$userfail);
             $nyauser->writehistory("USER_SIGN_IN",2040204,$userhash,$totptoken,$totpsecret,$ipid,$user,$process);
+            //预估下次是否会被要求验证码
+            $needcaptcha = $nyauser->needcaptcha($loginfail + 1);
+            if ($needcaptcha == "captcha") { //需要图形验证码
+                $this->getcaptcha(2040208,$totpsecret); //发放一个新的验证码
+            }
             $nlcore->msg->stopmsg(2040204,$totpsecret);
         }
         $process .= ",password=ok";
@@ -188,8 +186,15 @@ class nyalogin {
         $nyauser->writehistory("USER_SIGN_IN",1030000,$userhash,$totptoken,$totpsecret,$ipid,$user,$process,$token);
 
         //返回到客户端
-        $returnjson = $nlcore->msg->m(0,1030000);
-        $returnjson = [
+        $returnjson = [];
+        if ($alertinfo[0] == 3000000) {
+            $returnjson = $nlcore->msg->m(0,1030001);
+        } else if ($alertinfo[0] != null) {
+            $returnjson = $nlcore->msg->m(0,1030002);
+            $returnjson["msg"] = $returnjson["msg"].$alertinfo[1];
+        }
+
+        $returnjson = array_merge($returnjson,[
             "token" => $token,
             "timestamp" => $timestamp,
             "endtime" => $tokentimeout,
@@ -197,13 +202,7 @@ class nyalogin {
             "telarea" => $userinfoarr["telarea"],
             "tel" => $userinfoarr["tel"],
             "userinfo" => $userexinfoarr
-        ];
-        if ($alertinfo[0] == 3000000) {
-            $insertDic["code"] = 1030001;
-        } else if ($alertinfo[0] != null) {
-            $insertDic["code"] = 1030002;
-            $insertDic["msg"] = $insertDic["msg"].$alertinfo[1];
-        }
+        ]);
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 
@@ -220,6 +219,16 @@ class nyalogin {
         $whereDic = ["id" => $id];
         $result = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
+    }
+
+    function getcaptcha($code,$totpsecret) {
+        $nyacaptcha = new nyacaptcha();
+        $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
+        $returnjson = $nlcore->msg->m(0,$code);
+        $returnjson["img"] = $newcaptcha["img"];
+        $returnjson["timestamp"] = $newcaptcha["timestamp"];
+        echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
+        die();
     }
 }
 

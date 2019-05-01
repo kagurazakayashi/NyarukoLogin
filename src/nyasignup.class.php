@@ -98,6 +98,7 @@ class nyasignup {
             "regtime" => $timestr,
             "enabletime" => $timestr
         ];
+        if (isset($jsonarr["type"])) $insertDic["type"] = $jsonarr["type"];
         $returnjson["code"] = 1020000;
         if ($logintype == 0) {
             $insertDic["mail"] = $user; //邮件注册流程
