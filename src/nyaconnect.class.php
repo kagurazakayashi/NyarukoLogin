@@ -80,8 +80,8 @@
          */
         function log($logstr) {
             global $nlcore;
-            if (!isset($nlcore->cfg->db->logfile)) return;
-            $logfile = $nlcore->cfg->db->logfile;
+            if (!isset($nlcore->cfg->db->logfile_db)) return;
+            $logfile = $nlcore->cfg->db->logfile_db;
             if ($logfile) {
                 $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
                 $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
@@ -221,7 +221,7 @@
         /**
          * @description: 执行SQL连接
          * @param String sqlcmd SQL语句
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @return Array[Int,Int,Array] 状态码,新建的ID,返回的数据
          */
         function sqlc($sqlcmd) {
             global $nlcore;
@@ -295,7 +295,11 @@
                     if ($val) {
                         $keyval .= "`".$key."` = '".$val."'".$modestr;
                     } else {
-                        $keyval .= "`".$key."` = NULL".$modestr;
+                        if ($mode == 2) {
+                            $keyval .= "`".$key."` IS NULL".$modestr;
+                        } else {
+                            $keyval .= "`".$key."` = NULL".$modestr;
+                        }
                     }
                 }
                 return substr($keyval, 0, (0-$modestrlen));
