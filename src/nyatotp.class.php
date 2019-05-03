@@ -22,8 +22,11 @@ class nyatotp {
      * @param String<32> appsecret 应用密钥
      * @param Int timestamp 时间戳
      */
-    function newdevicetotp($appsecret,$timestamp=null) {
+    function newdevicetotp() {
         global $nlcore;
+        $argv = count($_POST) > 0 ? $_POST : $_GET;
+        if (!isset($argv["appsecret"])) $nlcore->msg->stopmsg(2000101,$totpsecret);
+        $appsecret = $argv["appsecret"];
         //检查IP访问频率
         $result = $nlcore->safe->frequencylimitation("getlinktotp");
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
@@ -35,20 +38,21 @@ class nyatotp {
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
         //检查应用名称和密钥
-        if (!$nlcore->safe->isNumberOrEnglishChar($appsecret,32,32)) $nlcore->msg->stopmsg(2020400);
+        if (!$nlcore->safe->isNumberOrEnglishChar($appsecret,64,64)) $nlcore->msg->stopmsg(2020409);
         $datadic = [
             "secret" => $appsecret
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["app"],$datadic);
-        if ($result[0] >= 2000000 || $result[2][0][0] == 0) $nlcore->msg->stopmsg(2020401);
+        if ($result[0] >= 2000000 || $result[2][0]["count(*)"] == 0) $nlcore->msg->stopmsg(2020401);
         //检查APP是否已经注册 $appsecret
         $appid = $nlcore->safe->chkappsecret($appsecret);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
         //检查客户端提供的时间差异，没有问题则用客户端时间
         $timeSlice = null;
-        if ($timestamp) {
-            $nlcore->safe->timestampdiff($time,$timestamp);
-            $timeSlice = floor($timestamp / 30);
+        if (isset($argv["timestamp"])) {
+            $ltimestamp = $argv["timestamp"];
+            $nlcore->safe->timestampdiff($time,$ltimestamp);
+            $timeSlice = floor($ltimestamp / 30);
         }
         //创建新的 totp secret
         $secret = $this->ga->createSecret(64);
@@ -63,12 +67,40 @@ class nyatotp {
         //如果 secret 或者 apptoken 已存在则删除
         $result = $nlcore->db->delete($nlcore->cfg->db->tables["totp"],$datadic,"","OR");
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020405);
+        //写入 device 表
+        $datadic = array();
+        $typeenum = ['phone','phone_emu','pad','pad_emu','pc','web','debug','other'];
+        $datadic["type"] = isset($argv["devtype"]) ? strtolower($nlcore->safe->retainletternumber($argv["devtype"])) : null;
+        if ($datadic["type"] && !in_array($datadic["type"],$typeenum)) $nlcore->msg->stopmsg(2000104);
+        $osenum = ['ios','android','windows','linux','harmony','emu','other'];
+        $datadic["os"] = isset($argv["devos"]) ? strtolower($nlcore->safe->retainletternumber($argv["devos"])) : null;
+        if ($datadic["os"] && !in_array($datadic["os"],$osenum)) $nlcore->msg->stopmsg(2000104);
+        $datadic["device"] = isset($argv["devdevice"]) ? $nlcore->safe->retainletternumber($argv["devdevice"]) : null;
+        $datadic["osver"] = isset($argv["devosver"]) ? $nlcore->safe->retainletternumber($argv["devosver"]) : null;
+        $datadic["info"] = isset($argv["devinfo"]) ? $nlcore->safe->retainletternumber($argv["devinfo"]) : null;
+        $deviceid = null;
+        if (!$nlcore->safe->allnull($datadic)) {
+            //检查条目是否存在
+            $result = $nlcore->db->select(["id"],$nlcore->cfg->db->tables["device"],$datadic);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020416);
+            if (isset($result[2])) {
+                $resultarr = $result[2];
+                if (count($resultarr) > 0 && isset($resultarr[0]["id"])) $deviceid = $resultarr[0]["id"];
+            }
+        }
+        if (!$deviceid) {
+            //如果不存在
+            $result = $nlcore->db->insert($nlcore->cfg->db->tables["device"],$datadic);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020416);
+            $deviceid = $result[1];
+        }
         //写入 session_totp 表
         $datadic = array(
             "secret" => $secret,
             "apptoken" => $apptoken,
             "ipid" => $ipid,
             "appid" => $appid,
+            "deviceid" => $deviceid,
             "time" => $stime
         );
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"],$datadic);
