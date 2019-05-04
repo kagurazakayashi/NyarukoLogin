@@ -7,3 +7,4 @@ vendor
 tmp*
 __pycache__
 .vs*
+image

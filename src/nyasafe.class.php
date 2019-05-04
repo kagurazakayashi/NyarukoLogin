@@ -44,8 +44,9 @@ class nyasafe {
      * @return String 生成的随机MD5/MD6码
      */
     function randhash($salt="",$md6=false) {
-        $data = (double)microtime().$salt.$this->randstr(32);
-        return md5($data);
+        $data = (double)microtime().$salt.$this->randstr(16);
+        if ($md6) return $this->md6($data);
+        else return md5($data);
     }
     /**
      * @description: 生成随机数发生器种子
@@ -85,28 +86,44 @@ class nyasafe {
     }
     /**
      * @description: 过滤字符串中的非法字符
-     * @param String value 源字符串
+     * @param String str 源字符串
      * @param Bool errdie 如果出错则完全中断执行，返回错误信息JSON
      * @param Bool dhtml 是否将HTML代码也视为非法字符
      * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return String 经过过滤的字符
      */
-    function safestr($value,$errdie=true,$dhtml=false,$totpsecret=null) {
+    function safestr($str,$errdie=true,$dhtml=false,$totpsecret=null) {
         global $nlcore;
-        $ovalue = $value;
+        $ovalue = $str;
         if (get_magic_quotes_gpc()) {
-            $value = stripslashes($value);
+            $str = stripslashes($str);
         }
-        if ($value != $ovalue && $errdie == true) {
+        if ($str != $ovalue && $errdie == true) {
             $nlcore->msg->stopmsg(2020101,$totpsecret);
         }
         if ($dhtml) {
-            $value = htmlspecialchars($value);
-            if ($value != $ovalue && $errdie == true) {
+            $str = htmlspecialchars($str);
+            if ($str != $ovalue && $errdie == true) {
                 $nlcore->msg->stopmsg(2020103,$totpsecret);
             }
         }
-        return $value;
+        return $str;
+    }
+    /**
+     * @description: 只保留字符串中所有的非字母和数字
+     * @param String str 源字符串
+     * @return String 经过过滤的字符
+     */
+    function retainletternumber($str) {
+        return preg_replace('/[\W]/', '', $str);
+    }
+    /**
+     * @description: 只保留字符串中所有的数字
+     * @param String str 源字符串
+     * @return String 经过过滤的字符
+     */
+    function retainnumber($str) {
+        return preg_replace('/[^\d]/', '', $str);
     }
     /**
      * @description: 检查是否为电子邮件地址
@@ -155,11 +172,11 @@ class nyasafe {
      * @return Int 0:未知,40:v4,60:v6,+1:公共地址
      */
     function iptype($ip) {
-        $iptypenum = 0;
-        if ($this->isIPv4($ip)) $iptypenum = 40;
-        else if ($this->isIPv6($ip)) $iptypenum = 60;
-        if ($this->isPubilcIP($ip)) $iptypenum ++;
-        return $iptypenum;
+        $iptype = "other";
+        if ($this->isIPv4($ip)) $iptype = "ipv4";
+        else if ($this->isIPv6($ip)) $iptype = "ipv6";
+        if ($this->isPubilcIP($ip)) $iptype = $iptype."_local";
+        return $iptype;
     }
     /**
      * @description: 检查是否为整数数字字符串
@@ -493,7 +510,7 @@ class nyasafe {
         if (!isset($argv["t"])) { //检查应用令牌
             $nlcore->msg->stopmsg(2020408);
         }
-        if (!$this->is_md5($argv["t"])) { //检查应用令牌格式
+        if (!$this->is_md6($argv["t"])) { //检查应用令牌格式
             $nlcore->msg->stopmsg(2020409);
         }
         //检查数据超长
@@ -552,7 +569,7 @@ class nyasafe {
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
         $appid = $this->chkappsecret($jsonarr["appsecret"]);
-        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],32,32) || $appid == null) $nlcore->msg->stopmsg(2020401);
+        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64) || $appid == null) $nlcore->msg->stopmsg(2020401);
         return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
     }
     /**
@@ -643,6 +660,18 @@ class nyasafe {
         }
         if ($getcount) return count($novalkey);
         return $novalkey;
+    }
+    /**
+     * @description: 数组是否全都是 null
+     * @param Array nowarray 需要被测试的数组
+     * @return Bool 是否全都是 null
+     */
+    function allnull($nowarray) {
+        if (!$nowarray || count($nowarray) == 0) return false;
+        foreach ($nowarray as $key => $value) {
+            if ($value != null) return false;
+        }
+        return true;
     }
     /**
      * @description: 获得需要使用的语言

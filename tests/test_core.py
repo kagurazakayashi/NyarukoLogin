@@ -14,7 +14,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     """向服务器提交内容并显示返回内容，自动处理加密解密"""
 
     # 需要提供与数据库 external_app 表中记录的内容
-    apiverAppidSecret = ["1","mipxT4wpGJ7JD29ZwI87AKmRvvCx19rI"]
+    apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
 
     if (showAllInfo) : tlog("准备输入的数据 ...")
     tlog(postUrl)
@@ -30,7 +30,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         totpsecret = filedataarr["totp_secret"]
         totptoken = filedataarr["totp_token"]
     except:
-        tlog("\033[31m错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」\033[0m")
+        terr("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
     finally:
         if f:
             f.close()
@@ -78,7 +78,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     try:
         postRes = request.urlopen(postReq)
     except error.HTTPError as e:
-        tlog("\033[31m错误：HTTP 连接遇到问题！\033[0m")
+        terr("错误：HTTP 连接遇到问题！")
         tlog(e)
         tlog("使用 cURL 获取原始数据 ...")
         curlcmd = 'curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"'
@@ -87,7 +87,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         tlog(output.read())
         sys.exit(1)
     except error.URLError as e:
-        tlog("\033[31m错误：网址不正确！\033[0m")
+        terr("错误：网址不正确！")
         tlog(e)
         sys.exit(1)
     postRes = postRes.read()
@@ -134,12 +134,12 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     try:
         dataarr = demjson.decode(jsonstr)
     except:
-        tlog("\033[31m错误：解密失败。\033[0m")
+        terr("错误：解密失败。")
         tlog("原始内容：")
         tlog(postRes)
         sys.exit()
     tlog(dataarr)
-    if (showAllInfo) : tlog("\033[32m"+"完成。"+"\033[0m")
+    if (showAllInfo) : tok("完成。")
     return dataarr
 
 def tlog(loginfo:"信息内容",end='\n'):
@@ -149,9 +149,17 @@ def tlog(loginfo:"信息内容",end='\n'):
     print(nowtime,end='\033[0m ')
     print(loginfo,end=end)
 
+def terr(loginfo:"信息内容"):
+    """输出错误"""
+    tlog("\033[31m"+loginfo+"\033[0m")
+
+def tok(loginfo:"信息内容"):
+    """输出正确"""
+    tlog("\033[32m"+loginfo+"\033[0m")
+
 def title(loginfo:"信息内容"):
     """输出标题"""
-    tlog("\033[1m===== "+loginfo+" =====\033[0m")
+    tlog("\033[1m"+loginfo.center(40,'=')+"\033[0m")
 
 def instr(alertinfo:"提示用户要输入的内容",isint=False):
     """接收用户输入"""

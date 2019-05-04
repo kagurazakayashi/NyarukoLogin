@@ -163,7 +163,7 @@ class nyauser {
     function getuserinfo($userhash,$totpsecret) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
-        $columnArr = ["infotype","name","nameid","genders","address","profile","description","image","background"];
+        $columnArr = ["infotype","name","nameid","gender","address","profile","description","image","background"];
         $whereDic = ["userhash" => $userhash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040206,$totpsecret);
