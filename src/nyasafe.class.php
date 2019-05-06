@@ -472,6 +472,7 @@ class nyasafe {
     function encryptargv($dataarray,$secret=null) {
         global $nlcore;
         //转换为json
+        $this->log("RETURN",$dataarray);
         $json = json_encode($dataarray);
         if ($secret) {
             //使用secret生成totp数字
@@ -503,6 +504,7 @@ class nyasafe {
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
+        $this->log($_SERVER['REQUEST_METHOD'],$argv);
         //被要求强制进行 TOTP/XXTEA 加密
         if (!isset($argv["j"]) && $nlcore->cfg->app->alwayencrypt) {
             $nlcore->msg->stopmsg(2020415);
@@ -571,6 +573,24 @@ class nyasafe {
         $appid = $this->chkappsecret($jsonarr["appsecret"]);
         if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64) || $appid == null) $nlcore->msg->stopmsg(2020401);
         return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
+    }
+    /**
+     * @description: 数据发送和接收时进行记录
+     * @param {type}
+     * @return:
+     */
+    function log($mode,$logarr) {
+        global $nlcore;
+        if (!isset($nlcore->cfg->db->logfile_ud)) return;
+        $logfile = $nlcore->cfg->db->logfile_ud;
+        if ($logfile) {
+            $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
+            $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
+            $logstr = "[".$this->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$mode."] ".print_r($logarr,true).PHP_EOL;
+            $fp = fopen($logfile,"a");
+            fwrite($fp,$logstr.PHP_EOL);
+            fclose($fp);
+        }
     }
     /**
      * @description: 批量替换指定字符
