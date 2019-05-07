@@ -181,5 +181,53 @@ class nyauser {
         if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);
         return array_merge($maininfo,$newuserinfos);
     }
+
+    function chklogin($userhash,$totpsecret) {
+        global $nlcore;
+        //取出所有 session 中的处于有效期内的 apptoken
+        $tableStr = $nlcore->cfg->db->tables["session"];
+        $columnArr = ["id","apptoken","deviceid","time"];
+        $whereDic = ["userhash" => $userhash];
+        $customWhere = "`endtime` > CURRENT_TIME";
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        print_r($result);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040209,$totpsecret);
+        //如果有
+        if (isset($result[2]) && count($apptokens) > 0) {
+            $apptokens = $result[2];
+            $apptokensc = count($apptokens);
+            //检查有没有超过总数限制
+            if ($apptokensc >= $nlcore->cfg->app->maxlogin["all"]) {
+                //超过总数限制，登出最早的终端。取最小的时间戳对应的id
+                $ttime = PHP_INT_MAX;
+                $tid = -1;
+                foreach ($apptokens as $apptoken) {
+                    $ttimen = strtotime($apptoken["time"]);
+                    if ($ttimen < $ttime) {
+                        $ttime = $ttimen;
+                        $tid = $apptoken["id"];
+                    }
+                }
+                if ($tid == -1) $nlcore->msg->stopmsg(2040211,$totpsecret);
+                //删除最旧的会话
+                $delwheredic = ["id" => $tid];
+                $delresult = $nlcore->db->delete($tableStr,$delwheredic);
+                if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211,$totpsecret);
+            }
+        }
+
+        //获取每个 session 中的 apptoken 去 totp 表查
+        //totp 表中查到 deviceid，去 device 表查 os 字段
+    }
+
+    function getdeviceid($totpsecret) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $columnArr = ["deviceid"];
+        $whereDic = ["secret" => $totpsecret];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] >= 2000000 || !isset($result[2][0]["deviceid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
+        return $result[2][0]["deviceid"];
+    }
 }
 ?>

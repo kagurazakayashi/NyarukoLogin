@@ -104,6 +104,10 @@ class nyalogin {
             echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
             die();
         }
+        //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
+        $nyauser->chklogin($userhash,$totpsecret);
+        die();
+
 
         //检查是否需要两步验证
         $fa = $userinfoarr["2fa"];
@@ -167,11 +171,13 @@ class nyalogin {
         }
         $tokentimeout += $timestamp;
         $tokentimeoutstr = $nlcore->safe->getdatetime(null,$tokentimeout)[1];
+        $deviceid = $nyauser->getdeviceid($totpsecret);
         $insertDic = [
             "token" => $token,
             "apptoken" => $totptoken,
+            "userhash" => $userhash,
             "ipid" => $ipid,
-            "appid" => $appid,
+            "deviceid" => $deviceid,
             "time" => $timestr,
             "endtime" => $tokentimeoutstr
         ];
