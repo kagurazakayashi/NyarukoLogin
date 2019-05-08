@@ -106,7 +106,7 @@
             $whereDic = $this->safe($whereDic);
             $columnStr = implode('`,`',$columnArr);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }

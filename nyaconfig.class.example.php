@@ -37,6 +37,7 @@ class nyasetting_db {
         "usergroup" => "u1_usergroup", //用户组表
         "history" => "u1_history", //日志
         "totp" => "u1_totp", //通信动态密码
+        "device" => "u1_device" //设备信息表
     ];
     //Redis数据库设定
     var $redis = [
@@ -50,8 +51,10 @@ class nyasetting_db {
     var $redis_tables = [
         "frequencylimitation" => "u1_fl"
     ];
-    //将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
-    var $logfile = "B:\\db.log";
+    //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
+    var $logfile_db = "B:\\db.log";
+    //调试用：将每条收到的数据和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
+    var $logfile_ud = "B:\\submit.log";
 }
 
 //应用相关设置
@@ -60,8 +63,8 @@ class nyasetting_app {
     var $app = "nyalogin_dev"; //应用名称（纯字母）（预留未实装）
     var $appname = "测试应用1"; //应用描述
     var $appurl = "http://192.168.2.100/NyarukoLogin/"; //访问网址（/结尾）
-    var $jsonlen_get = 2000; //数据（j参数）使用 get 方式提交时允许长度（字节）
-    var $jsonlen_post = 1000000; //数据（j参数）使用 post 方式提交时允许长度（字节）
+    var $maxlen_get = 2000; //使用 get 方式提交时允许长度（字节）
+    var $maxlen_post = 1000000; //使用 post 方式提交时允许长度（字节）
     var $timezone = "Asia/Shanghai"; //时区，留空则按照 php.ini
     var $alwayencrypt = false; //强制进行 TOTP/XXTEA 加密
     var $timestamplimit = 15; //允许客户端与服务端的时间差异（秒；如果客户端报告的话）
@@ -89,6 +92,19 @@ class nyasetting_app {
         "emaillen" => 50, //邮件地址长度限制
         "pwdexpiration" => 94608000 //密码有效期（秒）
     ];
+    //每个端可登录的设备数，key 和 device 表 type 的 enum 相对应
+    var $maxlogin = [
+        "all" => 3,
+        "phone" => 1,
+        "phone_emu" => 1,
+        "pad" => 1,
+        "pad_emu" => 1,
+        "pc" => 1,
+        "web" => 1,
+        "debug" => 255,
+        "other" => 1
+    ];
+    //'phone','phone_emu','pad','pad_emu','pc','web','debug','other'
     //关键词过滤设置，数据应全转换为小写，将&作为通配符的 json
     //违禁词列表为 JSON 一维数组，每个字符串中可以加「wildcardchar」分隔以同时满足两个条件词。
     var $wordfilter = [
@@ -104,12 +120,16 @@ class nyasetting_app {
 }
 
 class nyasetting_verify {
+    //哪种验证码在登录失败几次后开始被需要
+    var $needcaptcha = [
+        "captcha" => 3
+    ];
     //图形验证码设置
     var $captcha = [
         "captcha" => true, //进行验证码验证
         "charset" => "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890", //可抽选字符
         "codelen" => 4, //验证码长度
-        "imgdir" => "tmp", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
+        "imgdir" => "image", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
         "imgname" => "captcha_" //验证码图片前缀
     ];
     //各种验证码的超时时间
@@ -128,6 +148,8 @@ class nyasetting_verify {
     var $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";
     //密码长度要求，[最少,最多]多少位
     var $passwordlength = [6,1024];
+    //默认 token 有效时间(秒)
+    var $tokentimeout = 15552000;
 }
 
 //初始化，不要修改

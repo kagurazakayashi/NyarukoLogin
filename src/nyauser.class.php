@@ -189,19 +189,20 @@ class nyauser {
         $columnArr = ["id","apptoken","deviceid","time"];
         $whereDic = ["userhash" => $userhash];
         $customWhere = "`endtime` > CURRENT_TIME";
-        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        print_r($result);
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,$customWhere);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040209,$totpsecret);
         //如果有
-        if (isset($result[2]) && count($apptokens) > 0) {
-            $apptokens = $result[2];
-            $apptokensc = count($apptokens);
+        if (isset($result[2]) && count($result[2]) > 0) {
+            $sessionarr = $result[2];
+            $sessionarrc = count($sessionarr);
+            $maxlogin = $nlcore->cfg->app->maxlogin;
+            $alltype = array_keys($maxlogin);
             //检查有没有超过总数限制
-            if ($apptokensc >= $nlcore->cfg->app->maxlogin["all"]) {
+            if ($sessionarrc >= $maxlogin["all"]) {
                 //超过总数限制，登出最早的终端。取最小的时间戳对应的id
                 $ttime = PHP_INT_MAX;
                 $tid = -1;
-                foreach ($apptokens as $apptoken) {
+                foreach ($sessionarr as $apptoken) {
                     $ttimen = strtotime($apptoken["time"]);
                     if ($ttimen < $ttime) {
                         $ttime = $ttimen;
@@ -213,7 +214,39 @@ class nyauser {
                 $delwheredic = ["id" => $tid];
                 $delresult = $nlcore->db->delete($tableStr,$delwheredic);
                 if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211,$totpsecret);
+                //查设备表来返回被登出的设备型号
+                return $this->getdeviceinfo($apptoken["deviceid"],$totpsecret);
             }
+            //从会话加密码获得当前设备型号ID
+            $tableStr = $nlcore->cfg->db->tables["totp"];
+            $columnArr = ["deviceid"];
+            $whereDic = ["secret" => $totpsecret];
+            $devidresult = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+            if ($devidresult[0] >= 2000000 || !isset($devidresult[2][0]["deviceid"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+            $thisdevid = $devidresult[2][0]["deviceid"];
+            //取会话数组中用这个设备型号ID的数据
+            $thisdevsession = [];
+            foreach ($sessionarr as $sessioninfo) {
+                if ($thisdevid == $sessioninfo["deviceid"]) {
+                    array_push($thisdevsession,$sessioninfo);
+                }
+            }
+            //取出设备型号ID所对应的设备type文本
+            $tableStr = $nlcore->cfg->db->tables["device"];
+            $columnArr = ["type"];
+            $whereDic = ["id" => $thisdevid];
+            $thisdevtyperesult = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+            if ($thisdevtyperesult[0] >= 2000000 || !isset($thisdevtyperesult[2][0]["type"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+            $thisdevtype = $thisdevtyperesult[2][0]["type"];
+            //检查有没有超过额定限制
+            if (!isset($maxlogin[$thisdevtype])) $nlcore->msg->stopmsg(2040214,$totpsecret);
+            if (count($thisdevsession) >= $maxlogin[$thisdevtype]) {
+                //删除本设备的旧登录状态
+            }
+
+            //获取当前 deviceid
+            //为数组补充 devicetype 字段
+
         }
 
         //获取每个 session 中的 apptoken 去 totp 表查
@@ -228,6 +261,16 @@ class nyauser {
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] >= 2000000 || !isset($result[2][0]["deviceid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
         return $result[2][0]["deviceid"];
+    }
+
+    function getdeviceinfo($deviceid,$totpsecret) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["device"];
+        $columnArr = ["type","os","device","osvar"];
+        $whereDic = ["id" => $deviceid];
+        $resultdev = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if (!isset($resultdev[2][0])) $nlcore->msg->stopmsg(2040212,$totpsecret);
+        return $resultdev[2][0];
     }
 }
 ?>
