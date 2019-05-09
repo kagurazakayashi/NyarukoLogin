@@ -198,9 +198,11 @@ CREATE TABLE `u1_session` (
   `apptoken` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'APP钥匙访问代码',
   `userhash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '用户哈希',
   `ipid` int(11) UNSIGNED NOT NULL COMMENT 'IP地址ID',
-  `deviceid` int(11) DEFAULT NULL COMMENT '设备表ID',
+  `devid` int(11) DEFAULT NULL COMMENT '设备表ID',
+  `type` enum('phone','phone_emu','pad','pad_emu','pc','web','debug','other') CHARACTER SET ascii NOT NULL DEFAULT 'phone' COMMENT '设备类型',
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '令牌生成时间',
-  `endtime` datetime DEFAULT NULL COMMENT '令牌失效时间'
+  `endtime` datetime DEFAULT NULL COMMENT '令牌失效时间',
+  `ua` text COLLATE utf8mb4_unicode_520_ci COMMENT '会话环境信息'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='会话令牌表';
 
 -- --------------------------------------------------------
@@ -215,7 +217,7 @@ CREATE TABLE `u1_totp` (
   `apptoken` char(64) COLLATE ascii_bin NOT NULL COMMENT '钥匙访问代码',
   `ipid` int(11) NOT NULL COMMENT 'IP地址ID',
   `appid` int(11) UNSIGNED NOT NULL COMMENT '已注册应用ID',
-  `deviceid` int(10) UNSIGNED DEFAULT NULL COMMENT '设备表ID',
+  `devid` int(10) UNSIGNED DEFAULT NULL COMMENT '设备表ID',
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '生成时间',
   `c_code` char(6) CHARACTER SET armscii8 DEFAULT NULL COMMENT '验证码',
   `c_time` datetime DEFAULT NULL COMMENT '验证码生成时间',

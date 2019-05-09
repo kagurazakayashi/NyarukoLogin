@@ -186,7 +186,7 @@ class nyauser {
         global $nlcore;
         //取出所有 session 中的处于有效期内的 apptoken
         $tableStr = $nlcore->cfg->db->tables["session"];
-        $columnArr = ["id","apptoken","deviceid","time"];
+        $columnArr = ["id","apptoken","devid","time"];
         $whereDic = ["userhash" => $userhash];
         $customWhere = "`endtime` > CURRENT_TIME";
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,$customWhere);
@@ -215,19 +215,19 @@ class nyauser {
                 $delresult = $nlcore->db->delete($tableStr,$delwheredic);
                 if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211,$totpsecret);
                 //查设备表来返回被登出的设备型号
-                return $this->getdeviceinfo($apptoken["deviceid"],$totpsecret);
+                return $this->getdeviceinfo($apptoken["devid"],$totpsecret);
             }
             //从会话加密码获得当前设备型号ID
             $tableStr = $nlcore->cfg->db->tables["totp"];
-            $columnArr = ["deviceid"];
+            $columnArr = ["devid"];
             $whereDic = ["secret" => $totpsecret];
             $devidresult = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-            if ($devidresult[0] >= 2000000 || !isset($devidresult[2][0]["deviceid"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
-            $thisdevid = $devidresult[2][0]["deviceid"];
+            if ($devidresult[0] >= 2000000 || !isset($devidresult[2][0]["devid"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+            $thisdevid = $devidresult[2][0]["devid"];
             //取会话数组中用这个设备型号ID的数据
             $thisdevsession = [];
             foreach ($sessionarr as $sessioninfo) {
-                if ($thisdevid == $sessioninfo["deviceid"]) {
+                if ($thisdevid == $sessioninfo["devid"]) {
                     array_push($thisdevsession,$sessioninfo);
                 }
             }
@@ -256,11 +256,11 @@ class nyauser {
     function getdeviceid($totpsecret) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["totp"];
-        $columnArr = ["deviceid"];
+        $columnArr = ["devid"];
         $whereDic = ["secret" => $totpsecret];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] >= 2000000 || !isset($result[2][0]["deviceid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
-        return $result[2][0]["deviceid"];
+        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
+        return $result[2][0]["devid"];
     }
 
     function getdeviceinfo($deviceid,$totpsecret) {

@@ -100,7 +100,7 @@ class nyatotp {
             "apptoken" => $apptoken,
             "ipid" => $ipid,
             "appid" => $appid,
-            "deviceid" => $deviceid,
+            "devid" => $deviceid,
             "time" => $stime
         );
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"],$datadic);

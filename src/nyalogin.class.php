@@ -172,12 +172,19 @@ class nyalogin {
         $tokentimeout += $timestamp;
         $tokentimeoutstr = $nlcore->safe->getdatetime(null,$tokentimeout)[1];
         $deviceid = $nyauser->getdeviceid($totpsecret);
+        //获取 UA
+        $ua = null;
+        if (isset($jsonarr["ua"]) && strlen($jsonarr["ua"]) > 0) {
+            $ua = $jsonarr["ua"];
+        } else if (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) {
+            $ua = $_SERVER["HTTP_USER_AGENT"];
+        }
         $insertDic = [
             "token" => $token,
             "apptoken" => $totptoken,
             "userhash" => $userhash,
             "ipid" => $ipid,
-            "deviceid" => $deviceid,
+            "devid" => $deviceid,
             "time" => $timestr,
             "endtime" => $tokentimeoutstr
         ];
