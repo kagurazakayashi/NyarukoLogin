@@ -105,7 +105,7 @@ class nyalogin {
             die();
         }
         //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
-        $nyauser->chklogin($userhash,$totpsecret);
+        $this->chkoverflowsession($userhash,$totpsecret);
         die();
 
 
@@ -179,12 +179,15 @@ class nyalogin {
         } else if (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) {
             $ua = $_SERVER["HTTP_USER_AGENT"];
         }
+        //获取设备类型
+        $devicetype = $nyauser->getdeviceinfo($deviceid,$totpsecret,true);
         $insertDic = [
             "token" => $token,
             "apptoken" => $totptoken,
             "userhash" => $userhash,
             "ipid" => $ipid,
             "devid" => $deviceid,
+            "devtype" => $devicetype,
             "time" => $timestr,
             "endtime" => $tokentimeoutstr
         ];
@@ -242,6 +245,81 @@ class nyalogin {
         $returnjson["timestamp"] = $newcaptcha["timestamp"];
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
         die();
+    }
+
+    function chkoverflowsession($userhash,$totpsecret) {
+        global $nlcore;
+        $nyauser = new nyauser();
+        //在 totp 表取 devid 获得当前设备信息
+        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $columnArr = ["devid"];
+        $whereDic = ["secret" => $totpsecret];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+        $thisdevid = $result[2][0]["devid"];
+        //取出所有 session 中的处于有效期内的会话
+        $tableStr = $nlcore->cfg->db->tables["session"];
+        $columnArr = ["id","apptoken","devtype","time"];
+        $whereDic = ["userhash" => $userhash];
+        $customWhere = "`endtime` > CURRENT_TIME";
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,$customWhere);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040209,$totpsecret);
+        //如果有
+        if (isset($result[2]) && count($result[2]) > 0) {
+            //取出所有 session
+            $sessionarr = $result[2];
+            $maxlogin = $nlcore->cfg->app->maxlogin;
+            //检查有没有超过总数限制
+            if (count($sessionarr) >= $maxlogin["all"]) {
+                return removeoverflowsession($nyauser,$sessionarr,$totpsecret);
+            }
+            //查session表获取当前设备类型
+            $resultdev = $nyauser->getdeviceinfo($thisdevid,$totpsecret);
+            if (!isset($resultdev["type"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+            $devtype = $resultdev["type"];
+            //取会话数组中用这个设备型号的数据
+            $thisdevsession = [];
+            foreach ($sessionarr as $sessioninfo) {
+                if ($devtype == $sessioninfo["devtype"]) {
+                    array_push($thisdevsession,$sessioninfo);
+                }
+            }
+            //检查有没有超过额定限制
+            if (!isset($maxlogin[$devtype])) $nlcore->msg->stopmsg(2040214,$totpsecret);
+            if (count($thisdevsession) >= $maxlogin[$devtype]) {
+                //删除本设备的旧登录状态
+                return removeoverflowsession($nyauser,$thisdevsession,$totpsecret);
+            }
+        }
+    }
+
+    function removeoverflowsession($nyauser,$sessionarr,$totpsecret) {
+        global $nlcore;
+        //超过总数限制，登出最早的终端。取最小的时间戳对应的id
+        $ttime = PHP_INT_MAX;
+        $tid = -1;
+        foreach ($sessionarr as $apptoken) {
+            $ttimen = strtotime($apptoken["time"]);
+            if ($ttimen < $ttime) {
+                $ttime = $ttimen;
+                $tid = $apptoken["id"];
+            }
+        }
+        if ($tid == -1) $nlcore->msg->stopmsg(2040211,$totpsecret);
+        //取出要删除会话的设备型号
+        $tableStr = $nlcore->cfg->db->tables["session"];
+        $columnArr = ["devid"];
+        $whereDic = ["id" => $tid];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040212,$totpsecret);
+        $devid = $result[2][0]["devid"];
+        //删除最旧的会话
+        $delwheredic = ["id" => $tid];
+        $delresult = $nlcore->db->delete($tableStr,$delwheredic);
+        if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211,$totpsecret);
+        //查设备表来返回被登出的设备型号
+        $logoutdevinfo = $nyauser->getdeviceinfo($devid,$totpsecret);
+        return $nlcore->safe->arraykeyprefix($logoutdevinfo,"logout_");
     }
 }
 

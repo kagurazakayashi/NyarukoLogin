@@ -682,6 +682,21 @@ class nyasafe {
         return $novalkey;
     }
     /**
+     * @description: 为数组中的所有键增加一个前缀
+     * @param Array arr 要处理的数组
+     * @param String prefix 要添加的前缀
+     * @return Array 修改后的数组
+     */
+    function arraykeyprefix($arr=null,$prefix="") {
+        if (!isset($arr) || count($arr) == 0) return $arr;
+        $newarr = [];
+        foreach ($arr as $key => $value) {
+            $newkey = $prefix.$key;
+            $newarr[$newkey] = $value;
+        }
+        return $newarr;
+    }
+    /**
      * @description: 数组是否全都是 null
      * @param Array nowarray 需要被测试的数组
      * @return Bool 是否全都是 null
