@@ -191,7 +191,7 @@
             $this->initReadDbs();
             $whereDic = $this->safe($whereDic);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }

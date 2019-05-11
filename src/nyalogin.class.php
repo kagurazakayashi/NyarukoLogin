@@ -105,10 +105,12 @@ class nyalogin {
             die();
         }
         //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
-        $this->chkoverflowsession($userhash,$totpsecret);
-        die();
-
-
+        $overflowsession = $this->chkoverflowsession($userhash,$totpsecret);
+        if ($overflowsession) {
+            $overprog = ",overflowsession=".json_encode($overflowsession);
+            $process .= $overprog;
+            //TODO: 发送顶掉通知邮件
+        }
         //检查是否需要两步验证
         $fa = $userinfoarr["2fa"];
         if ($fa || $fa != "") {
@@ -219,6 +221,7 @@ class nyalogin {
             "tel" => $userinfoarr["tel"],
             "userinfo" => $userexinfoarr
         ]);
+        if ($overflowsession) $returnjson = array_merge($returnjson,$overflowsession);
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 
@@ -264,33 +267,32 @@ class nyalogin {
         $customWhere = "`endtime` > CURRENT_TIME";
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,$customWhere);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040209,$totpsecret);
-        //如果有
-        if (isset($result[2]) && count($result[2]) > 0) {
-            //取出所有 session
-            $sessionarr = $result[2];
-            $maxlogin = $nlcore->cfg->app->maxlogin;
-            //检查有没有超过总数限制
-            if (count($sessionarr) >= $maxlogin["all"]) {
-                return removeoverflowsession($nyauser,$sessionarr,$totpsecret);
-            }
-            //查session表获取当前设备类型
-            $resultdev = $nyauser->getdeviceinfo($thisdevid,$totpsecret);
-            if (!isset($resultdev["type"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
-            $devtype = $resultdev["type"];
-            //取会话数组中用这个设备型号的数据
-            $thisdevsession = [];
-            foreach ($sessionarr as $sessioninfo) {
-                if ($devtype == $sessioninfo["devtype"]) {
-                    array_push($thisdevsession,$sessioninfo);
-                }
-            }
-            //检查有没有超过额定限制
-            if (!isset($maxlogin[$devtype])) $nlcore->msg->stopmsg(2040214,$totpsecret);
-            if (count($thisdevsession) >= $maxlogin[$devtype]) {
-                //删除本设备的旧登录状态
-                return removeoverflowsession($nyauser,$thisdevsession,$totpsecret);
+        if (!isset($result[2]) || count($result[2]) == 0) return null;
+        //取出所有 session
+        $sessionarr = $result[2];
+        $maxlogin = $nlcore->cfg->app->maxlogin;
+        //检查有没有超过总数限制
+        if (count($sessionarr) >= $maxlogin["all"]) {
+            return removeoverflowsession($nyauser,$sessionarr,$totpsecret);
+        }
+        //查session表获取当前设备类型
+        $resultdev = $nyauser->getdeviceinfo($thisdevid,$totpsecret);
+        if (!isset($resultdev["type"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
+        $devtype = $resultdev["type"];
+        //取会话数组中用这个设备型号的数据
+        $thisdevsession = [];
+        foreach ($sessionarr as $sessioninfo) {
+            if ($devtype == $sessioninfo["devtype"]) {
+                array_push($thisdevsession,$sessioninfo);
             }
         }
+        //检查有没有超过额定限制
+        if (!isset($maxlogin[$devtype])) $nlcore->msg->stopmsg(2040214,$totpsecret);
+        if (count($thisdevsession) >= $maxlogin[$devtype]) {
+            //删除本设备的旧登录状态
+            return removeoverflowsession($nyauser,$thisdevsession,$totpsecret);
+        }
+        return null;
     }
 
     function removeoverflowsession($nyauser,$sessionarr,$totpsecret) {
