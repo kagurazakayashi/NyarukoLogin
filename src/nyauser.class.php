@@ -32,7 +32,7 @@ class nyauser {
         $whereDic = [$logintypearr[$logintype] => $loginstr];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["users"],$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100,$totpsecret);
-        $datacount = $result[2][0][0];
+        $datacount = $result[2][0];
         if ($datacount == 0) {
             return false;
         } else if ($datacount == 1) {

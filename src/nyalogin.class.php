@@ -201,14 +201,14 @@ class nyalogin {
         $userexinfoarr = $nyauser->getuserinfo($userhash,$totpsecret);
 
         //写入成功历史记录
-        $nyauser->writehistory("USER_SIGN_IN",1030000,$userhash,$totptoken,$totpsecret,$ipid,$user,$process,$token);
+        $nyauser->writehistory("USER_SIGN_IN",1020100,$userhash,$totptoken,$totpsecret,$ipid,$user,$process,$token);
 
         //返回到客户端
         $returnjson = [];
         if ($alertinfo[0] == 3000000) {
-            $returnjson = $nlcore->msg->m(0,1030001);
+            $returnjson = $nlcore->msg->m(0,1020102);
         } else if ($alertinfo[0] != null) {
-            $returnjson = $nlcore->msg->m(0,1030002);
+            $returnjson = $nlcore->msg->m(0,1020101);
             $returnjson["msg"] = $returnjson["msg"].$alertinfo[1];
         }
 

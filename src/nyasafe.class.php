@@ -290,7 +290,7 @@ class nyasafe {
     /**
      * @description: 检查是否包含违禁词汇
      * @param String str 源字符串
-     * @param Bool errdie 如果出错则完全中断执行，返回错误信息JSON
+     * @param Bool errdie 如果出错则完全中断执行，直接返回错误信息JSON给客户端
      * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return Array<Bool,String,String> [是否包含违禁词,河蟹后的字符串,触发的违禁词] ，如果不包含违禁词，返回 [false,原字符串]
      * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
@@ -326,8 +326,12 @@ class nyasafe {
         //搜索关键词
         $nstr = $str;
         foreach($wordjson as $keyword) {
+            $replacechar = $wordfilterpcfg["replacechar"];
+            for ($i=1; $i < mb_strlen($keyword,"utf-8"); $i++) {
+                $replacechar .= $wordfilterpcfg["replacechar"];
+            }
             //同时满足多条件
-            $nstr = preg_replace('/'.join(explode($wordfilterpcfg["wildcardchar"], $keyword),'.{1,'.$wordfilterpcfg["maxlength"].'}').'/',$wordfilterpcfg["replacechar"],$nstr);
+            $nstr = preg_replace('/'.join(explode($wordfilterpcfg["wildcardchar"], $keyword),'.{1,'.$wordfilterpcfg["maxlength"].'}').'/',$replacechar,$nstr);
             if (strcmp($str,$nstr) != 0) {
                 if ($errdie) $nlcore->msg->stopmsg(2020300,$totpsecret);
                 return [true,$nstr,$keyword];
@@ -467,10 +471,12 @@ class nyasafe {
      * @description: [数据发送]从数组创建JSON、加密、base64编码、变体
      * @param String dataarray 要返回到客户端的内容字典
      * @param String secret totp加密码（可选，不加不进行加密）
-     * @return Array<String> [解析后的JSON内容数组,TOTP的secret]
+     * @return String 加密后的信息
      */
     function encryptargv($dataarray,$secret=null) {
         global $nlcore;
+        //加时间戳
+        if (!isset($dataarray["timestamp"])) $dataarray["timestamp"] = time();
         //转换为json
         $this->log("RETURN",$dataarray);
         $json = json_encode($dataarray);
@@ -493,7 +499,7 @@ class nyasafe {
      * @description: [数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
-     * @return Array<String> [解析后的JSON内容数组,TOTP的secret,TOTP的token,IP地址ID,APPID]
+     * @return Array<String> [(0)解析后的JSON内容数组,(1)TOTP的secret,(2)TOTP的token,(3)IP地址ID,(4)APPID]
      */
     function decryptargv($module=null) {
         global $nlcore;
@@ -570,8 +576,9 @@ class nyasafe {
         //检查API版本是否一致
         if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
+        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64)) $nlcore->msg->stopmsg(2020401);
         $appid = $this->chkappsecret($jsonarr["appsecret"]);
-        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64) || $appid == null) $nlcore->msg->stopmsg(2020401);
+        if ($appid == null) $nlcore->msg->stopmsg(2020401);
         return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
     }
     /**
