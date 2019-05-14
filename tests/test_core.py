@@ -13,7 +13,7 @@ import os
 def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=False):
     """向服务器提交内容并显示返回内容，自动处理加密解密"""
 
-    # 需要提供与数据库 external_app 表中记录的内容
+    # 需要提供与数据库 app 表中记录的内容
     apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
 
     if (showAllInfo) : tlog("准备输入的数据 ...")

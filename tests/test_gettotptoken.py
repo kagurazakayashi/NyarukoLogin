@@ -9,7 +9,7 @@ import time
 import test_core
 import platform
 test_core.title("请求加密密钥")
-# 需要提供与数据库 external_app 表中记录的内容
+# 需要提供与数据库 app 表中记录的内容
 postData = {
     'appsecret':"vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW",
     'devtype':"debug",
@@ -17,6 +17,8 @@ postData = {
     'devos':platform.system(),
     'devosver':platform.platform()
 }
+test_core.tlog("准备要提交的数据:")
+test_core.tlog(demjson.encode(postData))
 postMod = parse.urlencode(postData).encode(encoding='utf-8')
 test_core.tlog("↑ 发送请求:")
 test_core.tlog(postMod)

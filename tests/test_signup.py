@@ -4,7 +4,7 @@ import webbrowser
 import sys
 test_core.title("注册用户测试")
 udataarr = {}
-udataarr["user"] = test_core.instr("请输入邮箱或手机号码(默认值 cxchope@163.com): ")
+udataarr["user"] = test_core.instr("请输入邮箱或手机号码(默认值 test@test.com): ")
 if (udataarr["user"] == ""): udataarr["user"] = "testmail@uuu.moe"
 test_core.tlog("用户名: "+udataarr["user"])
 udataarr["password"] = test_core.instr("请输入新密码(默认值 testpassword): ")
@@ -18,7 +18,7 @@ uurl = "http://127.0.0.1/NyarukoLogin/nyacaptcha.php"
 udataarr2 = {}
 img = test_core.postarray(uurl,udataarr2,True)["img"]
 test_core.tlog("在浏览器中打开验证码图像: "+img)
-# webbrowser.open(img)
+webbrowser.open(img)
 udataarr["captcha"] = test_core.instr("请输入验证码(默认值 0000): ")
 if (udataarr["captcha"] == ""): udataarr["captcha"] = "0000"
 test_core.tlog("验证码: "+udataarr["captcha"])
