@@ -2,7 +2,6 @@
 class nyasession {
     function sessionstatus() {
         global $nlcore;
-        //IP检查和解密客户端提交的信息
         $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
         $jsonarr = $jsonarrTotpsecret[0];
         $totpsecret = $jsonarrTotpsecret[1];
@@ -23,7 +22,11 @@ class nyasession {
             $nlcore->msg->stopmsg(1030201,$totpsecret);
         }
     }
-
+    /**
+     * @description: 检查 token 是否有效
+     * @param String token 会话令牌
+     * @return Null/Array 空(无效) 或 起始-结束 时间数组
+     */
     function sessionstatuscon($token) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["session"];

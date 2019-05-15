@@ -135,8 +135,5 @@ class nyacaptcha {
         $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         return true;
     }
-
-    //TODO: 检索用户名是否需要验证
-
 }
 ?>

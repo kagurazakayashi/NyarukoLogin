@@ -239,7 +239,10 @@ class nyalogin {
         $result = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
     }
-
+    /**
+     * @description: 创建一份新的验证码并返回客户端
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     */
     function getcaptcha($code,$totpsecret) {
         $nyacaptcha = new nyacaptcha();
         $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
@@ -249,7 +252,12 @@ class nyalogin {
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
         die();
     }
-
+    /**
+     * @description: 检查当前设备类型和总共的同时登录数是否超出限制
+     * @param String userhash 用户哈希
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @return Array 被登出的设备的信息（手机型号等）
+     */
     function chkoverflowsession($userhash,$totpsecret) {
         global $nlcore;
         $nyauser = new nyauser();
@@ -294,7 +302,13 @@ class nyalogin {
         }
         return null;
     }
-
+    /**
+     * @description: 将较早的设备登出
+     * @param Nyauser nyauser 对象
+     * @param Array sessionarr 用户已有有效会话的数组
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @return Array 被登出设备的相关设备信息，键均以 logout_ 为前缀
+     */
     function removeoverflowsession($nyauser,$sessionarr,$totpsecret) {
         global $nlcore;
         //超过总数限制，登出最早的终端。取最小的时间戳对应的id
