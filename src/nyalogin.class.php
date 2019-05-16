@@ -105,7 +105,7 @@ class nyalogin {
             die();
         }
         //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
-        $overflowsession = $this->chkoverflowsession($userhash,$totpsecret);
+        $overflowsession = $this->chkoverflowsession($userhash,$totptoken,$totpsecret);
         if ($overflowsession) {
             $overprog = ",overflowsession=".json_encode($overflowsession);
             $process .= $overprog;
@@ -173,7 +173,7 @@ class nyalogin {
         }
         $tokentimeout += $timestamp;
         $tokentimeoutstr = $nlcore->safe->getdatetime(null,$tokentimeout)[1];
-        $deviceid = $nyauser->getdeviceid($totpsecret);
+        $deviceid = $nyauser->getdeviceid($totptoken,$totpsecret);
         //获取 UA
         $ua = null;
         if (isset($jsonarr["ua"]) && strlen($jsonarr["ua"]) > 0) {
@@ -258,13 +258,13 @@ class nyalogin {
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Array 被登出的设备的信息（手机型号等）
      */
-    function chkoverflowsession($userhash,$totpsecret) {
+    function chkoverflowsession($userhash,$totptoken,$totpsecret) {
         global $nlcore;
         $nyauser = new nyauser();
         //在 totp 表取 devid 获得当前设备信息
         $tableStr = $nlcore->cfg->db->tables["totp"];
         $columnArr = ["devid"];
-        $whereDic = ["secret" => $totpsecret];
+        $whereDic = ["apptoken" => $totptoken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040213,$totpsecret);
         $thisdevid = $result[2][0]["devid"];
@@ -281,7 +281,7 @@ class nyalogin {
         $maxlogin = $nlcore->cfg->app->maxlogin;
         //检查有没有超过总数限制
         if (count($sessionarr) >= $maxlogin["all"]) {
-            return removeoverflowsession($nyauser,$sessionarr,$totpsecret);
+            return $this->removeoverflowsession($nyauser,$sessionarr,$totpsecret);
         }
         //查session表获取当前设备类型
         $resultdev = $nyauser->getdeviceinfo($thisdevid,$totpsecret);

@@ -182,11 +182,11 @@ class nyauser {
         return array_merge($maininfo,$newuserinfos);
     }
 
-    function getdeviceid($totpsecret) {
+    function getdeviceid($totptoken,$totpsecret) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["totp"];
         $columnArr = ["devid"];
-        $whereDic = ["secret" => $totpsecret];
+        $whereDic = ["apptoken" => $totptoken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
         return $result[2][0]["devid"];

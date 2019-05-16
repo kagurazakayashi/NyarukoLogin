@@ -10,13 +10,81 @@ import datetime
 import hashlib
 import os
 
-def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=False):
-    """向服务器提交内容并显示返回内容，自动处理加密解密"""
+def postarray_p(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=True):
+    """[明文传输]向服务器提交内容并显示返回内容，明文操作"""
 
     # 需要提供与数据库 app 表中记录的内容
     apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
 
-    if (showAllInfo) : tlog("准备输入的数据 ...")
+    if (showAllInfo):
+        tlog("传输模式：明文")
+        tlog("准备输入的数据 ...")
+    tlog(postUrl)
+    tlog(jsonDataArr)
+    if (showAllInfo) : tlog("读取 totpsecret.json ...")
+    totptoken = ""
+    try:
+        f = open('totpsecret.json', 'r')
+        filejson = f.read().rstrip('\n')
+        if (showAllInfo) : tlog(filejson)
+        filedataarr = demjson.decode(filejson)
+        totptoken = filedataarr["totp_token"]
+    except:
+        terr("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
+    finally:
+        if f:
+            f.close()
+    if (showAllInfo) : tlog("插入固定提交信息 ...")
+    jsonDataArr["t"] = totptoken
+    jsonDataArr["apiver"] = apiverAppidSecret[0]
+    jsonDataArr["appsecret"] = apiverAppidSecret[1]
+    postMod = parse.urlencode(jsonDataArr).encode(encoding='utf-8')
+    if (showAllInfo) :
+        tlog(demjson.encode(jsonDataArr))
+        tlog("↑ 发送请求:")
+        tlog(postMod.decode())
+    postReq = request.Request(url=postUrl,data=postMod)
+    try:
+        postRes = request.urlopen(postReq)
+    except error.HTTPError as e:
+        terr("错误：HTTP 连接遇到问题！")
+        tlog(e)
+        tlog("使用 cURL 获取原始数据 ...")
+        curlcmd = 'curl -X POST -d "'+postMod.decode()+'" "'+postUrl+'"'
+        tlog(curlcmd)
+        output = os.popen(curlcmd)
+        tlog(output.read())
+        sys.exit(1)
+    except error.URLError as e:
+        terr("错误：网址不正确！")
+        tlog(e)
+        sys.exit(1)
+    postRes = postRes.read()
+    postRes = postRes.decode(encoding='utf-8')
+    if (showAllInfo) :
+        tlog("↓ 收到数据:")
+        tlog(postRes)
+        tlog("JSON 解析 ...")
+    try:
+        dataarr = demjson.decode(postRes)
+    except:
+        terr("错误：解密失败。")
+        tlog("原始内容：")
+        tlog(postRes)
+        sys.exit()
+    tlog(dataarr)
+    if (showAllInfo) : tok("完成。")
+    return dataarr
+
+def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=True):
+    """[加密传输]向服务器提交内容并显示返回内容，自动处理加密解密"""
+
+    # 需要提供与数据库 app 表中记录的内容
+    apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
+
+    if (showAllInfo):
+        tlog("传输模式：加密")
+        tlog("准备输入的数据 ...")
     tlog(postUrl)
     tlog(jsonDataArr)
     if (showAllInfo) : tlog("读取 totpsecret.json ...")
