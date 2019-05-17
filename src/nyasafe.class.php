@@ -704,6 +704,28 @@ class nyasafe {
         return $newarr;
     }
     /**
+     * @description: 将
+     * {"key1":["val1","val2"],"key2":["val1","val2"]...}
+     * 转换为
+     * [{"key1":"val1"},{"key2":"val2"}...]
+     * @param Array 需要整理的字典数组
+     * @return Array 转换后的数组
+     */
+    function dicvals2arrsdic($dic) {
+        $newarr = [];
+        if (!$dic || count($dic) == 0) return $newarr;
+        $keys = array_keys($dic);
+        $datacount = count($dic[$keys[0]]);
+        for ($i=0; $i < $datacount; $i++) {
+            $nowdata = [];
+            foreach ($keys as $nowkey) {
+                $nowdata[$nowkey] = $dic[$nowkey][$i];
+            }
+            array_push($newarr,$nowdata);
+        }
+        echo json_encode($newarr);
+    }
+    /**
      * @description: 数组是否全都是 null
      * @param Array nowarray 需要被测试的数组
      * @return Bool 是否全都是 null
