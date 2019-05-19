@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>文件上传测试</title>
+    <link rel="stylesheet" href="../node_modules/mdui/dist/css/mdui.min.css">
+    <script src="../node_modules/mdui/dist/js/mdui.min.js"></script>
+</head>
+<body class="mdui-theme-primary-indigo mdui-theme-accent-pink">
+<div class="mdui-toolbar mdui-color-theme">
+    <span class="mdui-typo-title">文件上传测试</span>
+</div>
+    <div class="mdui-panel" mdui-panel>
+        <div class="mdui-panel-item mdui-panel-item-open">
+            <div class="mdui-panel-item-header">
+                <div class="mdui-panel-item-title">上传单个文件</div>
+                <i class="mdui-panel-item-arrow mdui-icon material-icons">keyboard_arrow_down</i>
+            </div>
+            <div class="mdui-panel-item-body">
+                <form action="test_uploadfile.php" method="post" enctype="multipart/form-data">
+                    <p><input class="mdui-btn" name="userfile" type="file" /></p>
+                    <p><input class="mdui-btn mdui-color-theme-accent mdui-ripple" type="submit" value="开始上传" /></p>
+                </form>
+            </div>
+        </div>
+        <div class="mdui-panel-item mdui-panel-item-open">
+            <div class="mdui-panel-item-header">
+                <div class="mdui-panel-item-title">上传多个文件</div>
+                <i class="mdui-panel-item-arrow mdui-icon material-icons">keyboard_arrow_down</i>
+            </div>
+            <div class="mdui-panel-item-body">
+                <form action="test_uploadfile.php" method="post" enctype="multipart/form-data">
+                    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
+                    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
+                    <p><input class="mdui-btn mdui-color-theme-accent mdui-ripple" type="submit" value="开始上传" /></p>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
