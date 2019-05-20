@@ -708,8 +708,8 @@ class nyasafe {
      * {"key1":["val1","val2"],"key2":["val1","val2"]...}
      * 转换为
      * [{"key1":"val1"},{"key2":"val2"}...]
-     * @param Array 需要整理的字典数组
-     * @return Array 转换后的数组
+     * @param Array 需要整理的数组(根为关联数组)
+     * @return Array 转换后的数组(根为索引数组)
      */
     function dicvals2arrsdic($dic) {
         $newarr = [];
@@ -723,7 +723,7 @@ class nyasafe {
             }
             array_push($newarr,$nowdata);
         }
-        echo json_encode($newarr);
+        return $newarr;
     }
     /**
      * @description: 数组是否全都是 null
