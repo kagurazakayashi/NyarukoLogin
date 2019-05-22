@@ -1,4 +1,5 @@
 <?php
+// require_once 'vendor/autoload.php';
 class uploadfile {
     function getuploadfile() {
         global $nlcore;
@@ -7,12 +8,34 @@ class uploadfile {
         $uploadconf["type"] = $nlcore->cfg->app->uploadtype;
         //整理文件详细信息数组
         $files = $nlcore->safe->dicvals2arrsdic($this->filearr($_FILES));
-        //准备文件存储路径(绝对路径,无/结尾)
-        $savepath = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]);
+        //准备文件存储路径(绝对路径,/结尾)
+        $savedir = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]).DIRECTORY_SEPARATOR; //目标存储文件夹
+        $stmpdir = $this->savepath($uploadconf["tmpdir"]).DIRECTORY_SEPARATOR; //二压临时文件夹
         //遍历文件资讯
         $returnarr = [];
         foreach ($files as $nowfile) {
-            echo $this->chkfile($nowfile,$uploadconf);
+            $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
+            $code = 1000000;
+            if (is_numeric($mediatype)) $code = $mediatype; //返回错误
+            $newfilename = $nlcore->safe->randstr(64); //创建文件名
+            $twotmpfile = $uploadconf["tmpdir"];
+            $savefile = $savedir.$newfilename; //最终存储文件完整路径
+            $savetmpfile = $stmpdir.$newfilename; //最终存储临时文件完整路径
+            //是视频还是图片？
+            echo json_encode($mediatype);
+            if ($mediatype == "image") {
+                //如果是图片文件则直接进行二压
+            } else if ($mediatype == "video") {
+                //如果是视频文件则移动到临时目录进行二压，生成临时操作指令
+            }
+
+
+
+
+            $nowvideoarr = [
+                "code" => $code,
+                "newname" => $newfilename
+            ];
         }
         //return array_merge($nowreturnarr,$nlcore->msg->m(0,2050100));
     }
@@ -26,13 +49,14 @@ class uploadfile {
             return 2050100;
         }
         //检查文件大小是否超过限制
-        if ($nowfile["size"] > $uploadconf["maxsize"]) {
+        $maxsize = $uploadconf["maxsize"];
+        if ($nowfile["size"] > $maxsize["all"]) {
             return 2050101;
         }
         //检查文件类型是否符合
         $fi = new finfo(FILEINFO_MIME_TYPE); //FILEINFO_MIME_TYPE FILEINFO_EXTENSION
         $mime_type = $fi->file($nowfile["tmp_name"]);
-        // [MIME类型, 扩展名, 媒体类别(图片/视频)] ，来自设置 uploadtype 。
+        //mediatype [MIME类型, 扩展名, 媒体类别(图片/视频)] ，来自设置 uploadtype 。
         $mediatype = null;
         foreach ($uploadconf["type"] as $typename => $typevalue) {
             foreach ($typevalue as $typearr) {
@@ -46,16 +70,35 @@ class uploadfile {
         if (!$mediatype || !in_array($mediatype[2],$enable)) {
             return 2050102;
         }
-        //如果是视频，检查时长
-        if ($mediatype[2] == "video") {
-            echo $this->getTime($nowfile["tmp_name"]);
+        if ($mediatype[2] == "video") { //如果是视频
+            //当前类型的限制大小
+            if ($nowfile["size"] > $maxsize["video"]) {
+                return 2050101;
+            }
+            //检查视频时长是否太长
+            $videoduration = $this->getvideoduration($nowfile["tmp_name"]);
+            if ($videoduration > $uploadconf["videoduration"]) {
+                return 2050103;
+            }
+        } else if ($mediatype[2] == "image") { //如果是图片
+            //当前类型的限制大小
+            if ($mediatype[1] == "gif" && $nowfile["size"] > $maxsize["gif"]) {
+                return 2050101;
+            } else if ($nowfile["size"] > $maxsize["image"]) {
+                return 2050101;
+            }
         }
-        //
-        // echo json_encode($mediatype); // image/jpeg
-        die();
-        //创建随机文件名
-
+        return $mediatype;
     }
+
+    function getvideoduration($file) {
+        $ffprobe = FFMpeg\FFProbe::create();
+        $duration = $ffprobe
+            ->format($file)
+            ->get('duration');
+        echo $duration;
+    }
+
     /**
      * @description: 通过读取文件头原始数据，判断文件真实类型（已废弃）
      * @param String filename 文件完整路径
@@ -92,7 +135,7 @@ class uploadfile {
      * @param String uploadpath 要存储的文件夹
      * @return String 绝对路径,无/结尾
      */
-    function savepath($uploadpath,$datedir=true,$chmod=0770) {
+    function savepath($uploadpath,$datedir=false,$chmod=0770) {
         $uploadto = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.$uploadpath;
         if ($datedir) {
             $uploadto = $uploadto.DIRECTORY_SEPARATOR.date('Y').DIRECTORY_SEPARATOR.date('m').DIRECTORY_SEPARATOR.date('d');

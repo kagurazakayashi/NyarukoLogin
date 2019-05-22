@@ -2,6 +2,7 @@
     "require": {
         "phpgangsta/googleauthenticator": "dev-master",
         "xxtea/xxtea": "^1.0",
-        "gregwar/captcha": "^1.1"
+        "gregwar/captcha": "^1.1",
+        "php-ffmpeg/php-ffmpeg": "^0.14.0"
     }
 }
