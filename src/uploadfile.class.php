@@ -17,26 +17,32 @@ class uploadfile {
             $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
             $code = 1000000;
             $tmpfile = $nowfile["tmp_name"];
-            if (is_numeric($mediatype)) $code = $mediatype; //返回错误
+            if (is_numeric($mediatype)) {
+                $code = $mediatype; //返回错误
+                $returnfileinfo = ["code" => $code];
+            } else {
+                $returnfileinfo = $mediatype;
+                $returnfileinfo["code"] = $code;
+            }
             $newfilename = $nlcore->safe->randstr(64); //创建文件名
             $twotmpfile = $uploadconf["tmpdir"];
             $savefile = $savedir.$newfilename; //最终存储文件完整路径
             $savetmpfile = $stmpdir.$newfilename; //最终存储临时文件完整路径
             //是视频还是图片？
-            // echo json_encode($mediatype); //["image/jpeg","jpg","image"]
             if ($mediatype == "image") {
                 //如果是图片文件则直接进行二压
+                $nowfilename = $savefile.'.'.$key;
+                foreach ($nlcore->cfg->app->imageresize as $key => $value) {
+                    $newfiles = $this->resizeto($tmpfile, $nowfilename, $mediatype[1], $value, $uploadconf["quality"]);
+                    $returnfileinfo["files"] = $newfiles;
+                }
             } else if ($mediatype == "video") {
                 //如果是视频文件则移动到临时目录进行二压，生成临时操作指令
+                //暂无需要，预留位置暂不开发
             }
-            $this->resizeto($tmpfile,$savetmpfile,$mediatype[1],[320,240]);
-
-            $nowvideoarr = [
-                "code" => $code,
-                "newname" => $newfilename
-            ];
+            return $returnfileinfo;
         }
-        //return array_merge($nowreturnarr,$nlcore->msg->m(0,2050100));
+        return null;
     }
 
     /**
@@ -48,66 +54,105 @@ class uploadfile {
      * @return Array<Float> 新的宽高
      */
     function getresize($imageWidth,$imageHeight,$maxWidth,$maxHeight) {
-        $newWidth = 0;
-        $newHeight = 0;
+        $newWidth = $imageWidth;
+        $newHeight = $imageHeight;
         $imageScale = $imageWidth / $imageHeight;
         $maxScale = $maxWidth / $maxHeight;
-        // echo json_encode([$maxScale,$imageScale]);
-        // echo json_encode([$maxWidth,$maxHeight]);
-        // echo json_encode([$imageWidth,$imageHeight]);
         if ($maxScale < $imageScale) {
-            // echo "111|";
             $newWidth = $maxWidth;
             $newHeight = $maxWidth / $imageScale;
         } else if ($maxScale > $imageScale) {
-            // echo "222|";
             $newHeight = $maxHeight;
             $newWidth = $maxHeight * $imageScale;
         }
-        // echo json_encode([$newWidth,$newHeight]);
-        echo $newWidth.'x'.$newHeight;
         return [$newWidth,$newHeight];
     }
 
-    function resizeto($imagefile,$tofile,$type,$size) {
-        $srcImg = null;
-        $isGIF = false;
-        switch ($type) {
-            case 'jpg':
-                $srcImg = imagecreatefromjpeg($imagefile);
-                break;
-            case 'png':
-                $srcImg = imagecreatefrompng($imagefile);
-                break;
-            case 'gif':
-                $srcImg = imagecreatefromgif($imagefile);
-                $isGIF = true;
-                break;
-            case 'webp':
-                $srcImg = imagecreatefromwebp($imagefile);
-                break;
-            case 'bmp':
-                $srcImg = imagecreatefrombmp($imagefile);
-                break;
-            default:
-                break;
+    function resizeto($imagefile,$tofile,$type,$size,$quality) {
+        $imagick = new Imagick($imagefile);
+        $imagick->stripImage(); //去除图片信息
+        $imageWidth = $imagick->getImageWidth();
+        $imageHeight = $imagick->getImageHeight();
+        if ($imageWidth <= 0 || $imageHeight <= 0) {
+            $imageWidth = imagesx($srcImg);
+            $imageHeight = imagesy($srcImg);
         }
-        if (!$srcImg) return false;
-        $srcWidth = imagesx($srcImg);
-        $srcHeight = imagesy($srcImg);
-        $newsize = $this->getresize($srcWidth,$srcHeight,$size[0],$size[1]);
-        $newImg = imagecreatetruecolor($newsize[0], $newsize[1]);
-        echo count($srcImg);
-        $alpha = imagecolorallocatealpha($newImg, 0, 0, 0, 127);
-        imagefill($newImg, 0, 0, $alpha);
-        imagecopyresampled($newImg, $srcImg, 0, 0, 0, 0, $newsize[0], $newsize[1], $srcWidth, $srcHeight);
-        imagesavealpha($newImg, true);
-        // imagepng($newImg, $tofile);
-        // imagewebp($newImg, $tofile.'.webp');
-        imagegif($newImg, $tofile.'.gif');
-        imagedestroy($newImg);
-        return true;
+        $newsize = $this->getresize($imageWidth,$imageHeight,$size[0],$size[1]);
+        if ($type == "gif") {
+            $transparent = new ImagickPixel("transparent");
+            $newimagick = new Imagick();
+            foreach($imagick as $img){
+                echo '=';
+                $page = $img->getImagePage();
+                $tmp = new Imagick();
+                $tmp->newImage($page['width'], $page['height'], $transparent, 'gif');
+                $tmp->compositeImage($img, Imagick::COMPOSITE_OVER, $page['x'], $page['y']);
+                $tmp->thumbnailImage($newsize[0], $newsize[1], true);
+                $tmp->setFormat("gif");
+                $newimagick->addImage($tmp);
+                $newimagick->setImagePage($tmp->getImageWidth(), $tmp->getImageHeight(), 0, 0);
+                $newimagick->setImageDelay($img->getImageDelay());
+                $newimagick->setImageDispose($img->getImageDispose());
+            }
+            $newimagick->setFormat("gif");
+            $savefilename = $tofile.".gif";
+            $newimagick->writeImages($savefilename,true);
+            return [$savefilename];
+        } else {
+            $imagick->adaptiveResizeImage($newsize[0], $newsize[1]);
+            $imagick->setImageCompressionQuality($quality); //图片质量
+            $webp = $imagick;
+            $webp->setFormat("webp");
+            $savefilename1 = $tofile.".webp";
+            $webp->writeImage($savefilename1);
+            $jpeg = $imagick;
+            $jpeg->setFormat("jpeg");
+            $savefilename2 = $tofile.".jpg";
+            $jpeg->writeImage($savefilename2);
+            return [$savefilename1,$savefilename2];
+        }
     }
+
+    // 使用 GD 库（已弃用）
+    // function resizeto($imagefile,$tofile,$type,$size) {
+    //     $srcImg = null;
+    //     $isGIF = false;
+    //     switch ($type) {
+    //         case 'jpg':
+    //             $srcImg = imagecreatefromjpeg($imagefile);
+    //             break;
+    //         case 'png':
+    //             $srcImg = imagecreatefrompng($imagefile);
+    //             break;
+    //         case 'gif':
+    //             $srcImg = imagecreatefromgif($imagefile);
+    //             $isGIF = true;
+    //             break;
+    //         case 'webp':
+    //             $srcImg = imagecreatefromwebp($imagefile);
+    //             break;
+    //         case 'bmp':
+    //             $srcImg = imagecreatefrombmp($imagefile);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    //     if (!$srcImg) return false;
+    //     $srcWidth = imagesx($srcImg);
+    //     $srcHeight = imagesy($srcImg);
+    //     $newsize = $this->getresize($srcWidth,$srcHeight,$size[0],$size[1]);
+    //     $newImg = imagecreatetruecolor($newsize[0], $newsize[1]);
+    //     echo count($srcImg);
+    //     $alpha = imagecolorallocatealpha($newImg, 0, 0, 0, 127);
+    //     imagefill($newImg, 0, 0, $alpha);
+    //     imagecopyresampled($newImg, $srcImg, 0, 0, 0, 0, $newsize[0], $newsize[1], $srcWidth, $srcHeight);
+    //     imagesavealpha($newImg, true);
+    //     // imagepng($newImg, $tofile);
+    //     // imagewebp($newImg, $tofile.'.webp');
+    //     // imagegif($newImg, $tofile.'.gif');
+    //     imagedestroy($newImg);
+    //     return true;
+    // }
 
     /**
      * @description: 检查文件是否符合要求
