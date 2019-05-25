@@ -11,38 +11,50 @@ class uploadfile {
         //准备文件存储路径(绝对路径,/结尾)
         $savedir = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]).DIRECTORY_SEPARATOR; //目标存储文件夹
         $stmpdir = $this->savepath($uploadconf["tmpdir"]).DIRECTORY_SEPARATOR; //二压临时文件夹
+        $uploaddirstrcount = strlen($this->savepath($uploadconf["uploaddir"]));
         //遍历文件资讯
         $returnarr = [];
         foreach ($files as $nowfile) {
             $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
             $code = 1000000;
+            $info = [];
             $tmpfile = $nowfile["tmp_name"];
             if (is_numeric($mediatype)) {
                 $code = $mediatype; //返回错误
-                $returnfileinfo = ["code" => $code];
+                $info = ["code" => $code];
             } else {
-                $returnfileinfo = $mediatype;
-                $returnfileinfo["code"] = $code;
+                $info["type"] = $mediatype;
+                $info["code"] = $code;
             }
             $newfilename = $nlcore->safe->randstr(64); //创建文件名
             $twotmpfile = $uploadconf["tmpdir"];
             $savefile = $savedir.$newfilename; //最终存储文件完整路径
-            $savetmpfile = $stmpdir.$newfilename; //最终存储临时文件完整路径
+            $savetmpfile = $stmpdir.$newfilename.'.'.$mediatype[1]; //最终存储临时文件完整路径
             //是视频还是图片？
-            if ($mediatype == "image") {
+            $info["files"] = [];
+            if ($mediatype[2] == "image") {
                 //如果是图片文件则直接进行二压
-                $nowfilename = $savefile.'.'.$key;
                 foreach ($nlcore->cfg->app->imageresize as $key => $value) {
+                    $nowfilename = $savefile.'.'.$key;
                     $newfiles = $this->resizeto($tmpfile, $nowfilename, $mediatype[1], $value, $uploadconf["quality"]);
-                    $returnfileinfo["files"] = $newfiles;
+                    foreach ($newfiles as $newfile) {
+                        $newfilesub = substr($newfile, $uploaddirstrcount);
+                        array_push($info["files"],$newfilesub);
+                    }
                 }
-            } else if ($mediatype == "video") {
-                //如果是视频文件则移动到临时目录进行二压，生成临时操作指令
-                //暂无需要，预留位置暂不开发
+            } else if ($mediatype[2] == "video") {
+                $videofile = $savefile.'.'.$mediatype[1];
+                $info["files"] = array_push($info["files"],$videofile);
+                //异步用文件
+                $vcfgfile = fopen($savetmpfile.'.txt', "w");
+                fwrite($vcfgfile, $videofile);
+                fclose($vcfgfile);
+                copy($tmpfile,$savetmpfile) or die();
             }
-            return $returnfileinfo;
+            array_push($returnarr,$info);
         }
-        return null;
+        echo json_encode($returnarr);
+        return $returnarr;
     }
 
     /**
@@ -68,6 +80,15 @@ class uploadfile {
         return [$newWidth,$newHeight];
     }
 
+    /**
+     * @description: 将图片限制到指定尺寸，压缩成更小的 gif 或 jpg+webp 格式，然后存入日期文件夹。
+     * @param String imagefile 图片临时文件完整路径
+     * @param String tofile 最终存储文件完整路径
+     * @param String type 扩展名
+     * @param Array size 最大尺寸 [宽,高]
+     * @param Int quality 在 jpg+webp 模式时的压缩比（清晰度）
+     * @return Array 文件信息和状态数组
+     */
     function resizeto($imagefile,$tofile,$type,$size,$quality) {
         $imagick = new Imagick($imagefile);
         $imagick->stripImage(); //去除图片信息
@@ -82,7 +103,6 @@ class uploadfile {
             $transparent = new ImagickPixel("transparent");
             $newimagick = new Imagick();
             foreach($imagick as $img){
-                echo '=';
                 $page = $img->getImagePage();
                 $tmp = new Imagick();
                 $tmp->newImage($page['width'], $page['height'], $transparent, 'gif');
@@ -93,10 +113,12 @@ class uploadfile {
                 $newimagick->setImagePage($tmp->getImageWidth(), $tmp->getImageHeight(), 0, 0);
                 $newimagick->setImageDelay($img->getImageDelay());
                 $newimagick->setImageDispose($img->getImageDispose());
+                $tmp->destroy();
             }
             $newimagick->setFormat("gif");
             $savefilename = $tofile.".gif";
             $newimagick->writeImages($savefilename,true);
+            $newimagick->destroy();
             return [$savefilename];
         } else {
             $imagick->adaptiveResizeImage($newsize[0], $newsize[1]);
@@ -109,9 +131,32 @@ class uploadfile {
             $jpeg->setFormat("jpeg");
             $savefilename2 = $tofile.".jpg";
             $jpeg->writeImage($savefilename2);
+            $webp->destroy();
+            $jpeg->destroy();
+            $imagick->destroy();
             return [$savefilename1,$savefilename2];
         }
     }
+    /* return
+[
+    {
+        "type": [
+            "image/png",
+            "png",
+            "image"
+        ],
+        "code": 1000000,
+        "files": [
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.S.webp",
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.S.jpg",
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.M.webp",
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.M.jpg",
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.L.webp",
+            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.L.jpg"
+        ]
+    }
+]
+    */
 
     // 使用 GD 库（已弃用）
     // function resizeto($imagefile,$tofile,$type,$size) {
@@ -212,12 +257,17 @@ class uploadfile {
         return $mediatype;
     }
 
+    /**
+     * @description: 获取视频长度
+     * @param String file 视频文件路径
+     * @return Float 视频持续时间（秒）
+     */
     function getvideoduration($file) {
         $ffprobe = FFMpeg\FFProbe::create();
         $duration = $ffprobe
             ->format($file)
             ->get('duration');
-        echo $duration;
+        return $duration;
     }
 
     /**

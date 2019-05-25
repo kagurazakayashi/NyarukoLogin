@@ -9,3 +9,5 @@ __pycache__
 .vs*
 image
 node_modules
+upload/*
+upload_tmp/*
