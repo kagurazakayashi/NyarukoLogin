@@ -1,12 +1,12 @@
 <?php
 // USE: require_once "nyacore.class.php";
 $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
+require_once $phpfiledir."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."nyaconfig.class.php";
 require_once $phpfiledir."nyainfomsg.class.php";
 require_once $phpfiledir."nyaconnect.class.php";
 require_once $phpfiledir."nyasafe.class.php";
 require_once $phpfiledir."md6.class.php";
-require_once $phpfiledir."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
 class nyacore {
     public $cfg; //设置
     public $msg; //信息

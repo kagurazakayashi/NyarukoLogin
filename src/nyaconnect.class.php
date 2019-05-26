@@ -36,10 +36,29 @@
          */
         function initMysqli($selectdbs) {
             global $nlcore;
-            $selectdbscount = count($selectdbs);
-            if ($selectdbscount > 0) {
-                //TODO: 使用Redis进行顺序式数据库选择
-                $dbid = rand(0, $selectdbscount-1);
+            $selectdbscount = count($selectdbs) - 1;
+            if ($selectdbscount >= 0) {
+                //如果 Redis 可用则顺序选数据库，不可用则随机选数据库
+                $dbid = 0;
+                if ($selectdbscount > 0) {
+                    if ($this->initRedis()) {
+                        $redis = $this->redis;
+                        $key = $nlcore->cfg->db->redis_tables["sqldb"];
+                        if($redis->exists($key)){
+                            $dbid = intval($redis->get($key));
+                            if ($dbid > $selectdbscount) {
+                                $redis->set($key,0);
+                            } else {
+                                $dbid++;
+                                $redis->incr($key);
+                            }
+                        } else {
+                            $redis->set($key,0);
+                        }
+                    } else {
+                        $dbid = rand(0, $selectdbscount);
+                    }
+                }
                 $selectdb = $selectdbs[$dbid];
                 $this->log("[CONNECT] ".$selectdb["db_user"]."@".$selectdb["db_host"].":".$selectdb["db_port"]."/".$selectdb["db_name"]);
                 $newcon = mysqli_connect($selectdb["db_host"],$selectdb["db_user"],$selectdb["db_password"],$selectdb["db_name"],$selectdb["db_port"]);
