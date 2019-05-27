@@ -1,7 +1,7 @@
 <?php
 class nyaverification {
     /**
-     * @description: 生成邮件内容
+     * @description: 生成邮件内容并发送
      * @param String userhash 用户哈希
      * @param String nickname 用户昵称
      * @param String mailto 收件人邮箱

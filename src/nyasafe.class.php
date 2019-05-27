@@ -419,12 +419,22 @@ class nyasafe {
     /**
      * @description: 检查当前IP是否到达接口访问频率限制
      * @param String module 功能名称（$conf->limittime）
+     * @param Array<String,String> module 自定义次数限制参数
      * @return Array<Int,Int> [状态代码,第几次请求]
      * 如果未加载Redis则自动关闭此功能，直接返回通过，请求数返回-1
      */
     function frequencylimitation($module) {
         global $nlcore;
-        $conf = $nlcore->cfg->app;
+        $interval = PHP_INT_MAX;
+        $times = PHP_INT_MAX;
+        if (is_array($module)) {
+            $interval = $module[0];
+            $times = $module[1];
+        } else {
+            $conf = $nlcore->cfg->app->limittime[$module];
+            $interval = $conf[0];
+            $times = $conf[1];
+        }
         if (!$nlcore->db->initRedis()) return [1000000,-1];
         $redis = $nlcore->db->redis;
         $key = $this->getip();
@@ -432,12 +442,12 @@ class nyasafe {
         if($check){
             $redis->incr($key);
             $count = $redis->get($key);
-            if($count > $conf->limittime[$module][1]){
+            if($count > $times){
                 return [2020407,$count];
             }
         } else {
             $redis->incr($key);
-            $redis->expire($key,$conf->limittime[$module][0]);
+            $redis->expire($key,$interval);
         }
         $count = $redis->get($key);
         return [1000000,$count];
@@ -468,7 +478,7 @@ class nyasafe {
         return $argv;
     }
     /**
-     * @description: [数据发送]从数组创建JSON、加密、base64编码、变体
+     * @description: [O数据发送]从数组创建JSON、加密、base64编码、变体
      * @param String dataarray 要返回到客户端的内容字典
      * @param String secret totp加密码（可选，不加不进行加密）
      * @return String 加密后的信息
@@ -496,9 +506,10 @@ class nyasafe {
         return $json;
     }
     /**
-     * @description: [数据接收]解析变体、base64解码、解密、解析JSON到数组
+     * @description: [I数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
+     * @param Array<String,String> module 自定义次数限制参数
      * @return Array<String> [(0)解析后的JSON内容数组,(1)TOTP的secret,(2)TOTP的token,(3)IP地址ID,(4)APPID]
      */
     function decryptargv($module=null) {
@@ -515,7 +526,7 @@ class nyasafe {
         if (!isset($argv["j"]) && $nlcore->cfg->app->alwayencrypt) {
             $nlcore->msg->stopmsg(2020415);
         }
-        if (!isset($argv["t"])) { //检查应用令牌
+        if (!isset($argv["t"])) { //检查是否提供了应用令牌
             $nlcore->msg->stopmsg(2020408);
         }
         if (!$this->is_md6($argv["t"])) { //检查应用令牌格式

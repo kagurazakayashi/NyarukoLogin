@@ -1,7 +1,7 @@
 <?php
 // require_once 'vendor/autoload.php';
 class uploadfile {
-    function getuploadfile() {
+    function getuploadfile($echojson=false) {
         global $nlcore;
         // if (!isset($_FILES["file"])) return false;
         $uploadconf = $nlcore->cfg->app->upload;
@@ -53,7 +53,7 @@ class uploadfile {
             }
             array_push($returnarr,$info);
         }
-        echo json_encode($returnarr);
+        if ($echojson) echo json_encode($returnarr);
         return $returnarr;
     }
 

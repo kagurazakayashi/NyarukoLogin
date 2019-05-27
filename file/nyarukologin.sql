@@ -199,7 +199,7 @@ CREATE TABLE `u1_session` (
   `userhash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '用户哈希',
   `ipid` int(11) UNSIGNED NOT NULL COMMENT 'IP地址ID',
   `devid` int(11) DEFAULT NULL COMMENT '设备表ID',
-  `type` enum('phone','phone_emu','pad','pad_emu','pc','web','debug','other') CHARACTER SET ascii NOT NULL DEFAULT 'phone' COMMENT '设备类型',
+  `devtype` enum('phone','phone_emu','pad','pad_emu','pc','web','debug','other') CHARACTER SET ascii NOT NULL DEFAULT 'phone' COMMENT '设备类型',
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '令牌生成时间',
   `endtime` datetime DEFAULT NULL COMMENT '令牌失效时间',
   `ua` text COLLATE utf8mb4_unicode_520_ci COMMENT '会话环境信息'
