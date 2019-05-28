@@ -117,16 +117,32 @@
          * @param String whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式（可选，默认空）
          * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
+         * @param Array<String,Bool> order 排序方式[排序依据,是否倒序]
+         * @param Int/Array<Int,Int> limit 区间。纯数字为前x条，用数组则为[从多少,取多少]
+         * @param Boolean islike 模糊搜素（可选，默认关）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
+        function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND",$islike=false,$order=null,$limit=null) {
             $this->initReadDbs();
             $columnArr = $this->safe($columnArr);
             $whereDic = $this->safe($whereDic);
             $columnStr = implode('`,`',$columnArr);
-            $whereStr = $this->dic2sql($whereDic,2);
+            $whereStr = $this->dic2sql($whereDic,2,$islike);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
-            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
+            $orderstr = "";
+            if ($order) {
+                $orderstr = " order by ".$order[0];
+                if ($order[1] === true) $orderstr.= " desc";
+            }
+            if ($limit) {
+                $orderstr.= " limit ";
+                if (is_array($limit)) {
+                    $orderstr.= strval($limit[0]).",".strval($limit[1]);
+                } else {
+                    $orderstr.= strval($limit);
+                }
+            }
+            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.$orderstr.";";
             return $this->sqlc($sqlcmd);
         }
         /**
@@ -204,12 +220,13 @@
          * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式（可选，默认空）
          * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
+         * @param Boolean islike 模糊搜素（可选，默认关）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND") {
+        function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND",$islike=false) {
             $this->initReadDbs();
             $whereDic = $this->safe($whereDic);
-            $whereStr = $this->dic2sql($whereDic,2);
+            $whereStr = $this->dic2sql($whereDic,2,$islike);
             if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
@@ -283,9 +300,10 @@
          *     1: `列1`='值1', `列2`='值2'
          *     2: `列1`='值1' AND `列2`='值2'
          *     3: `列1`='值1' OR `列2`='值2'
+         * @param Boolean islike 模糊搜素
          * @return String 返回 SQL 语句片段，如果不提供要转换的字典(null)，则返回通用*号
          */
-        function dic2sql($dic=null,$mode=0) {
+        function dic2sql($dic=null,$mode=0,$islike=false) {
             if ($dic == null) return "*";
             if ($mode == 0) {
                 $keys = "";
@@ -302,6 +320,8 @@
                 $valstr = substr($vals, 0, -2);
                 return "(".$keystr.") VALUES (".$valstr.")";
             } else {
+                $like = "=";
+                if ($islike) $like = "LIKE";
                 $modestr = ", ";
                 if ($mode == 2) {
                     $modestr = " AND ";
@@ -312,12 +332,12 @@
                 $keyval = "";
                 foreach ($dic as $key => $val) {
                     if ($val) {
-                        $keyval .= "`".$key."` = '".$val."'".$modestr;
+                        $keyval .= "`".$key."` ".$like." '".$val."'".$modestr;
                     } else {
                         if ($mode == 2) {
                             $keyval .= "`".$key."` IS NULL".$modestr;
                         } else {
-                            $keyval .= "`".$key."` = NULL".$modestr;
+                            $keyval .= "`".$key."` ".$like." NULL".$modestr;
                         }
                     }
                 }
