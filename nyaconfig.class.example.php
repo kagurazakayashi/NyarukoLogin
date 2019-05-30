@@ -49,7 +49,8 @@ class nyasetting_db {
     ];
     //Redis数据库表设置
     var $redis_tables = [
-        "frequencylimitation" => "u1_fl"
+        "frequencylimitation" => "u1_fl",
+        "sqldb" => "u1_db"
     ];
     //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
     var $logfile_db = "B:\\db.log";
@@ -77,6 +78,8 @@ class nyasetting_app {
         "getlinktotp" => [60,30], //限制 连接加密TOTP申请 接口的访问频率
         "signup" => [60,30], //提交用户名密码进行注册
         "captcha" => [60,30], //获取图形验证码
+        "session" => [60,30], //登录状态检查接口
+        "fastsearch" => [60,300], //快速模糊用户名搜索
     ];
     //多语言（应和template中的文件名对应），在第一位的为默认语言
     var $language = ["zh-cn"];
@@ -92,7 +95,7 @@ class nyasetting_app {
         "emaillen" => 50, //邮件地址长度限制
         "pwdexpiration" => 94608000 //密码有效期（秒）
     ];
-    //每个端可登录的设备数，key 和 device 表 type 的 enum 相对应
+    //每个端可登录的设备数，key 和 device/session 表 type/devtype 的 enum 相对应
     var $maxlogin = [
         "all" => 3,
         "phone" => 1,
@@ -117,6 +120,37 @@ class nyasetting_app {
         "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
     ];
     var $passwordsalt = "6yJv1R2TxyBVKOToumDbfBmqlDWr3PMK"; //密码盐
+    var $upload = [
+        "tmpdir" => "upload_tmp",
+        "uploaddir" => "upload",
+        "datedir" => true,
+        "chmod" => 0770,
+        "maxsize" => [
+            "all" => 314572800, //300M
+            "image" => 10485760, //10M
+            "gif" => 5242880, //5M
+            "video" => 314572800 //300M
+        ],
+        "videoduration" => 600,
+        "quality" => 80
+    ];
+    var $uploadtype = [
+        "image" => [
+            ["image/jpeg","jpg"],
+            ["image/png","png"],
+            ["image/gif","gif"],
+            ["image/webp","webp"]
+        ],
+        "video" => [
+            ["video/mp4","mp4"],
+            ["video/quicktime","mov"]
+        ]
+    ];
+    var $imageresize = [
+        "S" => [480,272],
+        "M" => [1280,720],
+        "L" => [1920,1080],
+    ];
 }
 
 class nyasetting_verify {

@@ -21,6 +21,8 @@ class nyaverification {
         $endtime = $nlcore->safe->getdatetime(null,time()+$nlcore->cfg->verify->timeout["mail"])[1];
         //生成验证代码
         $vcode = $nlcore->safe->randstr();
+        //写验证代码
+
         //生成验证网址
         $url = $nlcore->cfg->app->$appurl.DIRECTORY_SEPARATOR."nyaverification.php?code=".$vcode;
         $appname = $nlcore->cfg->app->appname;
