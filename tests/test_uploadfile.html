@@ -12,32 +12,49 @@
 <div class="mdui-toolbar mdui-color-theme">
     <span class="mdui-typo-title">文件上传测试</span>
 </div>
-    <div class="mdui-panel" mdui-panel>
-        <div class="mdui-panel-item mdui-panel-item-open">
-            <div class="mdui-panel-item-header">
-                <div class="mdui-panel-item-title">上传单个文件</div>
-                <i class="mdui-panel-item-arrow mdui-icon material-icons">keyboard_arrow_down</i>
-            </div>
-            <div class="mdui-panel-item-body">
-                <form action="test_uploadfile.php" method="post" enctype="multipart/form-data">
-                    <p><input class="mdui-btn" name="userfile" type="file" /></p>
-                    <p><input class="mdui-btn mdui-color-theme-accent mdui-ripple" type="submit" value="开始上传" /></p>
-                </form>
-            </div>
+<div class="mdui-progress" id="uploadprogress" style="display: none;">
+    <div class="mdui-progress-determinate mdui-color-theme-accent" id="uploadprogressv" style="width: 0%;"></div>
+</div>
+<div class="mdui-container">
+    <!-- <form action="test_uploadfile.php" method="post" enctype="multipart/form-data"> -->
+        <div class="mdui-textfield mdui-textfield-floating-label">
+            <label class="mdui-textfield-label">apiver</label>
+            <input class="mdui-textfield-input" id="apiver" value="1"/>
         </div>
-        <div class="mdui-panel-item mdui-panel-item-open">
-            <div class="mdui-panel-item-header">
-                <div class="mdui-panel-item-title">上传多个文件</div>
-                <i class="mdui-panel-item-arrow mdui-icon material-icons">keyboard_arrow_down</i>
-            </div>
-            <div class="mdui-panel-item-body">
-                <form action="test_uploadfile.php" method="post" enctype="multipart/form-data">
-                    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
-                    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
-                    <p><input class="mdui-btn mdui-color-theme-accent mdui-ripple" type="submit" value="开始上传" /></p>
-                </form>
-            </div>
+        <div class="mdui-textfield mdui-textfield-floating-label">
+            <label class="mdui-textfield-label">devtoken</label>
+            <input class="mdui-textfield-input" id="ttt"  value="670b4465669972de532bad1f5e75503534798c0b1397302a1e8ebaeff1bc6136"/>
         </div>
-    </div>
+        <div class="mdui-textfield mdui-textfield-floating-label">
+            <label class="mdui-textfield-label">appsecret</label>
+            <input class="mdui-textfield-input" id="appsecret" value="vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"/>
+        </div>
+        <div class="mdui-textfield mdui-textfield-floating-label">
+            <label class="mdui-textfield-label">usertoken</label>
+            <input class="mdui-textfield-input" id="token" value="33abe3b8cad07c85743f5e83790a1861f1f5bcfc2adc5681ebc296365215501d"/>
+        </div>
+        <p><input class="mdui-btn" id="fileToUpload" name="userfile" type="file" onchange="fileSelected();" /></p>
+        <p class="mdui-text-center" id="fileuploadimagebox">
+            <img class="mdui-shadow-2" id="fileuploadimageview" style="max-width: 80%; max-height: 300px;" src="" />
+            <div class="mdui-text-center">文件大小：<span id="fileuploadsizestr">0 KB</span></div>
+        </p>
+        <p class="mdui-text-center" id="uploadbtnbox">
+            <input onclick="uploadfile();" class="mdui-btn mdui-color-theme-accent mdui-ripple mdui-btn-raised" type="button" value="开始上传" />
+        </p>
+        <div class="mdui-text-center" id="uploadprogressbox" style="display: none;">
+            <div class="mdui-spinner mdui-spinner-colorful"></div>
+            正在上传&nbsp;<span id="fileuploadprogressstr">0</span>%&nbsp;...
+        </div>
+        <div id="statuslog"></div>
+    <!-- </form> -->
+</div>
+
+<!-- 多文件
+<form action="test_uploadfile.php" method="post" enctype="multipart/form-data">
+    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
+    <p><input class="mdui-btn" name="userfile[]" type="file" /></p>
+    <p><input class="mdui-btn mdui-color-theme-accent mdui-ripple" type="submit" value="开始上传" /></p>
+</form> -->
+<script src="test_uploadfile.js"></script>
 </body>
 </html>
