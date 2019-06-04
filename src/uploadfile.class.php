@@ -15,10 +15,12 @@ class uploadfile {
         //整理文件详细信息数组
         $files = $nlcore->safe->dicvals2arrsdic($this->filearr($_FILES));
         //准备文件存储路径(绝对路径,/结尾)
-        $savedir = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]).DIRECTORY_SEPARATOR; //目标存储文件夹
-        $stmpdir = $this->savepath($uploadconf["tmpdir"]).DIRECTORY_SEPARATOR; //二压临时文件夹
-        $uploaddirstrcount = strlen($this->savepath($uploadconf["uploaddir"]));
+        $savedirarr = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]);
+        $savedir = $savedirarr[0].DIRECTORY_SEPARATOR; //目标存储文件夹
+        $stmpdir = $this->savepath($uploadconf["tmpdir"])[0].DIRECTORY_SEPARATOR; //二压临时文件夹
+        $uploaddirstrcount = strlen($this->savepath($uploadconf["uploaddir"])[0]);
         //遍历文件资讯
+        $returnfile = [];
         $returnarr = [];
         foreach ($files as $nowfile) {
             $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
@@ -41,18 +43,34 @@ class uploadfile {
             $info["files"] = [];
             if ($mediatype["media"] == "image") {
                 //如果是图片文件则直接进行二压
-                foreach ($nlcore->cfg->app->imageresize as $key => $value) {
+                $nowextres = [];
+                $imageresize = $nlcore->cfg->app->imageresize;
+                foreach ($imageresize as $key => $value) {
                     $nowfilename = $savefile.'.'.$key;
                     $newfiles = $this->resizeto($tmpfile, $nowfilename, $mediatype["extension"], $value);
                     foreach ($newfiles as $newfile) {
                         $newfilesub = substr($newfile, $uploaddirstrcount);
                         $filepatharr = explode(".", $newfilesub);
-                        $info["files"][implode(",",array_slice($filepatharr, -2))] = str_replace("\\","/",$newfilesub);
-                        // array_push($info["files"],str_replace("\\","/",$newfilesub));
+                        //$info["files"][implode(",",array_slice($filepatharr, -2))] = str_replace("\\","/",$newfilesub);
+                        $filepatharrc = count($filepatharr);
+                        $extname = $filepatharr[$filepatharrc-1];
+                        $sizename = $filepatharr[$filepatharrc-2];
+                        if (!in_array($extname,$nowextres)) {
+                            array_push($nowextres,$extname);
+                        }
                     }
                 }
+                $nowpathsub = substr($savefile,strlen($savedirarr[1]));
+                $nowpathsub = str_replace("\\","/",$nowpathsub);
+                $nowfileres = [
+                    "path" => $nowpathsub,
+                    "size" => array_keys($imageresize),
+                    "ext" => $nowextres
+                ];
+                array_push($info["files"],$nowfileres);
             } else if ($mediatype["media"] == "video") {
-                $videofile = $savefile.'.'.$mediatype[1];
+                $nowextres = [];
+                $videofile = $savefile.'.'.$mediatype["extension"];
                 $info["files"] = array_push($info["files"],str_replace("\\","/",$videofile));
                 //异步用文件
                 $vcfgfile = fopen($savetmpfile.'.txt', "w");
@@ -60,8 +78,9 @@ class uploadfile {
                 fclose($vcfgfile);
                 copy($tmpfile,$savetmpfile) or $nlcore->msg->stopmsg(2050105,$totpsecret);
             }
-            array_push($returnarr,$info);
+            array_push($returnfile,$info);
         }
+        $returnarr["files"] = $returnfile;
         $returnarr["code"] = 1000000;
         if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpsecret);
         return $returnarr;
@@ -313,19 +332,24 @@ class uploadfile {
     /**
      * @description: 获取目的地文件夹
      * @param String uploadpath 要存储的文件夹
-     * @return String 绝对路径,无/结尾
+     * @param Bool datedir 是否生成日期子文件夹
+     * @param Int chmod 新建文件的权限
+     * @return Array[String] [完整绝对路径,存储区文件夹路径,日期文件夹路径] (无/结尾)
      */
     function savepath($uploadpath,$datedir=false,$chmod=0770) {
         $uploadto = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.$uploadpath;
+        $uploaddir = $uploadto;
+        $datedirstr = null;
         if ($datedir) {
-            $uploadto = $uploadto.DIRECTORY_SEPARATOR.date('Y').DIRECTORY_SEPARATOR.date('m').DIRECTORY_SEPARATOR.date('d');
+            $datedirstr = DIRECTORY_SEPARATOR.date('Y').DIRECTORY_SEPARATOR.date('m').DIRECTORY_SEPARATOR.date('d');
+            $uploadto = $uploadto.$datedirstr;
             if (!is_dir($uploadto)) {
                 mkdir($uploadto,$chmod,true);
             }
         } else if (!is_dir($uploadto)) {
             mkdir($uploadto,$chmod,true);
         }
-        return $uploadto;
+        return [$uploadto,$uploaddir,$datedirstr];
     }
     /**
      * @description: 合并多name上传的文件
