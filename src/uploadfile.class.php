@@ -46,8 +46,9 @@ class uploadfile {
                 $nowextres = [];
                 $imageresize = $nlcore->cfg->app->imageresize;
                 foreach ($imageresize as $key => $value) {
-                    $nowfilename = $savefile.'.'.$key;
-                    $newfiles = $this->resizeto($tmpfile, $nowfilename, $mediatype["extension"], $value);
+                    $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
+                    $newfiles = $resizetores[0];
+                    $isexists = $resizetores[1];
                     foreach ($newfiles as $newfile) {
                         $newfilesub = substr($newfile, $uploaddirstrcount);
                         $filepatharr = explode(".", $newfilesub);
@@ -62,8 +63,12 @@ class uploadfile {
                 }
                 $nowpathsub = substr($savefile,strlen($savedirarr[1]));
                 $nowpathsub = str_replace("\\","/",$nowpathsub);
+                list($timesub1, $timesub2) = explode(' ', microtime());
+                $ftag = (float)sprintf('%.0f', (floatval($timesub1) + floatval($timesub2)) * 1000);
+                $ftag = strval(dechex($ftag));
                 $nowfileres = [
                     "path" => $nowpathsub,
+                    "tmpt" => $ftag,
                     "size" => array_keys($imageresize),
                     "ext" => $nowextres
                 ];
@@ -106,27 +111,37 @@ class uploadfile {
             $newHeight = $maxHeight;
             $newWidth = $maxHeight * $imageScale;
         }
-        return [$newWidth,$newHeight];
+        if ($newWidth > $imageWidth && $newHeight > $imageHeight) {
+            return [$imageWidth,$imageHeight];
+        } else {
+            return [$newWidth,$newHeight];
+        }
     }
 
     /**
      * @description: 将图片限制到指定尺寸，压缩成更小的 gif 或 jpg+webp 格式，然后存入日期文件夹。
      * @param String imagefile 图片临时文件完整路径
-     * @param String tofile 最终存储文件完整路径
+     * @param String savefile 最终存储文件路径（无.）
+     * @param String saveext 最终存储文件路径扩展名前补位（在.后添加）
      * @param String type 扩展名
      * @param Array sizequality 最大尺寸和清晰度 [宽,高,在 jpg+webp 模式时的压缩比]
-     * @return Array 文件信息和状态数组
+     * @return Array [[文件完整路径],是否找到重复文件]
      */
-    function resizeto($imagefile,$tofile,$type,$sizequality) {
+    function resizeto($imagefile,$savefile,$key,$type,$sizequality) {
         $imagick = new Imagick($imagefile);
         $imagick->stripImage(); //去除图片信息
-        $imageWidth = $imagick->getImageWidth();
-        $imageHeight = $imagick->getImageHeight();
-        if ($imageWidth <= 0 || $imageHeight <= 0) {
-            $imageWidth = imagesx($srcImg);
-            $imageHeight = imagesy($srcImg);
+        $isresize = ($sizequality[0] <= 0 || $sizequality[1] <= 0) ? false : true;
+        $isrequality = ($sizequality[2] <= 0) ? false : true;
+        if ($isresize) {
+            $imageWidth = $imagick->getImageWidth();
+            $imageHeight = $imagick->getImageHeight();
+            if ($imageWidth <= 0 || $imageHeight <= 0) {
+                $imageWidth = imagesx($srcImg);
+                $imageHeight = imagesy($srcImg);
+            }
+            $newsize = $this->getresize($imageWidth,$imageHeight,$sizequality[0],$sizequality[1]);
         }
-        $newsize = $this->getresize($imageWidth,$imageHeight,$sizequality[0],$sizequality[1]);
+        $isexists = false;
         if ($type == "gif") {
             $transparent = new ImagickPixel("transparent");
             $newimagick = new Imagick();
@@ -135,7 +150,8 @@ class uploadfile {
                 $tmp = new Imagick();
                 $tmp->newImage($page['width'], $page['height'], $transparent, 'gif');
                 $tmp->compositeImage($img, Imagick::COMPOSITE_OVER, $page['x'], $page['y']);
-                $tmp->thumbnailImage($newsize[0], $newsize[1], true);
+                if ($isresize) $tmp->adaptiveResizeImage($newsize[0], $newsize[1]);
+                if ($isrequality) $tmp->setImageCompressionQuality(1);
                 $tmp->setFormat("gif");
                 $newimagick->addImage($tmp);
                 $newimagick->setImagePage($tmp->getImageWidth(), $tmp->getImageHeight(), 0, 0);
@@ -144,25 +160,29 @@ class uploadfile {
                 $tmp->destroy();
             }
             $newimagick->setFormat("gif");
-            $savefilename = $tofile.".gif";
+            $savefilename = $savefile.".".$key.".gif";
+            if (file_exists($savefilename)) $isexists = true;
             $newimagick->writeImages($savefilename,true);
             $newimagick->destroy();
-            return [$savefilename];
+            return [[$savefilename],$isexists];
         } else {
-            $imagick->adaptiveResizeImage($newsize[0], $newsize[1]);
-            $imagick->setImageCompressionQuality($sizequality[2]); //图片质量
+            if ($isresize) $imagick->adaptiveResizeImage($newsize[0], $newsize[1]);
+            if ($isrequality) $imagick->setImageCompressionQuality($sizequality[2]); //图片质量
             $webp = $imagick;
             $webp->setFormat("webp");
-            $savefilename1 = $tofile.".webp";
+            $savefilename1 = $savefile.".".$key.".webp";
+            $dechextime = strval(dechex(time()));
+            if (file_exists($savefilename1)) $isexists = true;
             $webp->writeImage($savefilename1);
             $jpeg = $imagick;
             $jpeg->setFormat("jpeg");
-            $savefilename2 = $tofile.".jpg";
+            $savefilename2 = $savefile.".".$key.".jpg";
+            if (file_exists($savefilename2)) $isexists = true;
             $jpeg->writeImage($savefilename2);
             $webp->destroy();
             $jpeg->destroy();
             $imagick->destroy();
-            return [$savefilename1,$savefilename2];
+            return [[$savefilename1,$savefilename2],$isexists];
         }
     }
     /* return

@@ -121,20 +121,20 @@ class nyasetting_app {
     ];
     var $passwordsalt = "6yJv1R2TxyBVKOToumDbfBmqlDWr3PMK"; //密码盐
     var $upload = [
-        "tmpdir" => "upload_tmp",
-        "uploaddir" => "upload",
-        "datedir" => true,
-        "chmod" => 0770,
-        "maxsize" => [
+        "tmpdir" => "upload_tmp", //异步二压临时文件夹
+        "uploaddir" => "upload", //媒体上传文件夹
+        "datedir" => true, //按日期创建子文件夹
+        "chmod" => 0770, //新建文件的权限
+        "maxsize" => [ //每种媒体类型的最大文件大小限制
             "all" => 314572800, //300M
             "image" => 10485760, //10M
             "gif" => 5242880, //5M
             "video" => 314572800 //300M
         ],
-        "videoduration" => 600,
-        "quality" => 80
+        "videoduration" => 600, //视频最大时长限制（秒）
+        "quality" => 80 //
     ];
-    var $uploadtype = [
+    var $uploadtype = [ //允许上传的文件类型 和 MIME/扩展名 对应关系
         "image" => [
             ["image/jpeg","jpg"],
             ["image/png","png"],
@@ -146,10 +146,13 @@ class nyasetting_app {
             ["video/quicktime","mov"]
         ]
     ];
+    //标识名=>图片压缩尺寸（宽高）和图片压缩清晰度百分比，会作为文件名.后缀
+    //清晰度百分比不支持gif
     var $imageresize = [
-        "S" => [480,272],
-        "M" => [1280,720],
-        "L" => [1920,1080],
+        "R" => [0,0,0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
+        "S" => [480,272,80],
+        "M" => [1280,720,80],
+        "L" => [1920,1080,80]
     ];
 }
 
