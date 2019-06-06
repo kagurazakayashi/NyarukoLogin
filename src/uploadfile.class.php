@@ -44,7 +44,8 @@ class uploadfile {
             if ($mediatype["media"] == "image") {
                 //如果是图片文件则直接进行二压
                 $nowextres = [];
-                $imageresize = $nlcore->cfg->app->imageresize;
+                $useto = isset($jsonarr["usefor"]) ? $jsonarr["usefor"] : "def";
+                $imageresize = $nlcore->cfg->app->imageresize[$useto];
                 foreach ($imageresize as $key => $value) {
                     $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
                     $newfiles = $resizetores[0];
@@ -186,24 +187,36 @@ class uploadfile {
         }
     }
     /* return
-[
-    {
-        "type": [
-            "image/png",
-            "png",
-            "image"
-        ],
-        "code": 1000000,
-        "files": [
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.S.webp",
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.S.jpg",
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.M.webp",
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.M.jpg",
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.L.webp",
-            "\\2019\\09\\10\\rrNjGYteUdiKvWP4W3MvfSS1PJO4Tr5bQd6fHt0wixA9YpNVCwyQvTM0jVvKujFI.L.jpg"
-        ]
-    }
-]
+{
+    "files": [
+        {
+            "type": {
+                "mime": "image/jpeg",
+                "extension": "jpg",
+                "media": "image"
+            },
+            "code": 1000000,
+            "files": [
+                {
+                    "path": "/2019/11/07/7005f8619c313e7b525778f71de70c24",
+                    "tmpt": "16e4518cfc2",
+                    "size": [
+                        "R",
+                        "S",
+                        "M",
+                        "L"
+                    ],
+                    "ext": [
+                        "webp",
+                        "jpg"
+                    ]
+                }
+            ]
+        }
+    ],
+    "code": 1000000,
+    "timestamp": 1573117284
+}
     */
 
     // 使用 GD 库（已弃用）

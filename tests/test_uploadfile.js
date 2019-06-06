@@ -32,6 +32,7 @@ function uploadfile() {
     form.append("t",document.getElementById("ttt").value);
     form.append("appsecret",document.getElementById("appsecret").value);
     form.append("token",document.getElementById("token").value);
+    form.append("usefor",document.getElementById("usefor").value);
     form.append("file", file);
     var xhr = new XMLHttpRequest() || new ActiveXObject("Microsoft.XMLHTTP");
     xhr.open("post","test_uploadfile.php",true);
