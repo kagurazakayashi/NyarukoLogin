@@ -221,7 +221,7 @@ class nyalogin {
             "tel" => $userinfoarr["tel"],
             "userinfo" => $userexinfoarr
         ]);
-        if ($overflowsession) $returnjson = array_merge($returnjson,$overflowsession);
+        if ($overflowsession) $returnjson["logout"] = $overflowsession;
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 
@@ -335,7 +335,7 @@ class nyalogin {
         if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211,$totpsecret);
         //查设备表来返回被登出的设备型号
         $logoutdevinfo = $nyauser->getdeviceinfo($devid,$totpsecret);
-        return $nlcore->safe->arraykeyprefix($logoutdevinfo,"logout_");
+        return $logoutdevinfo;
     }
 }
 

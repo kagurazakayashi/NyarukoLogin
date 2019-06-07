@@ -594,8 +594,8 @@ class nyasafe {
     }
     /**
      * @description: 数据发送和接收时进行记录
-     * @param {type}
-     * @return:
+     * @param String mode 记录类型
+     * @param String logarr 数据数组
      */
     function log($mode,$logarr) {
         global $nlcore;
@@ -604,7 +604,9 @@ class nyasafe {
         if ($logfile) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
             $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
-            $logstr = "[".$this->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$mode."] ".print_r($logarr,true).PHP_EOL;
+            $log = json_encode($logarr);
+            if (!$log) $log = print_r($logarr,true);
+            $logstr = "[".$this->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$mode."] ".$log.PHP_EOL;
             $fp = fopen($logfile,"a");
             fwrite($fp,$logstr.PHP_EOL);
             fclose($fp);

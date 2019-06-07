@@ -100,11 +100,11 @@ CREATE TABLE `u1_history` (
 CREATE TABLE `u1_info` (
   `id` int(11) NOT NULL COMMENT 'ID',
   `userhash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '哈希',
-  `infotype` tinyint(1) NOT NULL DEFAULT '0' COMMENT '资料类型',
+  `infotype` enum('main','additional') CHARACTER SET ascii NOT NULL DEFAULT 'main' COMMENT '资料类型',
   `name` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '昵称',
   `nameid` smallint(4) UNSIGNED ZEROFILL NOT NULL COMMENT '昵称唯一码',
-  `gender` enum('male','female','other','androgynos','androgyne','bigender','boi','cisgender','cross_dresser','gender_bender','gender_neutrality','non_binary','postgenderism','gender_variance','pangender','transgender','trans_man','trans_woman','transfeminine','transsexual','trigender') COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '性别',
-  `pronoun` enum('she','he','they') COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '称呼方式',
+  `gender` enum('male','female','other','androgynos','androgyne','bigender','boi','cisgender','cross_dresser','gender_bender','gender_neutrality','non_binary','postgenderism','gender_variance','pangender','transgender','trans_man','trans_woman','transfeminine','transsexual','trigender','') CHARACTER SET ascii DEFAULT NULL,
+  `pronoun` enum('she','he','it') CHARACTER SET ascii DEFAULT 'it' COMMENT '人称代词',
   `address` text COLLATE utf8mb4_unicode_520_ci COMMENT '地址',
   `profile` text COLLATE utf8mb4_unicode_520_ci COMMENT '签名',
   `description` longtext COLLATE utf8mb4_unicode_520_ci COMMENT '个人介绍',
@@ -258,6 +258,43 @@ CREATE TABLE `u1_users` (
   `errorcode` mediumint(7) NOT NULL DEFAULT '0' COMMENT '账户异常状态提示信息ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='用户表';
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `z1_keyword`
+--
+
+CREATE TABLE `z1_keyword` (
+  `id` bigint(20) NOT NULL COMMENT '序号',
+  `hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '关键词哈希',
+  `word` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '关键词描述',
+  `topost` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '目标贴文哈希',
+  `isai` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否为后台词汇'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `z1_posts`
+--
+
+CREATE TABLE `z1_posts` (
+  `id` bigint(20) UNSIGNED NOT NULL COMMENT '序号',
+  `post` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '文章哈希值',
+  `parent` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT '评论自',
+  `user` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '用户哈希值',
+  `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发表日期',
+  `modified` datetime DEFAULT NULL COMMENT '修改日期',
+  `title` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '文章标题',
+  `type` enum('POST','TEXT','IMAGE','VIDEO','VOTE','FORWARD') CHARACTER SET ascii NOT NULL COMMENT '贴文类型',
+  `content` mediumtext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '正文',
+  `files` text COLLATE utf8mb4_unicode_520_ci COMMENT '附件路径',
+  `share` enum('PUBLIC','CIRCLE','GROUP','USER','PRIVACY') CHARACTER SET ascii NOT NULL DEFAULT 'PUBLIC' COMMENT '分享范围',
+  `mention` text COLLATE utf8mb4_unicode_520_ci COMMENT '提及的人员哈希',
+  `cancomment` tinyint(1) NOT NULL DEFAULT '1' COMMENT '允许评论',
+  `canforward` tinyint(1) NOT NULL DEFAULT '1' COMMENT '允许转发'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
 --
 -- 转储表的索引
 --
@@ -298,8 +335,7 @@ ALTER TABLE `u1_history`
 -- 表的索引 `u1_info`
 --
 ALTER TABLE `u1_info`
-  ADD PRIMARY KEY (`id`) USING BTREE,
-  ADD UNIQUE KEY `userhash` (`userhash`);
+  ADD PRIMARY KEY (`id`) USING BTREE;
 
 --
 -- 表的索引 `u1_integral`
@@ -357,6 +393,12 @@ ALTER TABLE `u1_users`
   ADD UNIQUE KEY `hash` (`hash`),
   ADD UNIQUE KEY `tel` (`tel`),
   ADD UNIQUE KEY `mail` (`mail`);
+
+--
+-- 表的索引 `z1_posts`
+--
+ALTER TABLE `z1_posts`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- 在导出的表使用AUTO_INCREMENT
