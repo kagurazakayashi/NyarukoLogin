@@ -172,7 +172,10 @@ class nyauser {
         $maininfo = [];
         for ($i = 0; $i < count($userinfos); $i++) {
             $nowuserinfo = $userinfos[$i];
-            if ($nowuserinfo["infotype"] == 0) {
+            $uploaddir = $nlcore->cfg->app->upload["uploaddir"];
+            $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"],$uploaddir);
+            $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"],$uploaddir);
+            if ($nowuserinfo["infotype"] == "main") {
                 array_push($maininfo,$nowuserinfo);
             } else {
                 array_push($newuserinfos,$nowuserinfo);
@@ -182,6 +185,49 @@ class nyauser {
         return array_merge($maininfo,$newuserinfos);
     }
 
+    /**
+     * @description: 获取上传的某张图片的所有清晰度的完整文件名
+     * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
+     * @param String uploaddir 上传文件夹路径（/mnt/d/upload）
+     * @return Array<Array> 文件信息数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
+     */
+    function imageurl($dirpath,$uploaddir) {
+        $files = explode(',',$dirpath);
+        $fileinfoarr = [];
+        foreach ($files as $filepath) {
+            $patharr = explode('/',$filepath);
+            $filename = array_pop($patharr);
+            $dirstr = implode('/',$patharr);
+            $uploadto = pathinfo(__FILE__)["dirname"]."/../".$uploaddir.$dirstr;
+            $uploadto = str_replace("/",DIRECTORY_SEPARATOR,$uploadto);
+            $filesnames = scandir($uploadto);
+            $sizenames = [];
+            $extnames = [];
+            foreach ($filesnames as $nowfilename) {
+                if ($nowfilename != '.' && $nowfilename != '..') {
+                    $nowfilenamearr = explode('.',$nowfilename);
+                    if (count($nowfilenamearr) == 3 && $nowfilenamearr[0] == $filename) {
+                        if (!in_array($nowfilenamearr[1], $sizenames)) array_push($sizenames, $nowfilenamearr[1]);
+                        if (!in_array($nowfilenamearr[2], $extnames)) array_push($extnames, $nowfilenamearr[2]);
+                    }
+                }
+            }
+            $fileinfo = [
+                "path" => $filepath,
+                "size" => $sizenames,
+                "ext" => $extnames
+            ];
+            array_push($fileinfoarr, $fileinfo);
+        }
+        return $fileinfoarr;
+    }
+
+    /**
+     * @description: 获取设备ID
+     * @param String totptoken 设备代码
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @return Int 此设备在设备表中的ID
+     */
     function getdeviceid($totptoken,$totpsecret) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["totp"];
@@ -192,6 +238,13 @@ class nyauser {
         return $result[2][0]["devid"];
     }
 
+    /**
+     * @description: 获取设备信息
+     * @param String deviceid 设备ID
+     * @param String totpsecret 加密用secret（可选，不加则明文返回）
+     * @param Bool onlytype 是否只返回设备类型
+     * @return Array<String> 设备信息
+     */
     function getdeviceinfo($deviceid,$totpsecret,$onlytype=false) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["device"];
