@@ -198,9 +198,10 @@ class nyauser {
             $patharr = explode('/',$filepath);
             $filename = array_pop($patharr);
             $dirstr = implode('/',$patharr);
-            $uploadto = pathinfo(__FILE__)["dirname"]."/../".$uploaddir.$dirstr;
+            $uploadto = pathinfo(__FILE__)["dirname"]."/../../".$uploaddir.$dirstr;
             $uploadto = str_replace("/",DIRECTORY_SEPARATOR,$uploadto);
-            $filesnames = scandir($uploadto);
+            $filesnames = @scandir($uploadto);
+            if (!$filesnames) return [];
             $sizenames = [];
             $extnames = [];
             foreach ($filesnames as $nowfilename) {
