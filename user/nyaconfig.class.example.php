@@ -70,7 +70,7 @@ class nyasetting_app {
     var $alwayencrypt = false; //强制进行 TOTP/XXTEA 加密
     var $timestamplimit = 15; //允许客户端与服务端的时间差异（秒；如果客户端报告的话）
     var $totpcompensate = 0; //TOTP 补偿，需要客户端匹配
-    var $totptimeslice = 1; //TOTP 宽限次数，尝试用之前 x 个验证码尝试解密
+    var $totptimeslice = 1; //尝试用之前 x 个验证码尝试解密次数，1为当前时间（至少为1），每次回溯时间为30秒。
     var $frequency = false; //启动接口访问频率限制
     //各功能时长设定（每个IP地址）：[多少秒内,最多允许访问多少次]
     var $limittime = [

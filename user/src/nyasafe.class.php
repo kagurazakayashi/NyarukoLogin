@@ -560,10 +560,10 @@ class nyasafe {
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $gaisok = false;
-            $timestamp = time();
-            for ($oldcode=0; $oldcode < $nlcore->cfg->app->totptimeslice; $oldcode++) {
-                $exsecond = time() - ($oldcode * 30);
-                $timeSlice = floor($exsecond / 30);
+            $timestamp = isset($argv["s"]) ? $argv["s"] : time();
+            $totptimeslice = $nlcore->cfg->app->totptimeslice;
+            for ($i = -$totptimeslice; $i <= $totptimeslice; ++$i) {
+                $timeSlice = floor($timestamp / 30) + $i;
                 $numcode = $ga->getCode($secret,$timeSlice)+$nlcore->cfg->app->totpcompensate;
                 //MD5
                 $numcode = md5($secret.$numcode);
@@ -576,7 +576,7 @@ class nyasafe {
                     break;
                 }
             }
-            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$timestamp);
+            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$timestamp+'-'+strval(time()));
             $jsonarr = json_decode($decrypt_data,true);
         } else { //未加密
             $jsonarr = $argv;

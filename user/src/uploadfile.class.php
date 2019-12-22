@@ -88,6 +88,7 @@ class uploadfile {
         }
         $returnarr["files"] = $returnfile;
         $returnarr["code"] = 1000000;
+        $returnarr["filecount"] = count($files);
         if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpsecret);
         return $returnarr;
     }
