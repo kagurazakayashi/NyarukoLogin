@@ -10,11 +10,24 @@ import datetime
 import hashlib
 import os
 
+def getjsonfiledata():
+    """读入配置文件 totpsecret.json ，请先配置它，并先执行 test_gettotptoken.py 。"""
+
+    tlog("读入配置文件 ...")
+    f = open("totpsecret.json", 'r')
+    lines = f.read()
+    f.close()
+    jsonfiledata = demjson.decode(lines)
+    if jsonfiledata["appsecret"] == "" or jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
+        terr("错误： 'totpsecret.json' 配置不完全。")
+        exit()
+    return jsonfiledata
+
 def postarray_p(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=True):
     """[明文传输]向服务器提交内容并显示返回内容，明文操作"""
 
-    # 需要提供与数据库 app 表中记录的内容
-    apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
+    jsonfiledata = getjsonfiledata()
+    apiverAppidSecret = [jsonfiledata["apiver"],jsonfiledata["appsecret"]]
 
     if (showAllInfo):
         tlog("传输模式：明文")
@@ -22,18 +35,7 @@ def postarray_p(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数�
     tlog(postUrl)
     tlog(jsonDataArr)
     if (showAllInfo) : tlog("读取 totpsecret.json ...")
-    totptoken = ""
-    try:
-        f = open('totpsecret.json', 'r')
-        filejson = f.read().rstrip('\n')
-        if (showAllInfo) : tlog(filejson)
-        filedataarr = demjson.decode(filejson)
-        totptoken = filedataarr["totp_token"]
-    except:
-        terr("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
-    finally:
-        if f:
-            f.close()
+    totptoken = jsonfiledata["totptoken"]
     if (showAllInfo) : tlog("插入固定提交信息 ...")
     jsonDataArr["t"] = totptoken
     jsonDataArr["apiver"] = apiverAppidSecret[0]
@@ -79,8 +81,8 @@ def postarray_p(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数�
 def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组",showAllInfo=True):
     """[加密传输]向服务器提交内容并显示返回内容，自动处理加密解密"""
 
-    # 需要提供与数据库 app 表中记录的内容
-    apiverAppidSecret = ["1","vbCxaCOZL36G5EamUIbKC9ABk4aj8L9CTxBrcaJdrdukZJU3PrZs1oAh2UNkK0nW"]
+    jsonfiledata = getjsonfiledata()
+    apiverAppidSecret = [jsonfiledata["apiver"],jsonfiledata["appsecret"]]
 
     if (showAllInfo):
         tlog("传输模式：加密")
@@ -90,18 +92,8 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
     if (showAllInfo) : tlog("读取 totpsecret.json ...")
     totpsecret = ""
     totptoken = ""
-    try:
-        f = open('totpsecret.json', 'r')
-        filejson = f.read().rstrip('\n')
-        if (showAllInfo) : tlog(filejson)
-        filedataarr = demjson.decode(filejson)
-        totpsecret = filedataarr["totp_secret"]
-        totptoken = filedataarr["totp_token"]
-    except:
-        terr("错误：不能打开文件「totpsecret.json」，先运行「test_gettotptoken.py」来获取返回的 JSON，确保没有错误信息，然后将 JSON 保存到「totpsecret.json」")
-    finally:
-        if f:
-            f.close()
+    totpsecret = jsonfiledata["totpsecret"]
+    totptoken = jsonfiledata["totptoken"]
     if (showAllInfo) : tlog("插入固定提交信息 ...")
     jsonDataArr["apiver"] = apiverAppidSecret[0]
     jsonDataArr["appsecret"] = apiverAppidSecret[1]

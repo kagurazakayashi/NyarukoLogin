@@ -240,9 +240,9 @@
             return $serinfo;
         }
         /**
-         * @description: 结束SQL连接
+         * @description: 结束连接
          */
-        function closemysql() {
+        function close() {
             if ($this->conR) {
                 $this->log("[CLOSE] read-only mode.");
                 mysqli_close($this->conR);
@@ -252,6 +252,10 @@
                 $this->log("[CLOSE] read-write mode.");
                 mysqli_close($this->conW);
                 $this->conW = null;
+            }
+            if ($this->redis) {
+                $this->log("[CLOSE] redis.");
+                $this->redis->close();
             }
         }
         /**
@@ -364,7 +368,7 @@
                 $this->redis = null;
                 die($nlcore->msg->m(1,2010201));
             }
-            if (!$this->redis->auth($redisconf["rdb_password"])) {
+            if ($redisconf["rdb_password"] != "" && !$this->redis->auth($redisconf["rdb_password"])) {
                 $this->redis = null;
                 die($nlcore->msg->m(1,2010202));
             }
@@ -375,7 +379,7 @@
          * @description: 析构，结束连接
          */
         function __destruct() {
-            $this->closemysql();
+            $this->close();
             $this->con = null; unset($this->con);
             $this->mode = null; unset($this->mode);
             $this->redis = null; unset($this->redis);

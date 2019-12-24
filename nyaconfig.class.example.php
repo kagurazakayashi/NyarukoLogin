@@ -121,8 +121,8 @@ class nyasetting_app {
     ];
     var $passwordsalt = "6yJv1R2TxyBVKOToumDbfBmqlDWr3PMK"; //密码盐
     var $upload = [
-        "tmpdir" => "upload_tmp", //异步二压临时文件夹
-        "uploaddir" => "upload", //媒体上传文件夹
+        "tmpdir" => "../upload_tmp", //异步二压临时文件夹（先建立好文件夹设好权限）
+        "uploaddir" => "../upload", //媒体上传文件夹（先建立好文件夹设好权限）
         "datedir" => true, //按日期创建子文件夹
         "chmod" => 0770, //新建文件的权限
         "maxsize" => [ //每种媒体类型的最大文件大小限制

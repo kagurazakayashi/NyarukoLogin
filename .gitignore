@@ -7,10 +7,10 @@ vendor
 tmp*
 __pycache__
 .vs*
-user/image
+image
 node_modules
-upload/*
-upload_tmp/*
+upload
+upload_tmp
 zeze
 log
 .user.ini

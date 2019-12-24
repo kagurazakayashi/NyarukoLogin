@@ -25,7 +25,7 @@ punctuations = "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]"
 
 def tlog(loginfo:"信息内容",send=None):
     """输出前面带时间的信息"""
-    nowtime = datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S.%f]')
+    nowtime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     print(nowtime,end=' ')
     print(loginfo)
 
