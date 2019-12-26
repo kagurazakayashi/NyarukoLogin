@@ -3,7 +3,7 @@
         private $conR = null; //只读数据库
         private $conW = null; //可写入数据库
         private $con = null; //当前 MySQL 数据库（指针变量）
-        private $logtofile = false; //记录详细调试信息到文件
+        private $logfile = null; //记录详细调试信息到文件
         public $redis = null; //当前 Redis 数据库
         /**
          * @description: 初始化可写入数据库，按需建立SQL连接
@@ -100,14 +100,13 @@
         function log($logstr) {
             global $nlcore;
             if (!isset($nlcore->cfg->db->logfile_db)) return;
-            $logfile = $nlcore->cfg->db->logfile_db;
-            if ($logfile) {
+            $logfilepath = $nlcore->cfg->db->logfile_db;
+            if ($logfilepath) {
                 $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
                 $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
                 $logstr = "[".$nlcore->safe->getdatetime()[1]."][".$ipaddr.$proxyaddr."]".$logstr.PHP_EOL;
-                $fp = fopen($logfile,"a");
-                fwrite($fp,$logstr.PHP_EOL);
-                fclose($fp);
+                if (!$this->logfile) $this->logfile = fopen($logfilepath,"a");
+                fwrite($this->logfile,$logstr);
             }
         }
         /**
@@ -240,25 +239,6 @@
             return $serinfo;
         }
         /**
-         * @description: 结束连接
-         */
-        function close() {
-            if ($this->conR) {
-                $this->log("[CLOSE] read-only mode.");
-                mysqli_close($this->conR);
-                $this->conR = null;
-            }
-            if ($this->conW) {
-                $this->log("[CLOSE] read-write mode.");
-                mysqli_close($this->conW);
-                $this->conW = null;
-            }
-            if ($this->redis) {
-                $this->log("[CLOSE] redis.");
-                $this->redis->close();
-            }
-        }
-        /**
          * @description: 执行SQL连接
          * @param String sqlcmd SQL语句
          * @return Array[Int,Int,Array] 状态码,新建的ID,返回的数据
@@ -279,7 +259,7 @@
                     if($result_array) {
                         if (count($result_array) > 0) {
                             $this->log("[INFO] CODE:1010000, ID:".$insertid);
-                            $this->log("[RESULT] ".var_export($result_array,true));
+                            $this->log("[RESULT] ".json_encode($result_array,true));
                             return [1010000,$insertid,$result_array];
                         } else {
                             $this->log("[ERROR] arraycount == 0");
@@ -376,14 +356,40 @@
             return true;
         }
         /**
-         * @description: 析构，结束连接
+         * @description: 结束连接
+         */
+        function close() {
+            if ($this->conR) {
+                $this->log("[CLOSE] read-only mode.");
+                mysqli_close($this->conR);
+                $this->conR = null;
+            }
+            if ($this->conW) {
+                $this->log("[CLOSE] read-write mode.");
+                mysqli_close($this->conW);
+                $this->conW = null;
+            }
+            if ($this->redis) {
+                $this->log("[CLOSE] redis.");
+                $this->redis->close();
+                $this->redis = null;
+            }
+        }
+        /**
+         * @description: 析构，结束连接，关闭日志文件
          */
         function __destruct() {
             $this->close();
+            unset($this->conR);
+            unset($this->conW);
+            unset($this->redis);
             $this->con = null; unset($this->con);
             $this->mode = null; unset($this->mode);
-            $this->redis = null; unset($this->redis);
-            $this->logtofile = null; unset($this->logtofile);
+            if ($this->logfile) {
+                fclose($this->logfile);
+                $this->logfile = null;
+            }
+            unset($this->logfile);
         }
     }
 ?>

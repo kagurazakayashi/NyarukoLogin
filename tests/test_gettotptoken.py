@@ -12,12 +12,12 @@ import datetime
 test_core.title("请求加密密钥")
 # 需要提供与数据库 app 表中记录的内容
 test_core.tlog("读入配置文件 ...")
-f = open("totpsecret.json", 'r')
+f = open("testconfig.json", 'r')
 lines = f.read()
 f.close()
 jsonfiledata = demjson.decode(lines)
 if jsonfiledata["appsecret"] == "" or jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
-    test_core.terr("错误： 'totpsecret.json' 配置不完全。")
+    test_core.terr("错误： 'testconfig.json' 配置不完全。")
     exit()
 postData = {
     'appsecret':jsonfiledata["appsecret"],
@@ -62,7 +62,7 @@ jsonfiledata["update"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'
 jsonfiledata["totpsecret"] = totp_secret
 jsonfiledata["totptoken"] = totp_token
 lines = demjson.encode(jsonfiledata)
-f = open("totpsecret.json", 'w')
+f = open("testconfig.json", 'w')
 f.write(lines)
 f.close()
 test_core.tok("完成。")

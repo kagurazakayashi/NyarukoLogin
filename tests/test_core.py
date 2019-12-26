@@ -11,15 +11,15 @@ import hashlib
 import os
 
 def getjsonfiledata():
-    """读入配置文件 totpsecret.json ，请先配置它，并先执行 test_gettotptoken.py 。"""
+    """读入配置文件 testconfig.json ，请先配置它，并先执行 test_gettotptoken.py 。"""
 
     tlog("读入配置文件 ...")
-    f = open("totpsecret.json", 'r')
+    f = open("testconfig.json", 'r')
     lines = f.read()
     f.close()
     jsonfiledata = demjson.decode(lines)
     if jsonfiledata["appsecret"] == "" or jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
-        terr("错误： 'totpsecret.json' 配置不完全。")
+        terr("错误： 'testconfig.json' 配置不完全。")
         exit()
     return jsonfiledata
 
@@ -34,7 +34,7 @@ def postarray_p(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数�
         tlog("准备输入的数据 ...")
     tlog(postUrl)
     tlog(jsonDataArr)
-    if (showAllInfo) : tlog("读取 totpsecret.json ...")
+    if (showAllInfo) : tlog("读取 testconfig.json ...")
     totptoken = jsonfiledata["totptoken"]
     if (showAllInfo) : tlog("插入固定提交信息 ...")
     jsonDataArr["t"] = totptoken
@@ -89,7 +89,7 @@ def postarray(postUrl:"提交到指定的URL",jsonDataArr:"提交的数据数组
         tlog("准备输入的数据 ...")
     tlog(postUrl)
     tlog(jsonDataArr)
-    if (showAllInfo) : tlog("读取 totpsecret.json ...")
+    if (showAllInfo) : tlog("读取 testconfig.json ...")
     totpsecret = ""
     totptoken = ""
     totpsecret = jsonfiledata["totpsecret"]

@@ -1,5 +1,6 @@
 <?php
 class nyasafe {
+    private $logfile = null; //记录详细调试信息到文件
     /**
      * @description: 是否为MD5
      * @param String 需要判断的字符串
@@ -578,6 +579,7 @@ class nyasafe {
             }
             if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$timestamp+'-'+strval(time()));
             $jsonarr = json_decode($decrypt_data,true);
+            $this->log("DECODE",$jsonarr);
         } else { //未加密
             $jsonarr = $argv;
             unset($jsonarr["t"]);
@@ -600,16 +602,15 @@ class nyasafe {
     function log($mode,$logarr) {
         global $nlcore;
         if (!isset($nlcore->cfg->db->logfile_ud)) return;
-        $logfile = $nlcore->cfg->db->logfile_ud;
-        if ($logfile) {
+        $logfilepath = $nlcore->cfg->db->logfile_ud;
+        if ($logfilepath) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
             $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
             $log = json_encode($logarr);
-            if (!$log) $log = print_r($logarr,true);
+            if (!$log) $log = "(DATA)";
             $logstr = "[".$this->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$mode."] ".$log.PHP_EOL;
-            $fp = fopen($logfile,"a");
-            fwrite($fp,$logstr.PHP_EOL);
-            fclose($fp);
+            if (!$this->logfile) $this->logfile = fopen($logfilepath,"a");
+            fwrite($this->logfile,$logstr);
         }
     }
     /**
@@ -778,6 +779,15 @@ class nyasafe {
         }
         return $applanguages[0];
     }
-
+    /**
+     * @description: 析构，关闭日志文件
+     */
+    function __destruct() {
+        if ($this->logfile) {
+            fclose($this->logfile);
+            $this->logfile = null;
+        }
+        unset($this->logfile);
+    }
 }
 ?>

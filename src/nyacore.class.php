@@ -1,7 +1,7 @@
 <?php
 // USE: require_once "nyacore.class.php";
 $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
-require_once $phpfiledir."..".DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
+require_once $phpfiledir."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."nyaconfig.class.php";
 require_once $phpfiledir."nyainfomsg.class.php";
 require_once $phpfiledir."nyaconnect.class.php";
@@ -36,5 +36,6 @@ class nyacore {
 }
 global $nlcore;
 if (!isset($nlcore)) $nlcore = new nyacore();
+if (!isset($nlcore)) die("内核初始化失败");
 $nlcore->applyconfig();
 ?>

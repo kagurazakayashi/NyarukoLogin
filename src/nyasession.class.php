@@ -1,6 +1,7 @@
 <?php
 class nyasession {
     function sessionstatus() {
+        global $nlcore;
         if ($nlcore->cfg->app->sessioncachefirst && isset($_GET["quick"])) {
             $startend = $this->sessionstatuscon($token,null);
             if ($startend) {
@@ -12,7 +13,6 @@ class nyasession {
             }
             die();
         }
-        global $nlcore;
         $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
         $jsonarr = $jsonarrTotpsecret[0];
         $totpsecret = $jsonarrTotpsecret[1];

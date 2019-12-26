@@ -52,9 +52,9 @@ class nyasetting_db {
         "frequencylimitation" => "u1_fl",
         "sqldb" => "u1_db"
     ];
-    //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
+    //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
     var $logfile_db = "B:\\db.log";
-    //调试用：将每条收到的数据和返回内容记录在日志文件中,设置日志文件路径或null(不记录)
+    //调试用：将每条收到的数据和返回内容记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
     var $logfile_ud = "B:\\submit.log";
 }
 
