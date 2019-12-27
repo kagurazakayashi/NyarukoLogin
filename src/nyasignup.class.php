@@ -1,7 +1,6 @@
 <?php
 require_once "nyacaptcha.class.php";
 require_once "nyaverification.class.php";
-require_once "nyauser.class.php";
 class nyasignup {
     function adduser() {
         global $nlcore;
@@ -21,9 +20,8 @@ class nyasignup {
         $nyacaptcha = new nyacaptcha();
         if (!$nyacaptcha->verifycaptcha($totptoken,$totpsecret,$jsonarr["captcha"])) die();
         //检查输入的是邮箱还是手机号
-        $nyauser = new nyauser();
         $user = $jsonarr["user"];
-        $logintype = $nyauser->logintype($user,$totpsecret); //0:邮箱 1:手机号
+        $logintype = $nlcore->func->logintype($user,$totpsecret); //0:邮箱 1:手机号
         //检查是否允许使用这种方式注册
         if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->stopmsg(2040103,$totpsecret);
         //检查输入格式是否正确
@@ -57,14 +55,14 @@ class nyasignup {
             $nlcore->safe->wordfilter($nickname,true,$totpsecret);
         }
         //检查邮箱或者手机号是否已经重复
-        $isalreadyexists = $nyauser->isalreadyexists($logintype,$user,$totpsecret);
+        $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user,$totpsecret);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret,$user);
         //生成账户代码，遇到重复的重试10次
         $nameid = null;
         for ($i=0; $i < 10; $i++) {
             $nameid = rand(0, 9999);
             //检查昵称和状态代码是否重复
-            $exists = $nyauser->useralreadyexists(null,$nickname,$nameid,$totpsecret);
+            $exists = $nlcore->func->useralreadyexists(null,$nickname,$nameid,$totpsecret);
             if ($exists) $nameid = null;
             else break;
         }
@@ -75,7 +73,7 @@ class nyasignup {
             $hash = $nlcore->safe->randstr(64);
             // $hash = $nlcore->safe->rhash64$datetime[0]);
             // 检查哈希是否存在
-            $exists = $nyauser->isalreadyexists(2,$hash,$totpsecret);
+            $exists = $nlcore->func->isalreadyexists(2,$hash,$totpsecret);
             if ($exists) $hash = null;
             else break;
         }
@@ -89,7 +87,7 @@ class nyasignup {
         $pwdend = $nlcore->safe->getdatetime(null,$pwdend)[1];
         $timestr = $datetime[1];
         //加密密码
-        $passwordhash = $nyauser->passwordhash($password,$datetime[0]);
+        $passwordhash = $nlcore->safe->passwordhash($password,$datetime[0]);
         //注册 users 表
         $insertDic = [
             "hash" => $hash,
@@ -170,8 +168,8 @@ class nyasignup {
      * @return 直接返回加密后的内容到客户端
      */
     function passwordhashtest($password,$timestr) {
-        $nyauser = new nyauser();
-        echo $nyauser->passwordhash($password,$timestr);
+        global $nlcore;
+        echo $nlcore->safe->passwordhash($password,$timestr);
     }
 }
 ?>

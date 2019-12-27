@@ -4,19 +4,22 @@ $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."nyaconfig.class.php";
 require_once $phpfiledir."nyainfomsg.class.php";
-require_once $phpfiledir."nyaconnect.class.php";
 require_once $phpfiledir."nyasafe.class.php";
+require_once $phpfiledir."nyaconnect.class.php";
+require_once $phpfiledir."nyafunc.class.php";
 require_once $phpfiledir."md6.class.php";
 class nyacore {
     public $cfg; //设置
     public $msg; //信息
     public $db; //数据库操作
     public $safe; //安全类
+    public $func; //各种通用函数
     function __construct() {
         $this->cfg = new nyasetting();
         $this->msg = new nyainfomsg();
         $this->db = new nyadbconnect();
         $this->safe = new nyasafe();
+        $this->func = new nyafunc();
     }
     function applyconfig() {
         if ($this->cfg->app->debug == 1) {
@@ -32,6 +35,7 @@ class nyacore {
         $this->msg = null; unset($this->msg);
         $this->db = null; unset($this->db);
         $this->safe = null; unset($this->safe);
+        $this->func = null; unset($this->func);
     }
 }
 global $nlcore;

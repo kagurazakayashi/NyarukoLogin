@@ -1,5 +1,5 @@
 <?php
-class nyauser {
+class nyafunc {
     /**
      * @description: 检查登录凭据是邮箱还是手机号
      * @param String loginstr 要检查的登录凭据字符串
@@ -115,7 +115,6 @@ class nyauser {
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
     }
-
     /**
      * @description: 取出密码提示问题
      * @param String userhash 用户哈希
@@ -169,7 +168,6 @@ class nyauser {
         if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);
         return array_merge($maininfo,$newuserinfos);
     }
-
     /**
      * @description: 获取上传的某张图片的所有清晰度的完整文件名
      * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
@@ -207,7 +205,6 @@ class nyauser {
         }
         return $fileinfoarr;
     }
-
     /**
      * @description: 获取设备ID
      * @param String totptoken 设备代码
@@ -223,7 +220,6 @@ class nyauser {
         if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040210,$totpsecret);
         return $result[2][0]["devid"];
     }
-
     /**
      * @description: 获取设备信息
      * @param String deviceid 设备ID

@@ -33,7 +33,7 @@ class nyasafe {
      */
     function randstrto($str) {
         $strarr = str_split($str);
-        for ($i=0; $i < count($strarr); $i++) { 
+        for ($i=0; $i < count($strarr); $i++) {
             if (rand(0, 1) == 1) {
                 $strarr[$i] = strtoupper($strarr[$i]);
             } else {
@@ -799,6 +799,21 @@ class nyasafe {
             if ($value != null) return false;
         }
         return true;
+    }
+    /**
+     * @description: 对明文密码进行加密以便存储到数据库
+     * 原文+自定义盐+注册时间戳 的 MD6
+     * @param String password 明文密码
+     * @param Int timestamp 密码到期时间时间戳
+     * @param String timestamp 密码到期时间字符串（将自动转时间戳）
+     * @return 加密后的密码
+     */
+    function passwordhash($password,$timestamp) {
+        global $nlcore;
+        if (!is_int($timestamp)) $timestamp = strtotime($timestamp);
+        $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($timestamp);
+        $passwordhash = $nlcore->safe->md6($passwordhash);
+        return $passwordhash;
     }
     /**
      * @description: 获得需要使用的语言
