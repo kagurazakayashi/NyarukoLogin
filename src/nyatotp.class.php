@@ -58,7 +58,7 @@ class nyatotp {
         $secret = $this->ga->createSecret(64);
         $numcode = $this->ga->getCode($secret,$timeSlice);
         //创建 apptoken
-        $apptoken = $nlcore->safe->randhash($secret,true);
+        $apptoken = $nlcore->safe->randhash($secret);
         //检查 session_totp 表
         $datadic = [
             "secret" => $secret,

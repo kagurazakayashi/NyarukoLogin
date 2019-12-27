@@ -164,7 +164,7 @@ class nyalogin {
         }
 
         //分配 token
-        $token = $nlcore->safe->md6($userhash.$timestamp);
+        $token = $nlcore->safe->rhash64($userhash.$timestamp);
         $tokentimeout = 0;
         if (isset($jsonarr["timeout"])) {
             $tokentimeout = intval($jsonarr["timeout"]);

@@ -73,7 +73,7 @@ class nyasignup {
         $hash = null;
         for ($i=0; $i < 10; $i++) {
             $hash = $nlcore->safe->randstr(64);
-            // $hash = $nlcore->safe->md6($datetime[0]);
+            // $hash = $nlcore->safe->rhash64$datetime[0]);
             // 检查哈希是否存在
             $exists = $nyauser->isalreadyexists(2,$hash,$totpsecret);
             if ($exists) $hash = null;

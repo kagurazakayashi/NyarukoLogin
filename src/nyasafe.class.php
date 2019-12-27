@@ -27,12 +27,60 @@ class nyasafe {
         return $md6->hex($str);
     }
     /**
+     * @description: 随机将字符串中的每个字转换为大写或小写
+     * @param String 要进行随机大小写转换的字符串
+     * @return String 转换后的字符串
+     */
+    function randstrto($str) {
+        $strarr = str_split($str);
+        for ($i=0; $i < count($strarr); $i++) { 
+            if (rand(0, 1) == 1) {
+                $strarr[$i] = strtoupper($strarr[$i]);
+            } else {
+                $strarr[$i] = strtolower($strarr[$i]);
+            }
+        }
+        return implode("",$strarr);
+    }
+    /**
+     * @description: 进行MD6后进行随机大小写转换
+     * @param String 明文
+     * @return String 转换后的字符串
+     */
+    function rhash64($str) {
+        return $this->randstrto($this->md6($str));
+    }
+    /**
+     * @description: 验证是否为包含大小写的MD6变体字符串
+     * @param String MD6变体字符串
+     * @return Int 是否匹配 > 0 || != false
+     */
+    function is_rhash64($str) {
+        return preg_match("/^[A-Za-z0-9]{64}$/", $str);
+    }
+    /**
+     * @description: 进行MD6后进行随机大小写转换
+     * @param String 明文
+     * @return String 转换后的字符串
+     */
+    function rhash32($str) {
+        return $this->randstrto(md5($str));
+    }
+    /**
+     * @description: 验证是否为包含大小写的MD6变体字符串
+     * @param String MD6变体字符串
+     * @return Int 是否匹配 > 0 || != false
+     */
+    function is_rhash32($str) {
+        return preg_match("/^[A-Za-z0-9]{32}$/", $str);
+    }
+    /**
      * @description: 生成一段随机文本
      * @param Int len 生成长度
      * @param String chars 从此字符串中抽取字符
      * @return String 新生成的随机文本
      */
-    function randstr($len=32, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
+    function randstr($len=64, $chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
         mt_srand($this->seed());
         $password = "";
         while(strlen($password)<$len) $password .= substr($chars, (mt_rand()%strlen($chars)), 1);
@@ -41,13 +89,14 @@ class nyasafe {
     /**
      * @description: 生成随机哈希值
      * @param String salt 盐（可选）
-     * @param Boolean md6 使用MD6进行哈希（可选）
-     * @return String 生成的随机MD5/MD6码
+     * @param Boolean md6 使用 MD6 生成随机哈希值（64位），否则用 MD5 生成随机哈希值（32位）
+     * @param Boolean randstrto 将哈希结果随机大小写
+     * @return String 生成的字符串
      */
-    function randhash($salt="",$md6=false) {
+    function randhash($salt="",$md6=true,$randstrto=true) {
         $data = (double)microtime().$salt.$this->randstr(16);
-        if ($md6) return $this->md6($data);
-        else return md5($data);
+        $data = $md6 ? $this->md6($data) : md5($data);
+        return $randstrto ? $this->randstrto($data) : $data;
     }
     /**
      * @description: 生成随机数发生器种子
