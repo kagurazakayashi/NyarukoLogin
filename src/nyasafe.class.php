@@ -124,6 +124,17 @@ class nyasafe {
         return [$timestamp,$timestr];
     }
     /**
+     * @description: 获得毫秒级时间戳
+     * @return String 毫秒级时间戳字符串
+     */
+    function millisecondtimestamp() {
+        $time = explode(" ",strval(microtime()));
+        $time = $time[1].(intval($time[0]) * 1000);
+        $time2 = explode(".", $time);
+        $time = $time2[0];
+        return $time;
+    }
+    /**
      * @description: 检查时间戳差异是否大于配置文件中的值
      * 差异太大直接返回错误信息到客户端
      */
@@ -133,6 +144,33 @@ class nyasafe {
         if ($timestampabs > $nlcore->cfg->app->timestamplimit) {
             $nlcore->msg->stopmsg(2020413);
         }
+    }
+
+    function dirsep($path) {
+        $newpath = str_replace("\\",DIRECTORY_SEPARATOR,$path);
+        return str_replace("/",DIRECTORY_SEPARATOR,$newpath);
+    }
+
+    function parentfolder($path,$level=1) {
+        $newpath = $this->dirsep($path);
+        $endchar = substr($newpath, -1); //末字
+        if ($endchar != DIRECTORY_SEPARATOR) $endchar = "";
+        $startchar = substr($newpath, 0, 1); //首字
+        if ($startchar != DIRECTORY_SEPARATOR) $startchar = "";
+        $newpath = substr($newpath, 1, -1);
+        $newpatharr = explode(DIRECTORY_SEPARATOR, $newpath);
+        for ($i=0; $i < $level; $i++) {
+            array_pop($newpatharr);
+            if (count($newpatharr) == 0) return DIRECTORY_SEPARATOR;
+        }
+        $newpath = implode(DIRECTORY_SEPARATOR, $newpatharr);
+        return $startchar.$newpath.$endchar;
+    }
+
+    function parentfolderlevel($path) {
+        $pdirstr = "..".DIRECTORY_SEPARATOR;
+        $newpath = str_replace($pdirstr,"",$path,$ri);
+        return [$ri,$newpath];
     }
     /**
      * @description: 过滤字符串中的非法字符

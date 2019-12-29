@@ -57,10 +57,10 @@ class nyasignup {
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user,$totpsecret);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret,$user);
-        //生成账户代码，遇到重复的重试10次
+        //生成账户代码，遇到重复的重试100次
         $nameid = null;
-        for ($i=0; $i < 10; $i++) {
-            $nameid = rand(0, 9999);
+        for ($i=0; $i < 100; $i++) {
+            $nameid = rand(1000, 9999);
             //检查昵称和状态代码是否重复
             $exists = $nlcore->func->useralreadyexists(null,$nickname,$nameid,$totpsecret);
             if ($exists) $nameid = null;
