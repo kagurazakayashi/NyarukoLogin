@@ -241,5 +241,56 @@ class nyafunc {
         }
         return $resultdev[2][0];
     }
+    /**
+     * @description: 从用户[昵称#唯一码]获取用户哈希（自带安全检查）
+     * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
+     * @param String totpsecret 加密传输密钥（可选,留空不加密）
+     * @return Array<String> [昵称,ID,用户哈希(没查到则没有)]
+     */
+    function fullnickname2userhash($fullnickname,$totpsecret) {
+        global $nlcore;
+        $namearr = is_array($fullnickname) ? $fullnickname : explode("#",$fullnickname);
+        if (count($namearr) != 2) $nlcore->msg->stopmsg(2050001,$totpsecret);
+        $name = $namearr[0];
+        $nlcore->safe->safestr($name,true,true,$totpsecret);
+        $nameid = intval($namearr[1]);
+        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2050001,$totpsecret);
+        //通过安全性检查，查询数据库
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $columnArr = ["userhash"];
+        $whereDic = ["name" => $name, "nameid" => $nameid];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] == 1010001) {
+            return [$name,$nameid];
+        } else if ($result[0] != 1010000 || !isset($result[2][0]["userhash"])) {
+            $nlcore->msg->stopmsg(2050002,$totpsecret);
+        }
+        $users = $result[2];
+        if (count($users) > 1) $nlcore->msg->stopmsg(2040101,$totpsecret);
+        $userhash = $users[0]["userhash"];
+        return [$name,$nameid,$userhash];
+    }
+    /**
+     * @description: 从用户哈希获取用户[昵称#唯一码]
+     * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
+     * @param String totpsecret 加密传输密钥（可选,留空不加密）
+     * @return Null/String 用户哈希
+     */
+    function userhash2fullnickname($userhash) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $columnArr = ["name","nameid"];
+        $whereDic = ["userhash" => $userhash];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] == 1010001) {
+            return null;
+        } else if ($result[0] != 1010000) {
+            $nlcore->msg->stopmsg(2040200,$totpsecret);
+        }
+        if (count($result[2][0]) != 2 || !isset($result[2][0]["name"]) || !isset($result[2][0]["nameid"])) {
+            $nlcore->msg->stopmsg(2050002,$totpsecret);
+        }
+        return implode("#",$result[2][0]);
+    }
 }
 ?>
