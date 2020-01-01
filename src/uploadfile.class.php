@@ -17,7 +17,9 @@ class uploadfile {
         //准备文件存储路径(绝对路径,/结尾)
         $savedirarr = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]);
         $savedir = $savedirarr[0].DIRECTORY_SEPARATOR; //目标存储文件夹
-        $stmpdir = $this->savepath($uploadconf["tmpdir"])[0].DIRECTORY_SEPARATOR; //二压临时文件夹
+        $stmpdirs = $this->savepath($uploadconf["tmpdir"]);
+        $stmpdir = $stmpdirs[0].DIRECTORY_SEPARATOR; //二压临时文件夹
+
         $uploaddirstrcount = strlen($this->savepath($uploadconf["uploaddir"])[0]);
         //遍历文件资讯
         $returnfile = [];
@@ -28,62 +30,89 @@ class uploadfile {
             $info = [];
             $tmpfile = $nowfile["tmp_name"];
             if (is_numeric($mediatype)) {
-                $code = $mediatype; //返回错误
-                $info = ["code" => $code];
+                $nlcore->msg->stopmsg($mediatype,$totpsecret);
             } else {
                 $info["type"] = $mediatype;
                 $info["code"] = $code;
             }
-            // $newfilename = $nlcore->safe->randstr(64); //创建文件名
-            $newfilename = md5_file($tmpfile); //文件哈希值创建文件名
+            $newfilename = $nlcore->safe->millisecondtimestamp()."_".$nlcore->safe->randhash("",false,false); //创建临时文件名
+            // $newfilename = md5_file($tmpfile); //文件哈希值创建文件名
             $twotmpfile = $uploadconf["tmpdir"];
-            $savefile = $savedir.$newfilename; //最终存储文件完整路径
-            $savetmpfile = $stmpdir.$newfilename.'.'.$mediatype["extension"]; //最终存储临时文件完整路径
-            //是视频还是图片？
+            // $savefile = $savedir.$newfilename; //最终存储文件完整路径
+            $extension = $mediatype["extension"]; //扩展名
+            $savetmpfile = $stmpdir.$newfilename.'.'.$extension; //临时文件
+            $savetmpfileconf = $stmpdir.$newfilename.'.json'; //临时文件计划
             $info["files"] = [];
+            $nowextres = [];
+            $filejsonarr = [
+                "type" => $mediatype["media"],
+                "temp" => $savetmpfile,
+                "todir" => $savedir,
+                "toname" => $newfilename
+            ];
+            //是视频还是图片？
             if ($mediatype["media"] == "image") {
-                //如果是图片文件则直接进行二压
-                $nowextres = [];
+                if ($extension == "gif") {
+                    $nowextres = ["gif"];
+                } else {
+                    $nowextres = ["jpg","webp"];
+                }
                 $useto = isset($jsonarr["usefor"]) ? $jsonarr["usefor"] : "def";
                 $imageresize = $nlcore->cfg->app->imageresize[$useto];
-                foreach ($imageresize as $key => $value) {
-                    $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
-                    $newfiles = $resizetores[0];
-                    $isexists = $resizetores[1];
-                    foreach ($newfiles as $newfile) {
-                        $newfilesub = substr($newfile, $uploaddirstrcount);
-                        $filepatharr = explode(".", $newfilesub);
-                        //$info["files"][implode(",",array_slice($filepatharr, -2))] = str_replace("\\","/",$newfilesub);
-                        $filepatharrc = count($filepatharr);
-                        $extname = $filepatharr[$filepatharrc-1];
-                        $sizename = $filepatharr[$filepatharrc-2];
-                        if (!in_array($extname,$nowextres)) {
-                            array_push($nowextres,$extname);
-                        }
+                // 创建json计划文件
+                $sizesavepath = [];
+                foreach ($imageresize as $key => $sizes) {
+                    foreach ($nowextres as $convextension) {
+                        $newsizes = $sizes;
+                        $nowsizefile = $key.'.'.$convextension;
+                        array_unshift($newsizes,$nowsizefile);
+                        array_push($sizesavepath,$newsizes);
                     }
                 }
-                $nowpathsub = substr($savefile,strlen($savedirarr[1]));
-                $nowpathsub = str_replace("\\","/",$nowpathsub);
+                $filejsonarr["to"] = $sizesavepath;
+                // foreach ($imageresize as $key => $value) {
+                //     $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
+                //     $newfiles = $resizetores[0];
+                //     $isexists = $resizetores[1];
+                //     foreach ($newfiles as $newfile) {
+                //         $newfilesub = substr($newfile, $uploaddirstrcount);
+                //         $filepatharr = explode(".", $newfilesub);
+                //         $filepatharrc = count($filepatharr);
+                //         $extname = $filepatharr[$filepatharrc-1];
+                //         $sizename = $filepatharr[$filepatharrc-2];
+                //         if (!in_array($extname,$nowextres)) {
+                //             array_push($nowextres,$extname);
+                //         }
+                //     }
+                // }
+                // $nowpathsub = substr($savefile,strlen($savedirarr[1]));
+                // $nowpathsub = str_replace("\\","/",$nowpathsub);
                 list($timesub1, $timesub2) = explode(' ', microtime());
                 $ftag = (float)sprintf('%.0f', (floatval($timesub1) + floatval($timesub2)) * 1000);
                 $ftag = strval(dechex($ftag));
                 $nowfileres = [
-                    "path" => $nowpathsub,
+                    "path" => $stmpdir,
                     "tmpt" => $ftag,
                     "size" => array_keys($imageresize),
                     "ext" => $nowextres
                 ];
                 array_push($info["files"],$nowfileres);
             } else if ($mediatype["media"] == "video") {
-                $nowextres = [];
-                $videofile = $savefile.'.'.$mediatype["extension"];
-                $info["files"] = array_push($info["files"],str_replace("\\","/",$videofile));
-                //异步用文件
-                $vcfgfile = fopen($savetmpfile.'.txt', "w");
-                fwrite($vcfgfile, $videofile);
-                fclose($vcfgfile);
-                copy($tmpfile,$savetmpfile) or $nlcore->msg->stopmsg(2050105,$totpsecret);
+                // $nowextres = [];
+                // $videofile = $savefile.'.'.$mediatype["extension"];
+                // $info["files"] = array_push($info["files"],str_replace("\\","/",$videofile));
+                // //异步用文件
+                // $vcfgfile = fopen($savetmpfile.'.txt', "w");
+                // fwrite($vcfgfile, $videofile);
+                // fclose($vcfgfile);
+                // copy($tmpfile,$savetmpfile) or $nlcore->msg->stopmsg(2050105,$totpsecret);
             }
+            // $tmpfile -> $savetmpfile
+            move_uploaded_file($nowfile["tmp_name"],$savetmpfile);
+            $configfiledata = json_encode($filejsonarr);
+            $configfile = fopen($savetmpfileconf, "w");
+            fwrite($configfile, $configfiledata);
+            fclose($configfile);
             array_push($returnfile,$info);
         }
         $returnarr["files"] = $returnfile;
@@ -119,7 +148,6 @@ class uploadfile {
             return [$newWidth,$newHeight];
         }
     }
-
     /**
      * @description: 将图片限制到指定尺寸，压缩成更小的 gif 或 jpg+webp 格式，然后存入日期文件夹。
      * @param String imagefile 图片临时文件完整路径
@@ -187,80 +215,6 @@ class uploadfile {
             return [[$savefilename1,$savefilename2],$isexists];
         }
     }
-    /* return
-{
-    "files": [
-        {
-            "type": {
-                "mime": "image/jpeg",
-                "extension": "jpg",
-                "media": "image"
-            },
-            "code": 1000000,
-            "files": [
-                {
-                    "path": "/2019/11/07/7005f8619c313e7b525778f71de70c24",
-                    "tmpt": "16e4518cfc2",
-                    "size": [
-                        "R",
-                        "S",
-                        "M",
-                        "L"
-                    ],
-                    "ext": [
-                        "webp",
-                        "jpg"
-                    ]
-                }
-            ]
-        }
-    ],
-    "code": 1000000,
-    "timestamp": 1573117284
-}
-    */
-
-    // 使用 GD 库（已弃用）
-    // function resizeto($imagefile,$tofile,$type,$size) {
-    //     $srcImg = null;
-    //     $isGIF = false;
-    //     switch ($type) {
-    //         case 'jpg':
-    //             $srcImg = imagecreatefromjpeg($imagefile);
-    //             break;
-    //         case 'png':
-    //             $srcImg = imagecreatefrompng($imagefile);
-    //             break;
-    //         case 'gif':
-    //             $srcImg = imagecreatefromgif($imagefile);
-    //             $isGIF = true;
-    //             break;
-    //         case 'webp':
-    //             $srcImg = imagecreatefromwebp($imagefile);
-    //             break;
-    //         case 'bmp':
-    //             $srcImg = imagecreatefrombmp($imagefile);
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    //     if (!$srcImg) return false;
-    //     $srcWidth = imagesx($srcImg);
-    //     $srcHeight = imagesy($srcImg);
-    //     $newsize = $this->getresize($srcWidth,$srcHeight,$size[0],$size[1]);
-    //     $newImg = imagecreatetruecolor($newsize[0], $newsize[1]);
-    //     echo count($srcImg);
-    //     $alpha = imagecolorallocatealpha($newImg, 0, 0, 0, 127);
-    //     imagefill($newImg, 0, 0, $alpha);
-    //     imagecopyresampled($newImg, $srcImg, 0, 0, 0, 0, $newsize[0], $newsize[1], $srcWidth, $srcHeight);
-    //     imagesavealpha($newImg, true);
-    //     // imagepng($newImg, $tofile);
-    //     // imagewebp($newImg, $tofile.'.webp');
-    //     // imagegif($newImg, $tofile.'.gif');
-    //     imagedestroy($newImg);
-    //     return true;
-    // }
-
     /**
      * @description: 检查文件是否符合要求
      * @param String nowfile 当前文件完整路径
@@ -331,7 +285,6 @@ class uploadfile {
             ->get('duration');
         return $duration;
     }
-
     /**
      * @description: 通过读取文件头原始数据，判断文件真实类型（已废弃）
      * @param String filename 文件完整路径
@@ -371,7 +324,16 @@ class uploadfile {
      * @return Array[String] [完整绝对路径,存储区文件夹路径,日期文件夹路径] (无/结尾)
      */
     function savepath($uploadpath,$datedir=false,$chmod=0770) {
-        $uploadto = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.$uploadpath;
+        global $nlcore;
+        $uploadto = $uploadpath;
+        $uploadpath = $nlcore->safe->dirsep($uploadpath);
+        if (substr($uploadpath, 0, 1) != DIRECTORY_SEPARATOR) {
+            $uploadto = pathinfo(__FILE__)["dirname"];
+            $uploadto = $nlcore->safe->parentfolder($uploadto);
+            $uploadpatharr = $nlcore->safe->parentfolderlevel($uploadpath);
+            $uploadto = $nlcore->safe->parentfolder($uploadto,$uploadpatharr[0]);
+            $uploadto .= DIRECTORY_SEPARATOR.$uploadpatharr[1];
+        }
         $uploaddir = $uploadto;
         $datedirstr = null;
         if ($datedir) {
