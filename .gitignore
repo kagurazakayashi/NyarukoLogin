@@ -16,4 +16,5 @@ log
 .user.ini
 ClearSensitiveInformation
 tests/testconfig.json
-tools/go/convertfile
+tools/go/convertfile/file
+tools/go/convertfile/tofile
