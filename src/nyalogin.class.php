@@ -278,7 +278,7 @@ class nyalogin {
         $maxlogin = $nlcore->cfg->app->maxlogin;
         //检查有没有超过总数限制
         if (count($sessionarr) >= $maxlogin["all"]) {
-            return $this->removeoverflowsession($nyauser,$sessionarr,$totpsecret);
+            return $this->removeoverflowsession($sessionarr,$totpsecret);
         }
         //查session表获取当前设备类型
         $resultdev = $nlcore->func->getdeviceinfo($thisdevid,$totpsecret);
@@ -301,12 +301,11 @@ class nyalogin {
     }
     /**
      * @description: 将较早的设备登出
-     * @param Nyauser nyauser 对象
      * @param Array sessionarr 用户已有有效会话的数组
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Array 被登出设备的相关设备信息，键均以 logout_ 为前缀
      */
-    function removeoverflowsession($nyauser,$sessionarr,$totpsecret) {
+    function removeoverflowsession($sessionarr,$totpsecret) {
         global $nlcore;
         //超过总数限制，登出最早的终端。取最小的时间戳对应的id
         $ttime = PHP_INT_MAX;

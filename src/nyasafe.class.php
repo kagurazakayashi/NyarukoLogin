@@ -151,6 +151,10 @@ class nyasafe {
         return str_replace("/",DIRECTORY_SEPARATOR,$newpath);
     }
 
+    function urlsep($path) {
+        return str_replace("\\","/",$path);
+    }
+
     function parentfolder($path,$level=1) {
         $newpath = $this->dirsep($path);
         $endchar = substr($newpath, -1); //末字
@@ -617,7 +621,7 @@ class nyasafe {
         if (!isset($argv["t"])) { //检查是否提供了应用令牌
             $nlcore->msg->stopmsg(2020408);
         }
-        if (!$this->is_md6($argv["t"])) { //检查应用令牌格式
+        if (!$this->is_rhash64($argv["t"])) { //检查应用令牌格式
             $nlcore->msg->stopmsg(2020409);
         }
         //检查数据超长
@@ -664,7 +668,7 @@ class nyasafe {
                     break;
                 }
             }
-            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$timestamp+'-'+strval(time()));
+            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,strval($timestamp)+'-'+strval(time()));
             $jsonarr = json_decode($decrypt_data,true);
             $this->log("DECODE",$jsonarr);
         } else { //未加密
@@ -693,6 +697,14 @@ class nyasafe {
         if ($logfilepath) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
             $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
+            // 防止日志文件泄露密码
+            if (isset($logarr["password"]) && is_string($logarr["password"])) {
+                $newpassword = "";
+                for ($i=0; $i < strlen($logarr["password"]); $i++) {
+                    $newpassword .= "*";
+                }
+                $logarr["password"] = $newpassword;
+            }
             $log = json_encode($logarr);
             if (!$log) $log = "(DATA)";
             $logstr = "[".$this->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$mode."] ".$log.PHP_EOL;

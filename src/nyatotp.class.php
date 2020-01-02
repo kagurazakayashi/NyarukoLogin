@@ -25,7 +25,7 @@ class nyatotp {
     function newdevicetotp() {
         global $nlcore;
         $argv = count($_POST) > 0 ? $_POST : $_GET;
-        if (!isset($argv["appsecret"])) $nlcore->msg->stopmsg(2000101,$totpsecret);
+        if (!isset($argv["appsecret"])) $nlcore->msg->stopmsg(2000101,null,"",false);
         $appsecret = $argv["appsecret"];
         //检查IP访问频率
         $result = $nlcore->safe->frequencylimitation("getlinktotp");

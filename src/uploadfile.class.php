@@ -1,6 +1,9 @@
 <?php
 // require_once 'vendor/autoload.php';
 class uploadfile {
+
+    private $mediainfo = null;
+
     function getuploadfile($echojson=true) {
         global $nlcore;
         $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
@@ -16,6 +19,7 @@ class uploadfile {
         $files = $nlcore->safe->dicvals2arrsdic($this->filearr($_FILES));
         //准备文件存储路径(绝对路径,/结尾)
         $savedirarr = $this->savepath($uploadconf["uploaddir"],$uploadconf["datedir"],$uploadconf["chmod"]);
+        $relativepaths = $savedirarr[2]; //相对路径
         $savedir = $savedirarr[0].DIRECTORY_SEPARATOR; //目标存储文件夹
         $stmpdirs = $this->savepath($uploadconf["tmpdir"]);
         $stmpdir = $stmpdirs[0].DIRECTORY_SEPARATOR; //二压临时文件夹
@@ -24,6 +28,7 @@ class uploadfile {
         //遍历文件资讯
         $returnfile = [];
         $returnarr = [];
+        $returnfilepath = "";
         foreach ($files as $nowfile) {
             $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
             $code = 1000000;
@@ -44,12 +49,16 @@ class uploadfile {
             $savetmpfileconf = $stmpdir.$newfilename.'.json'; //临时文件计划
             $info["files"] = [];
             $nowextres = [];
+            $sizearr = [];
+            $mediainfojson = [];
             $filejsonarr = [
                 "type" => $mediatype["media"],
                 "temp" => $savetmpfile,
                 "todir" => $savedir,
                 "toname" => $newfilename
             ];
+            $returnfilepath = $nlcore->safe->urlsep($relativepaths.'/'.$newfilename);
+            $useto = isset($jsonarr["usefor"]) ? $jsonarr["usefor"] : "def";
             //是视频还是图片？
             if ($mediatype["media"] == "image") {
                 if ($extension == "gif") {
@@ -57,8 +66,11 @@ class uploadfile {
                 } else {
                     $nowextres = ["jpg","webp"];
                 }
-                $useto = isset($jsonarr["usefor"]) ? $jsonarr["usefor"] : "def";
-                $imageresize = $nlcore->cfg->app->imageresize[$useto];
+                if (isset($nlcore->cfg->app->imageresize[$useto])) {
+                    $imageresize = $nlcore->cfg->app->imageresize[$useto];
+                } else {
+                    $nlcore->msg->stopmsg(2050106,$totpsecret);
+                }
                 // 创建json计划文件
                 $sizesavepath = [];
                 foreach ($imageresize as $key => $sizes) {
@@ -70,6 +82,7 @@ class uploadfile {
                     }
                 }
                 $filejsonarr["to"] = $sizesavepath;
+                $sizearr = array_keys($imageresize);
                 // foreach ($imageresize as $key => $value) {
                 //     $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
                 //     $newfiles = $resizetores[0];
@@ -87,26 +100,49 @@ class uploadfile {
                 // }
                 // $nowpathsub = substr($savefile,strlen($savedirarr[1]));
                 // $nowpathsub = str_replace("\\","/",$nowpathsub);
-                list($timesub1, $timesub2) = explode(' ', microtime());
-                $ftag = (float)sprintf('%.0f', (floatval($timesub1) + floatval($timesub2)) * 1000);
-                $ftag = strval(dechex($ftag));
-                $nowfileres = [
-                    "path" => $stmpdir,
-                    "tmpt" => $ftag,
-                    "size" => array_keys($imageresize),
-                    "ext" => $nowextres
-                ];
-                array_push($info["files"],$nowfileres);
             } else if ($mediatype["media"] == "video") {
-                // $nowextres = [];
-                // $videofile = $savefile.'.'.$mediatype["extension"];
-                // $info["files"] = array_push($info["files"],str_replace("\\","/",$videofile));
-                // //异步用文件
-                // $vcfgfile = fopen($savetmpfile.'.txt', "w");
-                // fwrite($vcfgfile, $videofile);
-                // fclose($vcfgfile);
-                // copy($tmpfile,$savetmpfile) or $nlcore->msg->stopmsg(2050105,$totpsecret);
+                if (isset($nlcore->cfg->app->videoresize[$useto])) {
+                    $videoresize = $nlcore->cfg->app->videoresize[$useto];
+                } else {
+                    $nlcore->msg->stopmsg(2050106,$totpsecret);
+                }
+                $mediainfojson = $this->getvideomediainfo($tmpfile,["width","height","duration","bit_rate"]);
+                $mediainfojson["width"] = intval($mediainfojson["width"]);
+                $mediainfojson["height"] = intval($mediainfojson["height"]);
+                $mediainfojson["duration"] = floatval($mediainfojson["duration"]);
+                $mediainfojson["bit_rate"] = intval($mediainfojson["bit_rate"]);
+                $videowidth = $mediainfojson["width"];
+                $videoheight = $mediainfojson["height"];
+                // 创建json计划文件
+                $sizesavepath = [];
+                foreach ($videoresize as $key => $sizes) {
+                    $newsizes = $sizes;
+                    if ($videowidth < $videoheight) {
+                        $newsizes = [$sizes[1],$sizes[0],$sizes[2]];
+                    }
+                    $newwidth = intval($newsizes[0]);
+                    $newheight = intval($newsizes[1]);
+                    if ($newwidth > $videowidth || $newheight > $videoheight) {
+                        continue;
+                    }
+                    $nowsizefile = $key.'.mp4';
+                    array_unshift($newsizes,$nowsizefile);
+                    array_push($sizesavepath,$newsizes);
+                }
+                $filejsonarr["to"] = $sizesavepath;
+                $sizearr = array_keys($videoresize);
             }
+            $filejsonarr["info"] = $mediainfojson;
+            list($timesub1, $timesub2) = explode(' ', microtime());
+            $ftag = (float)sprintf('%.0f', (floatval($timesub1) + floatval($timesub2)) * 1000);
+            $ftag = strval(dechex($ftag));
+            $nowfileres = [
+                "path" => $returnfilepath,
+                "tmpt" => $ftag,
+                "size" => $sizearr,
+                "ext" => "mp4"
+            ];
+            array_push($info["files"],$nowfileres);
             // $tmpfile -> $savetmpfile
             move_uploaded_file($nowfile["tmp_name"],$savetmpfile);
             $configfiledata = json_encode($filejsonarr);
@@ -115,7 +151,7 @@ class uploadfile {
             fclose($configfile);
             array_push($returnfile,$info);
         }
-        $returnarr["files"] = $returnfile;
+        $returnarr["filegroups"] = $returnfile;
         $returnarr["code"] = 1000000;
         $returnarr["filecount"] = count($files);
         if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpsecret);
@@ -258,7 +294,7 @@ class uploadfile {
                 return 2050101;
             }
             //检查视频时长是否太长
-            $videoduration = $this->getvideoduration($nowfile["tmp_name"]);
+            $videoduration = $this->getvideomediainfo($nowfile["tmp_name"],"duration");
             if ($videoduration > $uploadconf["videoduration"]) {
                 return 2050103;
             }
@@ -272,18 +308,34 @@ class uploadfile {
         }
         return $mediatype;
     }
-
     /**
-     * @description: 获取视频长度
+     * @description: 获取视频详细信息（第一次获取时会缓存）
+     * composer require php-ffmpeg/php-ffmpeg
      * @param String file 视频文件路径
-     * @return Float 视频持续时间（秒）
+     * @param String key 要获取的属性
+     * @return Array/String 取得的视频信息
      */
-    function getvideoduration($file) {
-        $ffprobe = FFMpeg\FFProbe::create();
-        $duration = $ffprobe
-            ->format($file)
-            ->get('duration');
-        return $duration;
+    function getvideomediainfo($file,$key) {
+        if ($this->mediainfo == null) {
+            global $nlcore;
+            $logger = null;
+            $ffprobe = FFMpeg\FFProbe::create($nlcore->cfg->app->ffconf, $logger);
+            $this->mediainfo = $ffprobe->streams($file)->videos()->first()->all();
+        }
+        if (is_array($key)) {
+            $rval = [];
+            foreach ($key as $nowkey) {
+                if (isset($this->mediainfo[$nowkey])) {
+                    $rval[$nowkey] = $this->mediainfo[$nowkey];
+                } else {
+                    $rval[$nowkey] = null;
+                }
+            }
+            return $rval;
+        } else if (isset($this->mediainfo[$key])) {
+            return $this->mediainfo[$key];
+        }
+        return null;
     }
     /**
      * @description: 通过读取文件头原始数据，判断文件真实类型（已废弃）

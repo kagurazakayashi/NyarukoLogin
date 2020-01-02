@@ -2,8 +2,8 @@
     "require": {
         "xxtea/xxtea": "^1.0",
         "gregwar/captcha": "^1.1",
-        "php-ffmpeg/php-ffmpeg": "^0.14.0",
         "phpmailer/phpmailer": "^6.1",
-        "phpgangsta/googleauthenticator": "@dev"
+        "phpgangsta/googleauthenticator": "@dev",
+        "php-ffmpeg/php-ffmpeg": "^0.14.0"
     }
 }
