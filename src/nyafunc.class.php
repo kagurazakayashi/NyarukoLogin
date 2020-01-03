@@ -156,9 +156,8 @@ class nyafunc {
         $maininfo = [];
         for ($i = 0; $i < count($userinfos); $i++) {
             $nowuserinfo = $userinfos[$i];
-            $uploaddir = $nlcore->cfg->app->upload["uploaddir"];
-            $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"],$uploaddir);
-            $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"],$uploaddir);
+            $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"]);
+            $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"]);
             if ($nowuserinfo["infotype"] == "main") {
                 array_push($maininfo,$nowuserinfo);
             } else {
@@ -169,41 +168,67 @@ class nyafunc {
         return array_merge($maininfo,$newuserinfos);
     }
     /**
+     * @description: 获取目的地文件夹
+     * @return Array[String] [完整绝对路径,存储区文件夹路径,日期文件夹路径] (有/结尾)
+     * 返回示例： ["/wwwroot/upload/2020/03/21/","/wwwroot/upload/","2020/03/21/"]
+     */
+    function savepath($confdir="uploaddir",$mkdir=true,$subdir="") {
+        global $nlcore;
+        $uploadconf = $nlcore->cfg->app->upload;
+        $uploadpath = $uploadconf["uploaddir"];
+        if (substr($uploadpath, 0, 1) != DIRECTORY_SEPARATOR) {
+            //不是绝对路径的话，补绝对路径
+            $uploadpath = pathinfo(__FILE__)["dirname"]."/../".$uploadpath;
+        }
+        $uploadpath = $nlcore->safe->parentfolder($uploadpath).DIRECTORY_SEPARATOR;
+        $dirpath = $uploadpath;
+        $datedirstr = null;
+        $chmod = $uploadconf["chmod"];
+        if ($subdir != "") {
+            $uploadpath .= $subdir;
+        }
+        if ($uploadconf["datedir"] && $subdir == "") {
+            $datedirstr = date('Y').DIRECTORY_SEPARATOR.date('m').DIRECTORY_SEPARATOR.date('d');
+            $uploadpath .= $datedirstr;
+            if (!is_dir($uploadpath)) {
+                mkdir($uploadpath,$chmod,true);
+            }
+        } else if (!is_dir($uploadpath)) {
+            mkdir($uploadpath,$chmod,true);
+        }
+        return [$uploadpath.DIRECTORY_SEPARATOR,$dirpath,$datedirstr.DIRECTORY_SEPARATOR];
+    }
+    /**
      * @description: 获取上传的某张图片的所有清晰度的完整文件名
      * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
      * @param String uploaddir 上传文件夹路径（/mnt/d/upload）
      * @return Array<Array> 文件信息数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
      */
-    function imageurl($dirpath,$uploaddir) {
-        $files = explode(',',$dirpath);
-        $fileinfoarr = [];
-        foreach ($files as $filepath) {
-            $patharr = explode('/',$filepath);
-            $filename = array_pop($patharr);
-            $dirstr = implode('/',$patharr);
-            $uploadto = pathinfo(__FILE__)["dirname"]."/../../".$uploaddir.$dirstr;
-            $uploadto = str_replace("/",DIRECTORY_SEPARATOR,$uploadto);
-            $filesnames = @scandir($uploadto);
-            if (!$filesnames) return [];
-            $sizenames = [];
-            $extnames = [];
-            foreach ($filesnames as $nowfilename) {
-                if ($nowfilename != '.' && $nowfilename != '..') {
-                    $nowfilenamearr = explode('.',$nowfilename);
-                    if (count($nowfilenamearr) == 3 && $nowfilenamearr[0] == $filename) {
-                        if (!in_array($nowfilenamearr[1], $sizenames)) array_push($sizenames, $nowfilenamearr[1]);
-                        if (!in_array($nowfilenamearr[2], $extnames)) array_push($extnames, $nowfilenamearr[2]);
-                    }
+    function imageurl($dirpath) {
+        global $nlcore;
+        $dirarr = explode(DIRECTORY_SEPARATOR,$nlcore->safe->dirsep($dirpath));
+        $file = array_pop($dirarr);
+        $dir = implode(DIRECTORY_SEPARATOR,$dirarr);
+        $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
+        $filesnames = scandir($fulldir[0]);
+        if (!$filesnames) return [];
+        $sizenames = [];
+        $extnames = [];
+        foreach ($filesnames as $nowfilename) {
+            if ($nowfilename != '.' && $nowfilename != '..') {
+                $nowfilenamearr = explode('.',$nowfilename);
+                if (count($nowfilenamearr) == 3 && $nowfilenamearr[0] == $file) {
+                    if (!in_array($nowfilenamearr[1], $sizenames)) array_push($sizenames, $nowfilenamearr[1]);
+                    if (!in_array($nowfilenamearr[2], $extnames)) array_push($extnames, $nowfilenamearr[2]);
                 }
             }
-            $fileinfo = [
-                "path" => $filepath,
-                "size" => $sizenames,
-                "ext" => $extnames
-            ];
-            array_push($fileinfoarr, $fileinfo);
         }
-        return $fileinfoarr;
+        $fileinfo = [
+            "path" => $nlcore->safe->urlsep($dir."/".$file),
+            "size" => $sizenames,
+            "ext" => $extnames
+        ];
+        return $fileinfo;
     }
     /**
      * @description: 获取设备ID

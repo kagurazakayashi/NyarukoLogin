@@ -125,7 +125,6 @@ class nyasafe {
     }
     /**
      * @description: 获得毫秒级时间戳
-     * @return String 毫秒级时间戳字符串
      */
     function millisecondtimestamp() {
         $time = explode(" ",strval(microtime()));
@@ -137,6 +136,9 @@ class nyasafe {
     /**
      * @description: 检查时间戳差异是否大于配置文件中的值
      * 差异太大直接返回错误信息到客户端
+     * @param String timestamp1 秒级时间戳1
+     * @param String timestamp2 秒级时间戳2
+     * @return Void 成功不返回，失败直接返回错误代码给客户端
      */
     function timestampdiff($timestamp1,$timestamp2) {
         global $nlcore;
@@ -145,32 +147,62 @@ class nyasafe {
             $nlcore->msg->stopmsg(2020413);
         }
     }
-
+    /**
+     * @description: 将路径字符 '/' 和 '\' 统一转换为当前系统使用的路径字符
+     * @param String path 路径字符串
+     * @return String 转换后的路径字符串
+     */
     function dirsep($path) {
         $newpath = str_replace("\\",DIRECTORY_SEPARATOR,$path);
         return str_replace("/",DIRECTORY_SEPARATOR,$newpath);
     }
-
+    /**
+     * @description: 将路径字符 '\' 转换为 URL 用的 '/'
+     * @param String path 路径字符串
+     * @return String 转换后的路径字符串
+     */
     function urlsep($path) {
         return str_replace("\\","/",$path);
     }
-
-    function parentfolder($path,$level=1) {
+    /**
+     * @description: 自动清除路径中的文件夹字符(../)，可以在路径的任何位置。
+     * @param String path 路径字符串
+     * @param Int level 如果提供此数值，会改为手动向上父级多少级
+     * @return String 转换后的路径
+     */
+    function parentfolder($path,$level=-1) {
         $newpath = $this->dirsep($path);
-        $endchar = substr($newpath, -1); //末字
+        $endchar = substr($newpath, -1);
         if ($endchar != DIRECTORY_SEPARATOR) $endchar = "";
-        $startchar = substr($newpath, 0, 1); //首字
+        $startchar = substr($newpath, 0, 1);
         if ($startchar != DIRECTORY_SEPARATOR) $startchar = "";
-        $newpath = substr($newpath, 1, -1);
-        $newpatharr = explode(DIRECTORY_SEPARATOR, $newpath);
-        for ($i=0; $i < $level; $i++) {
-            array_pop($newpatharr);
-            if (count($newpatharr) == 0) return DIRECTORY_SEPARATOR;
+        $newpath = substr($newpath, strlen($startchar), strlen($newpath)-1-strlen($endchar));
+        $patharr = explode(DIRECTORY_SEPARATOR, $newpath);
+        $newpatharr = [];
+        if ($level == -1) {
+            foreach ($patharr as $dir) {
+                if ($dir == "..") {
+                    array_pop($newpatharr);
+                } else {
+                    array_push($newpatharr,$dir);
+                }
+            }
+        } else {
+            $newpatharr = $patharr;
+            for ($i=0; $i < $level; $i++) {
+                array_pop($newpatharr);
+            }
         }
+        if (count($newpatharr) == 0) return DIRECTORY_SEPARATOR;
         $newpath = implode(DIRECTORY_SEPARATOR, $newpatharr);
         return $startchar.$newpath.$endchar;
     }
-
+    /**
+     * @description: 将父文件夹字符(../)移除，并返回有多少层
+     * 例如： "/server/path/../../" -> [2,"/server/path/"]
+     * @param String path 路径字符串
+     * @return Array<Int,String> [层数,转换后的路径]
+     */
     function parentfolderlevel($path) {
         $pdirstr = "..".DIRECTORY_SEPARATOR;
         $newpath = str_replace($pdirstr,"",$path,$ri);
@@ -529,7 +561,7 @@ class nyasafe {
         }
         if (!$nlcore->db->initRedis()) return [1000000,-1];
         $redis = $nlcore->db->redis;
-        $key = $this->getip();
+        $key = $nlcore->cfg->db->redis_tables["frequencylimitation"].$this->getip();
         $check = $redis->exists($key);
         if($check){
             $redis->incr($key);
@@ -692,7 +724,7 @@ class nyasafe {
      */
     function log($mode,$logarr) {
         global $nlcore;
-        if (!isset($nlcore->cfg->db->logfile_ud)) return;
+        if ($nlcore->cfg->db->logfile_ud == null || $nlcore->cfg->db->logfile_ud == "") return;
         $logfilepath = $nlcore->cfg->db->logfile_ud;
         if ($logfilepath) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
@@ -862,7 +894,7 @@ class nyasafe {
         global $nlcore;
         if (!is_int($timestamp)) $timestamp = strtotime($timestamp);
         $passwordhash = $password.$nlcore->cfg->app->passwordsalt.strval($timestamp);
-        $passwordhash = $nlcore->safe->md6($passwordhash);
+        $passwordhash = $this->md6($passwordhash);
         return $passwordhash;
     }
     /**
