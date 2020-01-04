@@ -35,7 +35,7 @@ function uploadfile() {
     form.append("usefor",document.getElementById("usefor").value);
     form.append("file", file);
     var xhr = new XMLHttpRequest() || new ActiveXObject("Microsoft.XMLHTTP");
-    xhr.open("post","test_uploadfile.php",true);
+    xhr.open("post","../nyaupload.php",true);
     xhr.onload = function(evt) {
         console.log(evt.currentTarget.responseText);
         const response = evt.currentTarget.responseText;

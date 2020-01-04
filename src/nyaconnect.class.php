@@ -99,7 +99,7 @@
          */
         function log($logstr) {
             global $nlcore;
-            if (!isset($nlcore->cfg->db->logfile_db)) return;
+            if (!isset($nlcore->cfg->db->logfile_db) || $nlcore->cfg->db->logfile_db == null || $nlcore->cfg->db->logfile_db == "") return;
             $logfilepath = $nlcore->cfg->db->logfile_db;
             if ($logfilepath) {
                 $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
