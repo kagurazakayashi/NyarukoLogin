@@ -1,4 +1,18 @@
 #!/bin/bash
-echo "build: convertfile"
-go build tools/convertfile.go
-mv -f convertfile bin/
+file="convertimage"
+echo "build: $file"
+go build tools/$file.go
+mv -f $file bin/$file
+chmod +x bin/$file
+#
+file="convertvideo"
+echo "build: $file"
+go build tools/$file.go
+mv -f $file bin/$file
+chmod +x bin/$file
+#
+file="mserver"
+echo "build: $file"
+go build tools/$file.go
+mv -f $file bin/$file
+chmod +x bin/$file
