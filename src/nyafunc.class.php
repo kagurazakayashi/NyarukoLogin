@@ -172,10 +172,10 @@ class nyafunc {
      * @return Array[String] [完整绝对路径,存储区文件夹路径,日期文件夹路径] (有/结尾)
      * 返回示例： ["/wwwroot/upload/2020/03/21/","/wwwroot/upload/","2020/03/21/"]
      */
-    function savepath($confdir="uploaddir",$mkdir=true,$subdir="") {
+    function savepath($confdir="uploaddir",$mkdir=true,$subdir="",$datedir=-1) {
         global $nlcore;
         $uploadconf = $nlcore->cfg->app->upload;
-        $uploadpath = $uploadconf["uploaddir"];
+        $uploadpath = $uploadconf[$confdir];
         if (substr($uploadpath, 0, 1) != DIRECTORY_SEPARATOR) {
             //不是绝对路径的话，补绝对路径
             $uploadpath = pathinfo(__FILE__)["dirname"]."/../".$uploadpath;
@@ -187,13 +187,13 @@ class nyafunc {
         if ($subdir != "") {
             $uploadpath .= $subdir;
         }
-        if ($uploadconf["datedir"] && $subdir == "") {
+        if ($datedir == 1 || ($uploadconf["datedir"] && $subdir == "" && $datedir != 0)) {
             $datedirstr = date('Y').DIRECTORY_SEPARATOR.date('m').DIRECTORY_SEPARATOR.date('d');
             $uploadpath .= $datedirstr;
-            if (!is_dir($uploadpath)) {
+            if ($mkdir && !is_dir($uploadpath)) {
                 mkdir($uploadpath,$chmod,true);
             }
-        } else if (!is_dir($uploadpath)) {
+        } else if ($mkdir && !is_dir($uploadpath)) {
             mkdir($uploadpath,$chmod,true);
         }
         return [$uploadpath.DIRECTORY_SEPARATOR,$dirpath,$datedirstr.DIRECTORY_SEPARATOR];

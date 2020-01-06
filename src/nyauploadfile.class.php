@@ -21,7 +21,7 @@ class nyauploadfile {
         $savedirarr = $nlcore->func->savepath("uploaddir");
         $relativepaths = $savedirarr[2]; //相对路径
         $savedir = $savedirarr[0]; //目标存储文件夹
-        $stmpdirs = $nlcore->func->savepath("tmpdir");
+        $stmpdirs = $nlcore->func->savepath("tmpdir",false,"",0)[0];
         $stmpdir = $stmpdirs[0]; //二压临时文件夹
 
         $uploaddirstrcount = strlen($savedir);
@@ -42,10 +42,10 @@ class nyauploadfile {
             }
             $newfilename = $nlcore->safe->millisecondtimestamp()."_".$nlcore->safe->randhash("",false,false); //创建临时文件名
             // $newfilename = md5_file($tmpfile); //文件哈希值创建文件名
-            $twotmpfile = $uploadconf["tmpdir"];
+            $tmpfiledir = $uploadconf["tmpdir"];
             // $savefile = $savedir.$newfilename; //最终存储文件完整路径
             $extension = $mediatype["extension"]; //扩展名
-            $savetmpfile = $stmpdir.$newfilename.'.'.$extension; //临时文件
+            $savetmpfile = substr($stmpdirs, 0, -1).$newfilename.'.'.$extension; //临时文件
             $rediskey = "";
             // $savetmpfileconf = $stmpdir.$newfilename.'.json'; //临时文件计划
             $info["files"] = [];
@@ -80,15 +80,18 @@ class nyauploadfile {
                 // 创建json计划文件
                 $sizesavepath = [];
                 foreach ($imageresize as $key => $sizes) {
-                    foreach ($nowextres as $convextension) {
-                        $newsizes = $sizes;
-                        $nowsizefile = $key.'.'.$convextension;
-                        array_unshift($newsizes,$nowsizefile);
-                        array_push($sizesavepath,$newsizes);
+                    // 检查是否能提供该尺寸
+                    if (!in_array(0,$sizes) && $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
+                        foreach ($nowextres as $convextension) {
+                            $newsizes = $sizes;
+                            $nowsizefile = $key.'.'.$convextension;
+                            array_unshift($newsizes,$nowsizefile);
+                            array_push($sizesavepath,$newsizes);
+                        }
+                        array_push($sizearr,$key);
                     }
                 }
                 $filejsonarr["to"] = $sizesavepath;
-                $sizearr = array_keys($imageresize);
                 // foreach ($imageresize as $key => $value) {
                 //     $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
                 //     $newfiles = $resizetores[0];
@@ -124,21 +127,24 @@ class nyauploadfile {
                 // 创建json计划文件
                 $sizesavepath = [];
                 foreach ($videoresize as $key => $sizes) {
-                    $newsizes = $sizes;
-                    if ($videowidth < $videoheight) {
-                        $newsizes = [$sizes[1],$sizes[0],$sizes[2]];
+                    // 检查是否能提供该尺寸
+                    if (!in_array(0,$sizes) && $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
+                        $newsizes = $sizes;
+                        if ($videowidth < $videoheight) {
+                            $newsizes = [$sizes[1],$sizes[0],$sizes[2]];
+                        }
+                        $newwidth = intval($newsizes[0]);
+                        $newheight = intval($newsizes[1]);
+                        if ($newwidth > $videowidth || $newheight > $videoheight) {
+                            continue;
+                        }
+                        $nowsizefile = $key.'.mp4';
+                        array_unshift($newsizes,$nowsizefile);
+                        array_push($sizesavepath,$newsizes);
+                        array_push($sizearr,$key);
                     }
-                    $newwidth = intval($newsizes[0]);
-                    $newheight = intval($newsizes[1]);
-                    if ($newwidth > $videowidth || $newheight > $videoheight) {
-                        continue;
-                    }
-                    $nowsizefile = $key.'.mp4';
-                    array_unshift($newsizes,$nowsizefile);
-                    array_push($sizesavepath,$newsizes);
                 }
                 $filejsonarr["to"] = $sizesavepath;
-                $sizearr = array_keys($videoresize);
             }
             $filejsonarr["info"] = $mediainfojson;
             list($timesub1, $timesub2) = explode(' ', microtime());
@@ -161,18 +167,20 @@ class nyauploadfile {
             $rediskey .= $nlcore->safe->millisecondtimestamp();
             $redis->set($rediskey,$configfiledata);
             // 调用脚本，后台转换上传的媒体
-            // $execlog = "/dev/null";
-            // if(($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
-            //     $curl = curl_init();
-            //     curl_setopt($curl,CURLOPT_URL,"http://127.0.0.1:1081/".$mediatype["media"]);
-            //     curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
-            //     $httpresponse = curl_exec($curl);
-            //     $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);
-            //     curl_close($curl);
-            //     if ($httpCode != "200") {
-            //         $nlcore->msg->stopmsg(2060201,$totpsecret,strval($httpCode));
-            //     }
-            // }
+            if ($uploadconf["runconvert"] === true) {
+                $execlog = "/dev/null";
+                if(($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
+                    $curl = curl_init();
+                    curl_setopt($curl,CURLOPT_URL,"http://127.0.0.1:1081/".$mediatype["media"]);
+                    curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
+                    $httpresponse = curl_exec($curl);
+                    $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);
+                    curl_close($curl);
+                    if ($httpCode != "200") {
+                        $nlcore->msg->stopmsg(2060201,$totpsecret,strval($httpCode));
+                    }
+                }
+            }
             array_push($returnfile,$info);
         }
         $returnarr["filegroups"] = $returnfile;
@@ -183,12 +191,12 @@ class nyauploadfile {
     }
 
     /**
-     * @description: 缩小图片（如果已经小于设定值则输出原尺寸）
+     * @description: 计算缩小图片后的宽高（如果已经小于设定值则输出原尺寸）
      * @param Float imageWidth 原始图片宽度
      * @param Float imageHeight 原始图片高度
      * @param Float maxWidth 目标尺寸宽度
      * @param Float maxHeight 目标尺寸高度
-     * @return Array<Float> 新的宽高
+     * @return Array<Float,Float,Bool> 新的宽高,以及是否需要调整
      */
     function getresize($imageWidth,$imageHeight,$maxWidth,$maxHeight) {
         $newWidth = $imageWidth;
@@ -203,9 +211,9 @@ class nyauploadfile {
             $newWidth = $maxHeight * $imageScale;
         }
         if ($newWidth > $imageWidth && $newHeight > $imageHeight) {
-            return [$imageWidth,$imageHeight];
+            return [$imageWidth,$imageHeight,false];
         } else {
-            return [$newWidth,$newHeight];
+            return [$newWidth,$newHeight,true];
         }
     }
     /**

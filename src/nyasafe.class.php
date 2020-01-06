@@ -198,6 +198,19 @@ class nyasafe {
         return $startchar.$newpath.$endchar;
     }
     /**
+     * @description: 检查一维数组中是否都为某个值
+     * @param Object search 对象
+     * @param Array array 要检查的数组
+     * @param Bool type 使用全等进行判断
+     * @return Bool 是否都为某个值
+     */
+    function allinarray($search,$array,$type=true) {
+        foreach ($array as $value) {
+            if (($type && $value !== $search) || (!$type && $value != $search)) return false;
+        }
+        return true;
+    }
+    /**
      * @description: 将父文件夹字符(../)移除，并返回有多少层
      * 例如： "/server/path/../../" -> [2,"/server/path/"]
      * @param String path 路径字符串
