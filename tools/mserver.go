@@ -42,7 +42,7 @@ func convertimage(w http.ResponseWriter, r *http.Request) {
 
 func goimage(w http.ResponseWriter) {
 	barname := "/mnt/wwwroot/go/gowebserver/convertimage"
-	cmd := exec.Command(barname)
+	cmd := exec.Command(barname, "-v")
 	// println(barname)
 	stdout, err := cmd.StdoutPipe()
 	check(w, "cmd.StdoutPipe", err)

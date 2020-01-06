@@ -88,10 +88,12 @@ func main() {
 					// fmt.Println(someOne)
 					// if njson.Type == "video" {
 					mkdir(someOne.Todir)
-					getVideoSizeMakeThumbnail(someOne.Temp, someOne.Todir, someOne.Toname)
+					getVideoSizeMakeThumbnail(someOne.Temp, someOne.Todir, someOne.Toname, someOne.Info)
 					// }
 					for _, v := range someOne.To {
-						// scaleImage(someOne.Temp, someOne.Todir, someOne.Toname, v)
+						if verbose {
+							fmt.Println("正在处视频：", someOne.Temp, someOne.Todir, someOne.Toname, someOne.Info, v)
+						}
 						scaleVideo(someOne.Temp, someOne.Todir, someOne.Toname, someOne.Info, v)
 					}
 					filemd5(readfile(someOne.Temp), someOne.Todir, someOne.Toname)
@@ -204,13 +206,21 @@ func filemd5(data []byte, todir string, toname string) {
 }
 
 //getvideosize is 获取视频尺寸并在目标文件夹生成对应的缩略图
-func getVideoSizeMakeThumbnail(temp string, todir string, toname string) {
+func getVideoSizeMakeThumbnail(temp string, todir string, toname string, info map[string]interface{}) {
 	fmt.Println("getVideoSizeMakeThumbnail")
 	// screenshotpath := ""
 	//生成截图
 	// tempimagepath := strings.Split(temp, ".")
+	duration := info["duration"].(float64)
+	if duration >= 10 {
+		duration = 10
+	} else if duration >= 0 {
+		duration = duration / 2
+	} else {
+		duration = 0
+	}
 	screenshotpath := fmt.Sprintf("%s/%s.jpg", todir, toname)
-	cmd := exec.Command("ffmpeg", "-i", temp, "-vframes", "1", "-q:v", "8", "-f", "image2", screenshotpath, "-y")
+	cmd := exec.Command("ffmpeg", "-i", temp, "-ss", fmt.Sprintf("%s", duration), "-vframes", "1", "-q:v", "8", "-f", "image2", screenshotpath, "-y")
 	stdout, err := cmd.StdoutPipe()
 	check(0, "cmd.StdoutPipe", err)
 	defer stdout.Close()
@@ -314,14 +324,14 @@ func scaleVideo(temp string, todir string, toname string, info map[string]interf
 	// println(tofilepath)
 	// cmd := exec.Command("ffmpeg", "-i", temp, "-i", "logo.png", "-strict", "-2", "-filter_complex", vf, "-b:v", bitrate, tofilepath, "-hide_banner", "-y")
 	tempvideopath := strings.Split(temp, ".")
-	barname := fmt.Sprintf("%s.%s.sh", tempvideopath[0], tofile[0])
-	// println(barname)
-	bat := fmt.Sprintf("echo >>sh.log && date >>sh.log && /usr/local/ffmpeg/bin/ffmpeg -i %s -i %s -strict -2 -filter_complex %s -b:v %s -hls_time 5 -hls_key_info_file %s -hls_playlist_type vod -hls_segment_filename \"%s.%s.ts\" %s -hide_banner -y >>sh.log 2>&1 && echo ========== >>sh.log && echo >>sh.log && rm -f %s", temp, watermarkimage, vf, bitrate, keypath, tofileTSPath, "%d", tofilepath, barname)
-	content := []byte(bat)
-	err := ioutil.WriteFile(barname, content, 0777)
+	shfile := fmt.Sprintf("%s.%s.sh", tempvideopath[0], tofile[0])
+	// println(shfile)
+	sh := fmt.Sprintf("cat %s >>convertvideo.log && echo >>convertvideo.log && date >>convertvideo.log && /usr/local/ffmpeg/bin/ffmpeg -i %s -i %s -strict -2 -filter_complex %s -b:v %s -hls_time 5 -hls_key_info_file %s -hls_playlist_type vod -hls_segment_filename \"%s.%s.ts\" %s -hide_banner -y >>convertvideo.log 2>&1 && echo ===== >>convertvideo.log && rm -f %s", shfile, temp, watermarkimage, vf, bitrate, keypath, tofileTSPath, "%d", tofilepath, shfile)
+	content := []byte(sh)
+	err := ioutil.WriteFile(shfile, content, 0777)
 	check(1, "ioutil.WriteFile", err)
-	cmd := exec.Command("sh", barname)
-	println(barname)
+	cmd := exec.Command("sh", shfile)
+	println(shfile)
 	stdout, err := cmd.StdoutPipe()
 	check(1, "cmd.StdoutPipe", err)
 	defer stdout.Close()

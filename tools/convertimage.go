@@ -17,18 +17,19 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/go-redis/redis"
 )
 
 //Filejson is json的结构.
 type Filejson struct {
-	Type   string          `json:"type"`
-	Temp   string          `json:"temp"`
-	Todir  string          `json:"todir"`
-	Toname string          `json:"toname"`
-	Info   []interface{}   `json:"info"`
-	To     [][]interface{} `json:"to"`
+	Type   string                 `json:"type"`
+	Temp   string                 `json:"temp"`
+	Todir  string                 `json:"todir"`
+	Toname string                 `json:"toname"`
+	Info   map[string]interface{} `json:"info"`
+	To     [][]interface{}        `json:"to"`
 }
 
 // var uploadtmp string
@@ -55,7 +56,7 @@ func main() {
 	// flag.StringVar(&uploadtmp, "path", "/mnt/wwwroot/zyz/upload_tmp", "需要扫描的路径")
 	flag.StringVar(&watermarkimage, "wmimage", "/mnt/wwwroot/zyz/img/logo.png", "水印logo位置")
 	flag.StringVar(&nickname, "nick", "@择择#213", "指定删除多少行")
-	flag.StringVar(&wmfont, "wmfont", "simhei.ttf", "水印字体")
+	flag.StringVar(&wmfont, "wmfont", "/usr/share/fonts/google-noto-cjk/NotoSerifCJK-Regular.ttc", "水印字体")
 	// flag.StringVar(&keypath, "kpath", "/mnt/wwwroot/zyz/user/tools/go/convertfile/file/encrypt.keyinfo", "指定删除多少行")
 	flag.Parse()
 	err := initRedis()
@@ -87,16 +88,19 @@ func main() {
 				} else {
 					// fmt.Println(someOne)
 					for _, v := range someOne.To {
+						if verbose {
+							fmt.Println("正在处理图片：", someOne.Temp, someOne.Todir, someOne.Toname, v)
+						}
 						scaleImage(someOne.Temp, someOne.Todir, someOne.Toname, v)
 					}
 					filemd5(readfile(someOne.Temp), someOne.Todir, someOne.Toname)
 
-					rdel := redisdb.Del(flv)
-					if verbose {
-						fmt.Println("删除处理图片key", rdel)
-					}
-					err := os.Remove(someOne.Temp)
-					check(0, "del file", err)
+					// rdel := redisdb.Del(flv)
+					// if verbose {
+					// 	fmt.Println("删除处理图片key", rdel)
+					// }
+					// err := os.Remove(someOne.Temp)
+					// check(0, "del file", err)
 				}
 			} else {
 				fmt.Println(err)
@@ -199,20 +203,44 @@ func filemd5(data []byte, todir string, toname string) {
 	check(0, "ioutil.WriteFile", err)
 }
 
-func scaleImage(url string, todir string, toname string, tofile []interface{}) {
+func scaleImage(tempfile string, todir string, toname string, tofile []interface{}) {
+
 	// time.Sleep(500000000)
-	cmd := exec.Command("echo", "image")
 	resolutionratio := fmt.Sprintf("%sx%s", strconv.FormatFloat(tofile[1].(float64), 'f', -1, 64), strconv.FormatFloat(tofile[2].(float64), 'f', -1, 64))
 	precision := fmt.Sprintf("%s%s", strconv.FormatFloat(tofile[3].(float64), 'f', -1, 64), "%")
 	// toext := fmt.Sprintf("%s", tofile[0])
-	tourl := fmt.Sprintf("%s/%s.%s", todir, toname, tofile[0])
-	// fmt.Printf("\n0:%s\n1:%s\n2:%s\n3:%s\n4:%s\n5:%s\n", url, resolutionratio, precision, toname, toext, tourl)
+	topath := fmt.Sprintf("%s%s.%s", todir, toname, tofile[0])
+	// fmt.Printf("\n0:%s\n1:%s\n2:%s\n3:%s\n4:%s\n5:%s\n", tempfile, resolutionratio, precision, toname, toext, topath)
+
+	tempfileimagepath := strings.Split(todir, ".")
+	shfile := fmt.Sprintf("%s%s.%s.sh", tempfileimagepath[0], toname, tofile[0])
+
+	// println("==tempfileimagepath:", tempfileimagepath[0])
+	// println("shfile:", shfile)
+	sh := ""
 	if precision == "0%" {
-		cmd = exec.Command("convert", url, tourl)
+		sh = fmt.Sprintf("cp %s %s", tempfile, topath)
 	} else {
-		wmnickname := fmt.Sprintf("text 29,5 '%s'", nickname)
-		cmd = exec.Command("convert", url, "-resize", resolutionratio, watermarkimage, "-gravity", "southeast", "-geometry", "+0+0", "-gravity", "southeast", "-fill", "white", "-font", wmfont, "-pointsize", "16", "-draw", wmnickname, "-quality", precision, "-composite", tourl)
+		temparr := strings.Split(tempfile, ".")
+		// fmt.Println("====", temparr)
+		if temparr[1] == "gif" {
+			// sh = fmt.Sprintf("/usr/local/bin/convert %s -gravity southeast -geometry +0+0 -fill white -font %s -pointsize 16 -draw \"image over 5,5 24,24 '%s' %s\" -coalesce -resize 256x -deconstruct %s", tempfile, wmfont, watermarkimage, wmnickname, topath)
+			fmt.Println("====", resolutionratio)
+			sh = fmt.Sprintf("/usr/local/bin/convert -coalesce %s -coalesce -set dispose previous -gravity southeast -stroke '#000C' -font %s -pointsize 16 -strokewidth 4 -annotate +29+5  \"%s\" -stroke none -fill white -font %s -pointsize 16 -annotate +29+5 \"%s\" -geometry +3+5 null: %s -layers composite -resize %s -layers optimize %s", tempfile, wmfont, nickname, wmfont, nickname, watermarkimage, resolutionratio, topath)
+		} else {
+			wmnickname := fmt.Sprintf("text 29,5 '%s'", nickname)
+			sh = fmt.Sprintf("/usr/local/bin/convert %s -resize %s %s -gravity southeast -geometry +0+0 -gravity southeast -fill white -font %s -pointsize 16 -draw \"%s\" -quality %s -composite %s >>convertimage.log 2>&1", tempfile, resolutionratio, watermarkimage, wmfont, wmnickname, precision, topath)
+		}
+		// cmd = exec.Command("convert", url, "-resize", resolutionratio, watermarkimage, "-gravity", "southeast", "-geometry", "+0+0", "-gravity", "southeast", "-fill", "white", "-font", wmfont, "-pointsize", "16", "-draw", wmnickname, "-quality", precision, "-composite", tourl)
+		//GIF
+		// convert i.gif -coalesce -set dispose previous -gravity southeast -geometry +0+0 -fill white -font /usr/share/fonts/google-noto-cjk/NotoSerifCJK-Regular.ttc -pointsize 16 -draw "image over 5,5 24,24 '/mnt/wwwroot/zyz/img/logo.png' text 29,5 '@择择#213'" -coalesce -resize 256x -layers Optimize 2.gif
 	}
+	sh = fmt.Sprintf("cat %s >>convertimage.log && echo >>convertimage.log && date >>convertimage.log && %s && echo ===== >>convertimage.log && rm -f %s", shfile, sh, shfile)
+	println("===sh:", sh)
+	content := []byte(sh)
+	err := ioutil.WriteFile(shfile, content, 0777)
+	check(1, "ioutil.WriteFile", err)
+	cmd := exec.Command("sh", shfile)
 	stdout, err := cmd.StdoutPipe()
 	check(1, "cmd.StdoutPipe", err)
 	defer stdout.Close()
