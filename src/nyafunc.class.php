@@ -196,7 +196,8 @@ class nyafunc {
         } else if ($mkdir && !is_dir($uploadpath)) {
             mkdir($uploadpath,$chmod,true);
         }
-        return [$uploadpath.DIRECTORY_SEPARATOR,$dirpath,$datedirstr.DIRECTORY_SEPARATOR];
+        $uploadpath = $nlcore->safe->mergerepeatchar($uploadpath.DIRECTORY_SEPARATOR,DIRECTORY_SEPARATOR);
+        return [$uploadpath,$dirpath,$datedirstr.DIRECTORY_SEPARATOR];
     }
     /**
      * @description: 获取上传的某张图片的所有清晰度的完整文件名
@@ -210,8 +211,8 @@ class nyafunc {
         $file = array_pop($dirarr);
         $dir = implode(DIRECTORY_SEPARATOR,$dirarr);
         $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
+        if (!is_dir($fulldir[0])) return [];
         $filesnames = scandir($fulldir[0]);
-        if (!$filesnames) return [];
         $sizenames = [];
         $extnames = [];
         foreach ($filesnames as $nowfilename) {

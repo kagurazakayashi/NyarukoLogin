@@ -166,12 +166,13 @@ class nyauploadfile {
             $redis = $nlcore->db->redis;
             $rediskey .= $nlcore->safe->millisecondtimestamp();
             $redis->set($rediskey,$configfiledata);
+            $mserver = $nlcore->cfg->app->mserver;
             // 调用脚本，后台转换上传的媒体
-            if ($uploadconf["runconvert"] === true) {
+            if ($mserver != "") {
                 $execlog = "/dev/null";
                 if(($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
                     $curl = curl_init();
-                    curl_setopt($curl,CURLOPT_URL,"http://127.0.0.1:1081/".$mediatype["media"]);
+                    curl_setopt($curl,CURLOPT_URL,$mserver.$mediatype["media"]);
                     curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
                     $httpresponse = curl_exec($curl);
                     $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);

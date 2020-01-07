@@ -148,21 +148,44 @@ class nyasafe {
         }
     }
     /**
-     * @description: 将路径字符 '/' 和 '\' 统一转换为当前系统使用的路径字符
+     * @description: 替换字符串中某个字符的多个连续字符，转换成一个
+     * 例如： "///" -> "/"
+     * @param String str 原字符串
+     * @param String chr 要合并的字符
+     * @return String 替换后的字符
+     */
+    function mergerepeatchar($str,$chr) {
+        $chararr = str_split($str);
+        $newchararr = [];
+        $oldchar = "";
+        foreach ($chararr as $nowchar) {
+            if (!($nowchar == $oldchar && $chr == $nowchar)) {
+                array_push($newchararr,$nowchar);
+                $oldchar = $nowchar;
+            }
+        }
+        return implode('', $newchararr);
+    }
+    /**
+     * @description: 转换为系统路径
+     * 将路径字符 '/' 和 '\' 统一转换为当前系统使用的路径字符
      * @param String path 路径字符串
      * @return String 转换后的路径字符串
      */
     function dirsep($path) {
         $newpath = str_replace("\\",DIRECTORY_SEPARATOR,$path);
-        return str_replace("/",DIRECTORY_SEPARATOR,$newpath);
+        $newpath = str_replace("/",DIRECTORY_SEPARATOR,$newpath);
+        return $this->mergerepeatchar($newpath,DIRECTORY_SEPARATOR);
     }
     /**
-     * @description: 将路径字符 '\' 转换为 URL 用的 '/'
+     * @description: 转换为网址路径
+     * 将路径字符 '\' 转换为 URL 用的 '/'
      * @param String path 路径字符串
      * @return String 转换后的路径字符串
      */
     function urlsep($path) {
-        return str_replace("\\","/",$path);
+        $newpath = str_replace("\\","/",$path);
+        return $this->mergerepeatchar($newpath,"/");
     }
     /**
      * @description: 自动清除路径中的文件夹字符(../)，可以在路径的任何位置。
