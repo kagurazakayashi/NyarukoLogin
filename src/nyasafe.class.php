@@ -473,6 +473,7 @@ class nyasafe {
         } else {
             return [false,$str];
         }
+        //词汇资料库加载失败
         if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303,$totpsecret);
         //删除输入字符串特殊符号
         $punctuations = $this->mbStrSplit($wordfilterpcfg["punctuations"]);
@@ -666,11 +667,44 @@ class nyasafe {
         return $json;
     }
     /**
+     * @description: 动态加密码测试用，可删除
+     */
+    function decryptargv_totptest() {
+        global $nlcore;
+        $j = $_GET['t'] ?? $_POST['t'] ?? null;
+        $timestamp = $_GET['s'] ?? $_POST['s'] ?? time();
+        if ($j) {
+            //查询apptoken对应的secret
+            $datadic = [
+                "apptoken" => $j
+            ];
+            $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
+            //空或查询失败都视为不正确
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$argv["t"]);
+            $secret = $result[2][0]["secret"];
+            //使用secret生成totp数字
+            $ga = new PHPGangsta_GoogleAuthenticator();
+            $timestamp = isset($argv["s"]) ? $argv["s"] : time();
+            header('Content-Type:application/json;charset=utf-8');
+            $totptimeslice = 3;
+            $authcode = [];
+            for ($i = -$totptimeslice; $i <= $totptimeslice; ++$i) {
+                $nowcode = $ga->getCode($secret,floor($timestamp / 30) + $i);
+                $nowkey = "acode".strval($i);
+                $authcode[$nowkey] = $nowcode;
+            }
+            $authcode["secret"] = $secret;
+            $authcode["time"] = date('Y-m-d H:i:s', $timestamp);
+            $authcode["timestamp"] = $timestamp;
+            echo json_encode($authcode);
+        }
+    }
+    /**
      * @description: [I数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
      * @param String module 功能名称（$conf->limittime）
      * @param Array<String,String> module 自定义次数限制参数
-     * @return Array<String> [(0)解析后的JSON内容数组,(1)TOTP的secret,(2)TOTP的token,(3)IP地址ID,(4)APPID]
+     * @return Array<String> [〇解析后的JSON内容数组,①TOTP的secret,②TOTP的token,③IP地址ID,④APPID]
      */
     function decryptargv($module=null) {
         global $nlcore;
@@ -690,7 +724,7 @@ class nyasafe {
             $nlcore->msg->stopmsg(2020408);
         }
         if (!$this->is_rhash64($argv["t"])) { //检查应用令牌格式
-            $nlcore->msg->stopmsg(2020409);
+            $nlcore->msg->stopmsg(2020417);
         }
         //检查数据超长
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->maxlen_get : $nlcore->cfg->app->maxlen_post;
@@ -715,14 +749,19 @@ class nyasafe {
             ];
             $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
             //空或查询失败都视为不正确
-            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409);
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$argv["t"]);
             $secret = $result[2][0]["secret"];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $gaisok = false;
             $timestamp = isset($argv["s"]) ? $argv["s"] : time();
+            if ($timestamp > 1000000000000) {
+                $timestamp = intval($timestamp / 1000);
+            }
             $totptimeslice = $nlcore->cfg->app->totptimeslice;
+            $tryi = 0;
             for ($i = -$totptimeslice; $i <= $totptimeslice; ++$i) {
+                $tryi++;
                 $timeSlice = floor($timestamp / 30) + $i;
                 $numcode = $ga->getCode($secret,$timeSlice)+$nlcore->cfg->app->totpcompensate;
                 //MD5
@@ -736,7 +775,8 @@ class nyasafe {
                     break;
                 }
             }
-            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,strval($timestamp)+'-'+strval(time()));
+            $failinfo = strval($timestamp).'-'.strval(time()).','.strval($tryi).','.strval($numcode);
+            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$failinfo);
             $jsonarr = json_decode($decrypt_data,true);
             $this->log("DECODE",$jsonarr);
         } else { //未加密

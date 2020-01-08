@@ -38,7 +38,7 @@ class nyatotp {
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
         //检查应用名称和密钥
-        if (!$nlcore->safe->isNumberOrEnglishChar($appsecret,64,64)) $nlcore->msg->stopmsg(2020409);
+        if (!$nlcore->safe->is_rhash64($appsecret)) $nlcore->msg->stopmsg(2020417);
         $datadic = [
             "secret" => $appsecret
         ];
