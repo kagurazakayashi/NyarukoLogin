@@ -17,11 +17,11 @@ class nyauploadfile {
         $uploadconf["type"] = $nlcore->cfg->app->uploadtype;
         //整理文件详细信息数组
         $files = $nlcore->safe->dicvals2arrsdic($this->filearr($_FILES));
-        //准备文件存储路径(绝对路径,/结尾)
+        //准备文件存储路径
         $savedirarr = $nlcore->func->savepath("uploaddir");
         $relativepaths = $savedirarr[2]; //相对路径
         $savedir = $savedirarr[0]; //目标存储文件夹
-        $stmpdirs = $nlcore->func->savepath("tmpdir",false,"",0)[0];
+        $stmpdirs = $nlcore->func->savepath("tmpdir",false,"",0)[0].DIRECTORY_SEPARATOR;
         $stmpdir = $stmpdirs[0]; //二压临时文件夹
 
         $uploaddirstrcount = strlen($savedir);
@@ -42,7 +42,6 @@ class nyauploadfile {
             }
             $newfilename = $nlcore->safe->millisecondtimestamp()."_".$nlcore->safe->randhash("",false,false); //创建临时文件名
             // $newfilename = md5_file($tmpfile); //文件哈希值创建文件名
-            $tmpfiledir = $uploadconf["tmpdir"];
             // $savefile = $savedir.$newfilename; //最终存储文件完整路径
             $extension = $mediatype["extension"]; //扩展名
             $savetmpfile = substr($stmpdirs, 0, -1).$newfilename.'.'.$extension; //临时文件
@@ -81,7 +80,7 @@ class nyauploadfile {
                 $sizesavepath = [];
                 foreach ($imageresize as $key => $sizes) {
                     // 检查是否能提供该尺寸
-                    if (!in_array(0,$sizes) && $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
+                    if (in_array(0,$sizes) || $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
                         foreach ($nowextres as $convextension) {
                             $newsizes = $sizes;
                             $nowsizefile = $key.'.'.$convextension;

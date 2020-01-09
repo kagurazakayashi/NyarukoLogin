@@ -241,12 +241,14 @@
         /**
          * @description: 执行SQL连接
          * @param String sqlcmd SQL语句
-         * @return Array[Int,Int,Array] 状态码,新建的ID,返回的数据
+         * @return Array[Int,Int,Array,Int] 状态码,新建的ID,返回的数据,受影响的行数
          */
         function sqlc($sqlcmd) {
             global $nlcore;
             $this->log("[QUERY] ".$sqlcmd);
             $result = mysqli_query($this->con,$sqlcmd);
+            $rowaffected = mysqli_affected_rows($this->con);
+            $this->log("[AFFRCT] ".$rowaffected);
             if ($result) {
                 $insertid = mysqli_insert_id($this->con);
                 if(@mysqli_num_rows($result)) {
@@ -260,20 +262,25 @@
                         if (count($result_array) > 0) {
                             $this->log("[INFO] CODE:1010000, ID:".$insertid);
                             $this->log("[RESULT] ".json_encode($result_array,true));
-                            return [1010000,$insertid,$result_array];
+                            return [1010000,$insertid,$result_array,$rowaffected];
                         } else {
                             $this->log("[ERROR] arraycount == 0");
                             die($nlcore->msg->m(1,2010102));
                         }
+                    } else {
+                        $this->log("[ERROR] arraycount == 0");
+                        die($nlcore->msg->m(1,2010102));
                     }
                 } else {
                     $this->log("[INFO] CODE:1010001, ID:".$insertid);
                     $this->log("[RESULT] (null)");
-                    return [1010001,$insertid];
+                    return [1010001,$insertid,null,$rowaffected];
                 }
-            } else {
-                $this->log("[ERROR] ".mysqli_connect_error());
+            } else if (mysqli_connect_errno($this->con)) {
+                $this->log("[ERROR] mysqli_connect_error: ".mysqli_connect_error());
                 die($nlcore->msg->m(1,2010101));
+            } else {
+                $this->log("[WARN] no_result: ".$result.mysqli_connect_error());
             }
         }
         /**
@@ -294,7 +301,7 @@
                 $vals = "";
                 foreach ($dic as $key => $val) {
                     $keys .= "`".$key."`, ";
-                    if ($val) {
+                    if ($val !== null) {
                         $vals .= "'".$val."', ";
                     } else {
                         $vals .= "NULL, ";
@@ -315,7 +322,7 @@
                 $modestrlen = strlen($modestr);
                 $keyval = "";
                 foreach ($dic as $key => $val) {
-                    if ($val) {
+                    if ($val !== null) {
                         $keyval .= "`".$key."` ".$like." '".$val."'".$modestr;
                     } else {
                         if ($mode == 2) {

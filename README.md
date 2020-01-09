@@ -4,6 +4,7 @@
 
 - 注意：这个程序尚未做完，请勿使用。
 - 要查看旧版本代码和此处的说明，请前往 v2016_expired 分支。
+- 不支持 Windows 。
 
 ## 开发进度
 
@@ -205,6 +206,14 @@
   - [检查是否已经登录](https://github.com/kagurazakayashi/NyarukoLogin/wiki/检查是否已经登录)
 - [接口测试流程](https://github.com/kagurazakayashi/NyarukoLogin/wiki/接口测试流程)
   - [功能测试脚本](https://github.com/kagurazakayashi/NyarukoLogin/wiki/功能测试脚本)
+- [文件上传](https://github.com/kagurazakayashi/NyarukoLogin/wiki/文件上传)
+  - [查询媒体文件可提供的尺寸与格式](https://github.com/kagurazakayashi/NyarukoLogin/wiki/查询媒体文件可提供的尺寸与格式)
+
+## 其他功能
+- [搜索用户](https://github.com/kagurazakayashi/NyarukoLogin/wiki/搜索用户)
+
+## 后台服务
+- [后台服务](https://github.com/kagurazakayashi/NyarukoLogin/wiki/后台服务)
 
 ### 附加工具
 - [导入和导出关键词库](https://github.com/kagurazakayashi/NyarukoLogin/wiki/导入和导出关键词库)

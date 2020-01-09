@@ -7,6 +7,7 @@ require_once $phpfiledir."nyainfomsg.class.php";
 require_once $phpfiledir."nyasafe.class.php";
 require_once $phpfiledir."nyaconnect.class.php";
 require_once $phpfiledir."nyafunc.class.php";
+require_once $phpfiledir."nyasession.class.php";
 require_once $phpfiledir."md6.class.php";
 class nyacore {
     public $cfg; //设置
@@ -14,12 +15,14 @@ class nyacore {
     public $db; //数据库操作
     public $safe; //安全类
     public $func; //各种通用函数
+    public $sess; //用户会话
     function __construct() {
         $this->cfg = new nyasetting();
         $this->msg = new nyainfomsg();
         $this->db = new nyadbconnect();
         $this->safe = new nyasafe();
         $this->func = new nyafunc();
+        $this->sess = new nyasession();
     }
     function applyconfig() {
         if ($this->cfg->app->debug == 1) {
@@ -36,6 +39,7 @@ class nyacore {
         $this->db = null; unset($this->db);
         $this->safe = null; unset($this->safe);
         $this->func = null; unset($this->func);
+        $this->sess = null; unset($this->sess);
     }
 }
 global $nlcore;
