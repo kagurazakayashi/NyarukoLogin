@@ -147,7 +147,7 @@ class nyafunc {
     function getuserinfo($userhash,$totpsecret) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
-        $columnArr = ["infotype","name","nameid","gender","address","profile","description","image","background"];
+        $columnArr = ["belong","name","nameid","gender","address","profile","description","image","background"];
         $whereDic = ["userhash" => $userhash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040206,$totpsecret);
@@ -158,7 +158,7 @@ class nyafunc {
             $nowuserinfo = $userinfos[$i];
             $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"]);
             $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"]);
-            if ($nowuserinfo["infotype"] == "main") {
+            if (isset($nowuserinfo["belong"])) {
                 array_push($maininfo,$nowuserinfo);
             } else {
                 array_push($newuserinfos,$nowuserinfo);

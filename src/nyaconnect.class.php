@@ -180,13 +180,12 @@
          * @description: 如果有则更新数据，没有则插入数据
          * @param String tableStr 表名
          * @param Array<String:String> dataDic 要更新或插入的数据字典
-         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
          * @param String customWhere 自定义条件表达式（可选，默认空）
          * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
          * @return Array<Int,Array> 返回的状态码和内容
          */
-        function updateinsert($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
-            $result = $this->scount($tableStr,$whereDic,$customWhere,$whereMode);
+        function insertupdate($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
+            $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
             if ($result[0] >= 2000000) return [$result[0]];
             $datacount = $result[2][0][0];
             if ($datacount == 0) {
@@ -194,7 +193,25 @@
             } else if ($datacount == 1) {
                 return $this->update($dataDic,$tableStr,$whereDic,$customWhere,$whereMode);
             } else {
-                return [2010200];
+                return [2010300];
+            }
+        }
+        /**
+         * @description: 如果没有，才添加数据
+         * @param String tableStr 表名
+         * @param Array<String:String> dataDic 要更新或插入的数据字典
+         * @param String customWhere 自定义条件表达式（可选，默认空）
+         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
+         * @return Array<Int,Array> 返回的状态码和内容
+         */
+        function insertnull($tableStr,$dataDic,$customWhere="",$whereMode="AND") {
+            $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
+            if ($result[0] >= 2000000) return [$result[0]];
+            $datacount = $result[2][0][0];
+            if ($datacount == 0) {
+                return $this->insert($tableStr,$dataDic);
+            } else {
+                return [1010002];
             }
         }
         /**
@@ -295,7 +312,8 @@
          * @return String 返回 SQL 语句片段，如果不提供要转换的字典(null)，则返回通用*号
          */
         function dic2sql($dic=null,$mode=0,$islike=false) {
-            if ($dic == null) return "*";
+            if ($dic === null) return "*";
+            else if (count($dic) == 0) return "";
             if ($mode == 0) {
                 $keys = "";
                 $vals = "";
