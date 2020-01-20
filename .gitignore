@@ -19,3 +19,4 @@ tests/testconfig.json
 tools/go/convertfile/file
 tools/go/convertfile/tofile
 bin/
+*.bak
