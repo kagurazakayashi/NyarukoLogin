@@ -1,3 +1,5 @@
+<p align="center"><img src="icon/icon.png" width="128"></p>
+
 # NyarukoLogin 2
 
 一个通用的用户登录系统，目标是本身作为一个服务，为外部业务系统进行服务，可多开，可负载均衡。

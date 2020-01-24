@@ -1,12 +1,17 @@
 <?php
+/**
+ * @description: MySQL/Redis 資料庫語句生成和連接管理類
+ * @package NyarukoLogin
+*/
     class nyadbconnect {
-        private $conR = null; //只读数据库
-        private $conW = null; //可写入数据库
-        private $con = null; //当前 MySQL 数据库（指针变量）
-        private $logfile = null; //记录详细调试信息到文件
-        public $redis = null; //当前 Redis 数据库
+        private $conR = null; //隻讀資料庫
+        private $conW = null; //可寫入資料庫
+        private $con = null; //當前 MySQL 資料庫（指針變數）
+        private $logfile = null; //記錄詳細調試信息到文件
+        public $redis = null; //當前 Redis 資料庫
+
         /**
-         * @description: 初始化可写入数据库，按需建立SQL连接
+         * @description: 初始化可寫入資料庫，按需建立SQL連接
          */
         function initWriteDbs() {
             global $nlcore;
@@ -17,8 +22,9 @@
             }
             $this->con = &$this->conW;
         }
+
         /**
-         * @description: 初始化只读数据库，按需建立SQL连接
+         * @description: 初始化隻讀資料庫，按需建立SQL連接
          */
         function initReadDbs() {
             global $nlcore;
@@ -29,16 +35,17 @@
             }
             $this->con = &$this->conR;
         }
+
         /**
-         * @description: 初始化数据库
-         * @param String selectdbs 数据库配置数组($nlcore->cfg->db->*)
-         * @return mysqli_connect 数据库连接对象
+         * @description: 初始化資料庫
+         * @param String selectdbs 資料庫配置數組($nlcore->cfg->db->*)
+         * @return mysqli_connect 資料庫連接對象
          */
         function initMysqli($selectdbs) {
             global $nlcore;
             $selectdbscount = count($selectdbs) - 1;
             if ($selectdbscount >= 0) {
-                //如果 Redis 可用则顺序选数据库，不可用则随机选数据库
+                // 如果 Redis 可用則順序選資料庫，不可用則隨機選資料庫
                 $dbid = 0;
                 if ($selectdbscount > 0) {
                     if ($this->initRedis()) {
@@ -74,10 +81,11 @@
             }
             return null;
         }
+
         /**
-         * @description: 清理提交数据中的注入语句
-         * @param String/Array data 要进行清理的内容，支持多维数组、字符串，其他类型（如 int）不清理
-         * @return String/Array 清理后的数组/字符串
+         * @description: 清理提交數據中的註入語句
+         * @param String/Array data 要進行清理的內容，支援多維數組、字符串，其他類型（如 int）不清理
+         * @return String/Array 清理後的數組/字符串
          */
         function safe($data) {
             $newdata;
@@ -93,9 +101,10 @@
             }
             return $newdata;
         }
+
         /**
-         * @description: 将每条SQL语句和返回内容记录在日志文件中，通过 nyaconfig 中的此项设置来进行调试。
-         * @param String logstr 要记录的字符串
+         * @description: 將每條SQL語句和返回內容記錄在日誌文件中，通過 nyaconfig 中的此項設定來進行調試。
+         * @param String logstr 要記錄的字符串
          */
         function log($logstr) {
             global $nlcore;
@@ -109,17 +118,18 @@
                 fwrite($this->logfile,$logstr);
             }
         }
+
         /**
-         * @description: 查询数据
-         * @param Array<String> columnArr 要查询的列名数组
-         * @param String tableStr 表名
-         * @param String whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @param Array<String,Bool> order 排序方式[排序依据,是否倒序]
-         * @param Int/Array<Int,Int> limit 区间。纯数字为前x条，用数组则为[从多少,取多少]
-         * @param Boolean islike 模糊搜素（可选，默认关）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 查詢數據
+         * @param Array<String> columnArr 要查詢的列名數組
+         * @param String tableStr 錶名
+         * @param String whereDic 條件字典（k:列名=v:預期內容）
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]
+         * @param Int/Array<Int,Int> limit 區間。純數字為前x條，用數組則為[從多少,取多少]
+         * @param Boolean islike 模糊搜素（可選，預設關）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND",$islike=false,$order=null,$limit=null) {
             $this->initReadDbs();
@@ -144,11 +154,12 @@
             $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.$orderstr.";";
             return $this->sqlc($sqlcmd);
         }
+
         /**
-         * @description: 插入数据
-         * @param String tableStr 表名
-         * @param Array<String:String> insertDic 要插入的数据字典
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 插入數據
+         * @param String tableStr 錶名
+         * @param Array<String:String> insertDic 要插入的數據字典
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function insert($tableStr,$insertDic) {
             $this->initWriteDbs();
@@ -157,14 +168,15 @@
             $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
             return $this->sqlc($sqlcmd);
         }
+
         /**
-         * @description: 更新数据
-         * @param Array<String:String> updateDic 要更新的数据字典
-         * @param String tableStr 表名
-         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 更新數據
+         * @param Array<String:String> updateDic 要更新的數據字典
+         * @param String tableStr 錶名
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function update($updateDic,$tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
@@ -176,13 +188,14 @@
             $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
+
         /**
-         * @description: 如果有则更新数据，没有则插入数据
-         * @param String tableStr 表名
-         * @param Array<String:String> dataDic 要更新或插入的数据字典
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 如果有則更新數據，冇有則插入數據
+         * @param String tableStr 錶名
+         * @param Array<String:String> dataDic 要更新或插入的數據字典
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function insertupdate($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
             $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
@@ -196,13 +209,14 @@
                 return [2010300];
             }
         }
+
         /**
-         * @description: 如果没有，才添加数据
-         * @param String tableStr 表名
-         * @param Array<String:String> dataDic 要更新或插入的数据字典
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 如果冇有，才添加數據
+         * @param String tableStr 錶名
+         * @param Array<String:String> dataDic 要更新或插入的數據字典
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function insertnull($tableStr,$dataDic,$customWhere="",$whereMode="AND") {
             $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
@@ -214,13 +228,14 @@
                 return [1010002];
             }
         }
+
         /**
-         * @description: 删除数据
-         * @param String tableStr 表名
-         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 刪除數據
+         * @param String tableStr 錶名
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function delete($tableStr,$whereDic,$customWhere="",$whereMode="AND") {
             $this->initWriteDbs();
@@ -230,14 +245,15 @@
             $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
+
         /**
-         * @description: 查询有多少数据
-         * @param String tableStr 表名
-         * @param Array<String:String> whereDic 条件字典（k:列名=v:预期内容）
-         * @param String customWhere 自定义条件表达式（可选，默认空）
-         * @param String whereMode 条件判断模式（AND/OR/...，可选，默认AND）
-         * @param Boolean islike 模糊搜素（可选，默认关）
-         * @return Array<Int,Array> 返回的状态码和内容
+         * @description: 查詢有多少數據
+         * @param String tableStr 錶名
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
+         * @param Boolean islike 模糊搜素（可選，預設關）
+         * @return Array<Int,Array> 返回的狀態碼和內容
          */
         function scount($tableStr,$whereDic=null,$customWhere="",$whereMode="AND",$islike=false) {
             $this->initReadDbs();
@@ -247,18 +263,20 @@
             $sqlcmd = "select count(*) from `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
+
         /**
-         * @description: 测试SQL连接
-         * @return String mysql版本号
+         * @description: 測試SQL連接
+         * @return String mysql版本號
          */
         function sqltest() {
             $serinfo = mysqli_get_server_info($this->con);
             return $serinfo;
         }
+
         /**
-         * @description: 执行SQL连接
-         * @param String sqlcmd SQL语句
-         * @return Array[Int,Int,Array,Int] 状态码,新建的ID,返回的数据,受影响的行数
+         * @description: 執行SQL連接
+         * @param String sqlcmd SQL語句
+         * @return Array[Int,Int,Array,Int] 狀態碼,新建的ID,返回的數據,受影響的行數
          */
         function sqlc($sqlcmd) {
             global $nlcore;
@@ -300,16 +318,18 @@
                 $this->log("[WARN] no_result: ".$result.mysqli_connect_error());
             }
         }
+
         /**
-         * @description: 将字典类型转换为SQL语句
-         * @param Dictionary<String:String> dic 要转换的字典
+         * @description: 將字典類型轉換為SQL語句
+         * @param Dictionary<String:String> dic 要轉換的字典
+         *     key 中如果包含「*」，「*」及之後內容將被捨棄。用於處理要包括同名 key 的需要。
          * @param Int mode 返回字符串的格式
-         *     0; (列1, 列2) VALUES (值1, 值2)
-         *     1: `列1`='值1', `列2`='值2'
-         *     2: `列1`='值1' AND `列2`='值2'
-         *     3: `列1`='值1' OR `列2`='值2'
+         *     0:  (列1, 列2) VALUES (值1, 值2)
+         *     1:  `列1`='值1', `列2`='值2'
+         *     2:  `列1`='值1' AND `列2`='值2'
+         *     3:  `列1`='值1' OR `列2`='值2'
          * @param Boolean islike 模糊搜素
-         * @return String 返回 SQL 语句片段，如果不提供要转换的字典(null)，则返回通用*号
+         * @return String 返回 SQL 語句片段，如果不提供要轉換的字典(null)，則返回通用「*」
          */
         function dic2sql($dic=null,$mode=0,$islike=false) {
             if ($dic === null) return "*";
@@ -318,7 +338,7 @@
                 $keys = "";
                 $vals = "";
                 foreach ($dic as $key => $val) {
-                    $keys .= "`".$key."`, ";
+                    $keys .= "`".explode("*",$key)[0]."`, ";
                     if ($val !== null) {
                         $vals .= "'".$val."', ";
                     } else {
@@ -340,22 +360,24 @@
                 $modestrlen = strlen($modestr);
                 $keyval = "";
                 foreach ($dic as $key => $val) {
+                    $keyc = explode("*",$key)[0];
                     if ($val !== null) {
-                        $keyval .= "`".$key."` ".$like." '".$val."'".$modestr;
+                        $keyval .= "`".$keyc."` ".$like." '".$val."'".$modestr;
                     } else {
                         if ($mode == 2) {
-                            $keyval .= "`".$key."` IS NULL".$modestr;
+                            $keyval .= "`".$keyc."` IS NULL".$modestr;
                         } else {
-                            $keyval .= "`".$key."` ".$like." NULL".$modestr;
+                            $keyval .= "`".$keyc."` ".$like." NULL".$modestr;
                         }
                     }
                 }
                 return substr($keyval, 0, (0-$modestrlen));
             }
         }
+
         /**
-         * @description: 初始化 Redis 数据库
-         * @return Bool true:正常 false:功能禁用 die:失败
+         * @description: 初始化 Redis 資料庫
+         * @return Bool true:正常 false:功能禁用 die:失敗
          */
         function initRedis() {
             if ($this->redis) return true;
@@ -380,8 +402,9 @@
             $this->redis->select($redisconf["rdb_id"]);
             return true;
         }
+
         /**
-         * @description: 结束连接
+         * @description: 結束連接
          */
         function close() {
             if ($this->conR) {
@@ -400,8 +423,9 @@
                 $this->redis = null;
             }
         }
+
         /**
-         * @description: 析构，结束连接，关闭日志文件
+         * @description: 析構，結束連接，關閉日誌文件
          */
         function __destruct() {
             $this->close();
