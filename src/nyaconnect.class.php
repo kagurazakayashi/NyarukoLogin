@@ -276,7 +276,7 @@
         /**
          * @description: 執行SQL連接
          * @param String sqlcmd SQL語句
-         * @return Array[Int,Int,Array,Int] 狀態碼,新建的ID,返回的數據,受影響的行數
+         * @return Array[Int,Int,Array,Int,String] 0狀態碼,1新建的ID,2返回的數據,3受影響的行數,4所使用的SQL語句
          */
         function sqlc($sqlcmd) {
             global $nlcore;
@@ -297,25 +297,32 @@
                         if (count($result_array) > 0) {
                             $this->log("[INFO] CODE:1010000, ID:".$insertid);
                             $this->log("[RESULT] ".json_encode($result_array,true));
-                            return [1010000,$insertid,$result_array,$rowaffected];
+                            return [1010000,$insertid,$result_array,$rowaffected,$sqlcmd];
                         } else {
                             $this->log("[ERROR] arraycount == 0");
                             die($nlcore->msg->m(1,2010102));
                         }
                     } else {
-                        $this->log("[ERROR] arraycount == 0");
-                        die($nlcore->msg->m(1,2010102));
+                        $this->log("[ERROR] arraycount == null");
+                        die($nlcore->msg->m(1,2010104));
                     }
                 } else {
                     $this->log("[INFO] CODE:1010001, ID:".$insertid);
                     $this->log("[RESULT] (null)");
-                    return [1010001,$insertid,null,$rowaffected];
+                    return [1010001,$insertid,null,$rowaffected,$sqlcmd];
                 }
             } else if (mysqli_connect_errno($this->con)) {
                 $this->log("[ERROR] mysqli_connect_error: ".mysqli_connect_error());
                 die($nlcore->msg->m(1,2010101));
             } else {
-                $this->log("[WARN] no_result: ".$result.mysqli_connect_error());
+                if ($rowaffected <= 0) {
+                    $this->log("[ERROR] mysqli_connect_error.");
+                    die($nlcore->msg->m(1,2010106));
+                } else {
+                    $this->log("[WARN] no_result: ".$result.mysqli_connect_error());
+                    // die($nlcore->msg->m(1,2010105));
+                    return [1010004,null,null,$rowaffected,$sqlcmd];
+                }
             }
         }
 

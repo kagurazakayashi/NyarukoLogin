@@ -1002,6 +1002,14 @@ class nyasafe {
         return $applanguages[0];
     }
     /**
+     * @description: 检查是否为媒体文件的命名格式
+     * @param String filename 指定一个语言
+     * @return Bool 是否为媒体文件的命名格式
+     */
+    function ismediafilename($filename) {
+        return preg_match("/[\w\/]*[\d]{11}_[\w]{32}/",$filename);
+    }
+    /**
      * @description: 析构，关闭日志文件
      */
     function __destruct() {
