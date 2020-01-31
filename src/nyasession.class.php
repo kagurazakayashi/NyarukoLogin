@@ -21,8 +21,9 @@ class nyasession {
         $ipid = $jsonarrTotpsecret[3];
         $appid = $jsonarrTotpsecret[4];
         $returnjson = [];
-        if (!isset($jsonarr["token"]) || !$nlcore->safe->is_rhash64($jsonarr["token"])) {
-            $nlcore->msg->stopmsg(2040400,$totpsecret);
+        $usertoken = $jsonarr["token"] ?? null;
+        if (!$usertoken || !$nlcore->safe->is_rhash64($jsonarr["token"])) {
+            $nlcore->msg->stopmsg(2040400,$totpsecret,$usertoken);
         }
         $status = $this->sessionstatuscon($jsonarr["token"],false,$totpsecret);
         if ($status) {

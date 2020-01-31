@@ -159,9 +159,9 @@ class nyafunc {
             $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"]);
             $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"]);
             if (isset($nowuserinfo["belong"])) {
-                array_push($maininfo,$nowuserinfo);
-            } else {
                 array_push($newuserinfos,$nowuserinfo);
+            } else {
+                array_push($maininfo,$nowuserinfo);
             }
         }
         if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);

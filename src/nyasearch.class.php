@@ -48,7 +48,7 @@ class nyasearch {
         $whereMode = "LIKE";
         $tableStr = $nlcore->cfg->db->tables["info"];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,"","AND",true,null,$limit);
-        if ($result[0] != 1010000 && $result[0] != 1010001) $nlcore->msg->stopmsg(2040400,$totpsecret);
+        if ($result[0] != 1010000 && $result[0] != 1010001) $nlcore->msg->stopmsg(2040500,$totpsecret);
         if (isset($result[2])) {
             return $result[2];
         } else {
