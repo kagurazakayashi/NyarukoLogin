@@ -160,27 +160,42 @@ class nyauploadfile {
             // $tmpfile -> $savetmpfile
             move_uploaded_file($nowfile["tmp_name"],$savetmpfile);
             $configfiledata = json_encode($filejsonarr);
-            // if (!$nlcore->db->initRedis()) die();
             // 将转换计划写入 Redis
+            // if (!$nlcore->db->initRedis()) die();
             $redis = $nlcore->db->redis;
-            $rediskey .= $nlcore->safe->millisecondtimestamp();
+            $rediskey .= $nlcore->safe->millisecondtimestamp().$newfilename;
             $redis->set($rediskey,$configfiledata);
             $mserver = $nlcore->cfg->app->mserver;
-            // 调用脚本，后台转换上传的媒体
+            // 記錄日誌
+            $logfilepath = $nlcore->cfg->db->logfile_sh;
+            $logfile = null;
+            if (strlen($logfilepath) > 0) {
+                $logfile = fopen($logfilepath, "a");
+                fwrite($logfile, "===== ".date('Y-m-d H:i:s')." =====\n[REDIS KEY] ".$rediskey."\n[REDIS VAL] ".$configfiledata."\n");
+            }
+            // 調用GO程序，開始進行後台二壓
             if ($mserver != "") {
                 $execlog = "/dev/null";
                 if(($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
                     $curl = curl_init();
-                    curl_setopt($curl,CURLOPT_URL,$mserver.$mediatype["media"]);
+                    $url = $mserver.$mediatype["media"];
+                    curl_setopt($curl,CURLOPT_URL,$url);
                     curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
                     $httpresponse = curl_exec($curl);
                     $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);
                     curl_close($curl);
                     if ($httpCode != "200") {
+                        if (strlen($logfilepath) > 0) {
+                            fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] [!ERROR!] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
+                            fclose($logfile);
+                        }
                         $nlcore->msg->stopmsg(2060201,$totpsecret,strval($httpCode));
+                    } else if (strlen($logfilepath) > 0) {
+                        fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
                     }
                 }
             }
+            fclose($logfile);
             array_push($returnfile,$info);
         }
         $returnarr["filegroups"] = $returnfile;
