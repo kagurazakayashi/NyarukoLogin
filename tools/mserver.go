@@ -27,6 +27,8 @@ import (
 
 func main() {
 	// http.HandleFunc("/", sayhelloName)     //设置访问的路由
+	fmt.Println("STRART gowebserver v1.0")
+
 	http.HandleFunc("/image", convertimage)
 	http.HandleFunc("/video", convertvideo)
 	err := http.ListenAndServe(":1081", nil) //设置监听的端口
@@ -41,7 +43,7 @@ func convertimage(w http.ResponseWriter, r *http.Request) {
 }
 
 func goimage(w http.ResponseWriter) {
-	barname := "/mnt/wwwroot/go/gowebserver/convertimage"
+	barname := "./convertimage"
 	cmd := exec.Command(barname, "-v")
 	// println(barname)
 	stdout, err := cmd.StdoutPipe()
@@ -62,7 +64,7 @@ func convertvideo(w http.ResponseWriter, r *http.Request) {
 
 func govideo(w http.ResponseWriter) {
 	fmt.Println("govideo")
-	barname := "/mnt/wwwroot/go/gowebserver/convertvideo"
+	barname := "./convertvideo"
 	cmd := exec.Command(barname, "-v")
 	// println(barname)
 	stdout, err := cmd.StdoutPipe()
