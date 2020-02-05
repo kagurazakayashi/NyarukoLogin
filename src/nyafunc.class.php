@@ -1,5 +1,6 @@
 <?php
 class nyafunc {
+    private $logfile = null; //记录详细调试信息到文件
     /**
      * @description: 检查登录凭据是邮箱还是手机号
      * @param String loginstr 要检查的登录凭据字符串
@@ -202,16 +203,18 @@ class nyafunc {
     /**
      * @description: 获取上传的某张图片的所有清晰度的完整文件名
      * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
-     * @param String uploaddir 上传文件夹路径（/mnt/d/upload）
      * @return Array<Array> 文件信息数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
      */
-    function imageurl($dirpath) {
+    function imageurl(string $dirpath):array {
         global $nlcore;
         $dirarr = explode(DIRECTORY_SEPARATOR,$nlcore->safe->dirsep($dirpath));
         $file = array_pop($dirarr);
         $dir = implode(DIRECTORY_SEPARATOR,$dirarr);
         $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
-        if (!is_dir($fulldir[0])) return [];
+        if (!is_dir($fulldir[0])) {
+            $this->log("W/ImageURL","找不到文件夹: ".strval($fulldir[0]));
+            return [];
+        }
         $filesnames = scandir($fulldir[0]);
         $sizenames = [];
         $extnames = [];
@@ -224,12 +227,30 @@ class nyafunc {
                 }
             }
         }
+        if (count($sizenames) == 0 || count($extnames) == 0) {
+            $this->log("W/ImageURL","找不到目标图片: ".strval($fulldir[0]));
+            return [];
+        }
         $fileinfo = [
             "path" => $nlcore->safe->urlsep($dir."/".$file),
             "size" => $sizenames,
             "ext" => $extnames
         ];
         return $fileinfo;
+    }
+    /**
+     * @description: 获取上传的多张图片的所有清晰度的完整文件名
+     * @param String dirpaths 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）（使用逗号分隔符）
+     * @param String extname 要补充的扩展名
+     * @return Array<Array> 文件信息二维数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
+     */
+    function imagesurl(string $dirpaths, string $extname=""):array {
+        $fileinfos = [];
+        $dirpatharr = explode(",", $dirpaths);
+        for ($i=0; $i < count($dirpatharr); $i++) {
+            $fileinfos[$i] = $this->imageurl($dirpatharr[$i]);
+        }
+        return $fileinfos;
     }
     /**
      * @description: 获取设备ID
@@ -317,6 +338,35 @@ class nyafunc {
             $nlcore->msg->stopmsg(2050002,$totpsecret);
         }
         return implode("#",$result[2][0]);
+    }
+
+    /**
+     * @description: 记录运行时产生的警告信息
+     * @param String tag 主题
+     * @param String logstr 信息字符串
+     */
+    function log(string $tag,string $logstr):void {
+        global $nlcore;
+        $logfilepath = $nlcore->cfg->db->logfile_nl;
+        if ($logfilepath == null || $logfilepath == "") return;
+        if ($logfilepath) {
+            $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
+            $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
+            $logstr = "[".$nlcore->safe->getdatetime()[1]."][".$ipaddr.$proxyaddr."][".$tag."] ".$logstr.PHP_EOL;
+            if (!$this->logfile) $this->logfile = fopen($logfilepath,"a");
+            fwrite($this->logfile,$logstr);
+        }
+    }
+
+    /**
+     * @description: 析构，关闭日志文件
+     */
+    function __destruct() {
+        if ($this->logfile) {
+            fclose($this->logfile);
+            $this->logfile = null;
+        }
+        unset($this->logfile);
     }
 }
 ?>

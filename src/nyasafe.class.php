@@ -796,12 +796,12 @@ class nyasafe {
     /**
      * @description: 数据发送和接收时进行记录
      * @param String mode 记录类型
-     * @param String logarr 数据数组
+     * @param Array logarr 信息数组
      */
-    function log($mode,$logarr) {
+    function log(string $mode,array $logarr):void {
         global $nlcore;
-        if ($nlcore->cfg->db->logfile_ud == null || $nlcore->cfg->db->logfile_ud == "") return;
         $logfilepath = $nlcore->cfg->db->logfile_ud;
+        if ($logfilepath == null || $logfilepath == "") return;
         if ($logfilepath) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
             $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@".$_SERVER['HTTP_X_FORWARDED_FOR'] : "";
