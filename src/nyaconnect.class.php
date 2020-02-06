@@ -136,7 +136,12 @@
             $columnArr = $this->safe($columnArr);
             $whereDic = $this->safe($whereDic);
             $columnStr = implode('`,`',$columnArr);
-            $whereStr = $this->dic2sql($whereDic,2,$islike);
+            $whereStr = "";
+            if ($whereMode == "IN") {
+                $whereStr = $this->dic2sql($whereDic,4,$islike);
+            } else {
+                $whereStr = $this->dic2sql($whereDic,2,$islike);
+            }
             if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $orderstr = "";
             if ($order) {
@@ -335,6 +340,7 @@
          *     1:  `列1`='值1', `列2`='值2'
          *     2:  `列1`='值1' AND `列2`='值2'
          *     3:  `列1`='值1' OR `列2`='值2'
+         *     4:  `列1` IN (值1, 值2)  *需要特殊字典格式：["列"=>[值1,值2]]
          * @param Boolean islike 模糊搜素
          * @return String 返回 SQL 語句片段，如果不提供要轉換的字典(null)，則返回通用「*」
          */
@@ -355,6 +361,10 @@
                 $keystr = substr($keys, 0, -2);
                 $valstr = substr($vals, 0, -2);
                 return "(".$keystr.") VALUES (".$valstr.")";
+            } else if ($mode == 4) {
+                foreach ($dic as $key => $value) {
+                    return "`".$key."` IN ('".implode("','", $value)."')";
+                }
             } else {
                 $like = "=";
                 if ($islike) $like = "LIKE";
