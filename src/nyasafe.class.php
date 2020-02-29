@@ -775,8 +775,10 @@ class nyasafe {
                     break;
                 }
             }
-            $failinfo = strval($timestamp).'-'.strval(time()).','.strval($tryi).','.strval($numcode);
-            if (!$gaisok) $nlcore->msg->stopmsg(2020411,null,$failinfo);
+            if (!$gaisok) {
+                $failinfo = strval($timestamp).'-'.strval(time()).','.strval($tryi).','.strval($numcode);
+                $nlcore->msg->stopmsg(2020411,null,$failinfo);
+            }
             $jsonarr = json_decode($decrypt_data,true);
             $this->log("DECODE",$jsonarr);
         } else { //未加密

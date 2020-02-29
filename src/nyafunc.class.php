@@ -203,9 +203,10 @@ class nyafunc {
     /**
      * @description: 获取上传的某张图片的所有清晰度的完整文件名
      * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
+     * @param Array none 找不到内容或错误时需要返回的信息
      * @return Array<Array> 文件信息数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
      */
-    function imageurl(string $dirpath):array {
+    function imageurl(string $dirpath, array $none=[]):array {
         global $nlcore;
         $dirarr = explode(DIRECTORY_SEPARATOR,$nlcore->safe->dirsep($dirpath));
         $file = array_pop($dirarr);
@@ -213,7 +214,7 @@ class nyafunc {
         $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
         if (!is_dir($fulldir[0])) {
             $this->log("W/ImageURL","找不到文件夹: ".strval($fulldir[0]));
-            return [];
+            return $none;
         }
         $filesnames = scandir($fulldir[0]);
         $sizenames = [];
@@ -229,7 +230,7 @@ class nyafunc {
         }
         if (count($sizenames) == 0 || count($extnames) == 0) {
             $this->log("W/ImageURL","找不到目标图片: ".strval($fulldir[0]));
-            return [];
+            return $none;
         }
         $fileinfo = [
             "path" => $nlcore->safe->urlsep($dir."/".$file),
@@ -241,16 +242,16 @@ class nyafunc {
     /**
      * @description: 获取上传的多张图片的所有清晰度的完整文件名
      * @param String dirpaths 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）（使用逗号分隔符）
-     * @param String extname 要补充的扩展名
+     * @param Array none 找不到内容或错误时需要返回的信息
      * @return Array<Array> 文件信息二维数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
      */
-    function imagesurl(string $dirpaths, string $extname=""):array {
+    function imagesurl(string $dirpaths, array $none=[]):array {
         $fileinfos = [];
         $dirpatharr = explode(",", $dirpaths);
         for ($i=0; $i < count($dirpatharr); $i++) {
-            $fileinfos[$i] = $this->imageurl($dirpatharr[$i]);
+            $fileinfos[$i] = $this->imageurl($dirpatharr[$i],$none);
         }
-        return $fileinfos;
+        return (count($fileinfos) > 0) ? $fileinfos : $none;
     }
     /**
      * @description: 获取设备ID
