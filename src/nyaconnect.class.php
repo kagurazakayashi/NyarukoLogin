@@ -103,10 +103,10 @@
         }
 
         /**
-         * @description: 將每條SQL語句和返回內容記錄在日誌文件中，通過 nyaconfig 中的此項設定來進行調試。
-         * @param String logstr 要記錄的字符串
+         * @description: 將每條SQL語句和返回內容記錄在日誌檔案中，通過 nyaconfig 中的此項設定來進行偵錯。
+         * @param String logstr 要記錄的字元串
          */
-        function log($logstr) {
+        function log(string $logstr):void {
             global $nlcore;
             if (!isset($nlcore->cfg->db->logfile_db) || $nlcore->cfg->db->logfile_db == null || $nlcore->cfg->db->logfile_db == "") return;
             $logfilepath = $nlcore->cfg->db->logfile_db;
@@ -120,22 +120,32 @@
         }
 
         /**
-         * @description: 查詢數據
-         * @param Array<String> columnArr 要查詢的列名數組
-         * @param String tableStr 錶名
-         * @param String whereDic 條件字典（k:列名=v:預期內容）
-         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
+         * @description: 查詢資料
+         * @param Array<String/Array> columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]
+         * @param String tableStr 表名或 *JOIN*ON* 語句
+         * @param Array<String/String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
+         * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]
-         * @param Int/Array<Int,Int> limit 區間。純數字為前x條，用數組則為[從多少,取多少]
+         * @param Array<Int>/Array<Int,Int> limit 區間， [前N條] 或 [從多少,取多少]
          * @param Boolean islike 模糊搜素（可選，預設關）
          * @return Array<Int,Array> 返回的狀態碼和內容
          */
-        function select($columnArr,$tableStr,$whereDic,$customWhere="",$whereMode="AND",$islike=false,$order=null,$limit=null) {
+        function select(array $columnArr,string $tableStr,array $whereDic,string $customWhere="",string $whereMode="AND",bool $islike=false,array $order=null,array $limit=null):array {
             $this->initReadDbs();
-            $columnArr = $this->safe($columnArr);
+            $columnStr = null;
+            if (is_array($columnArr[0])) {
+                $tablecolumnarr = [];
+                foreach ($columnArr as $tc) {
+                    $table = $this->safe($tc[0]);
+                    $column = $this->safe($tc[1]);
+                    array_push($tablecolumnarr,"`".$table."`.`".$column."`");
+                }
+                $columnStr = implode(",",$tablecolumnarr);
+            } else {
+                $columnStr = "`".implode("`,`",$this->safe($columnArr))."`";
+            }
             $whereDic = $this->safe($whereDic);
-            $columnStr = implode('`,`',$columnArr);
             $whereStr = "";
             if ($whereMode == "IN") {
                 $whereStr = $this->dic2sql($whereDic,4,$islike);
@@ -150,13 +160,16 @@
             }
             if ($limit) {
                 $orderstr.= " limit ";
-                if (is_array($limit)) {
+                if (count($limit) > 1) {
                     $orderstr.= strval($limit[0]).",".strval($limit[1]);
                 } else {
-                    $orderstr.= strval($limit);
+                    $orderstr.= strval($limit[0]);
                 }
             }
-            $sqlcmd = "SELECT `".$columnStr."` FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.$orderstr.";";
+            if (strpos(strtoupper($tableStr),"JOIN") == false) {
+                $tableStr = "`".$tableStr."`";
+            }
+            $sqlcmd = "SELECT ".$columnStr." FROM ".$tableStr." WHERE ".$whereStr.$customWhere.$orderstr.";";
             return $this->sqlc($sqlcmd);
         }
 
@@ -178,7 +191,7 @@
          * @description: 更新數據
          * @param Array<String:String> updateDic 要更新的數據字典
          * @param String tableStr 錶名
-         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
          * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @return Array<Int,Array> 返回的狀態碼和內容
@@ -237,7 +250,7 @@
         /**
          * @description: 刪除數據
          * @param String tableStr 錶名
-         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
          * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @return Array<Int,Array> 返回的狀態碼和內容
@@ -254,7 +267,7 @@
         /**
          * @description: 查詢有多少數據
          * @param String tableStr 錶名
-         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容）
+         * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
          * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @param Boolean islike 模糊搜素（可選，預設關）
@@ -333,7 +346,8 @@
 
         /**
          * @description: 將字典類型轉換為SQL語句
-         * @param Dictionary<String:String> dic 要轉換的字典
+         * @param Dictionary<String:String> dic 要轉換的字典 ["表名"=>"列名"]
+         *     key 中如果包含「.」，则视为 `表名`.`列名`
          *     key 中如果包含「*」，「*」及之後內容將被捨棄。用於處理要包括同名 key 的需要。
          * @param Int mode 返回字符串的格式
          *     0:  (列1, 列2) VALUES (值1, 值2)
@@ -351,7 +365,12 @@
                 $keys = "";
                 $vals = "";
                 foreach ($dic as $key => $val) {
-                    $keys .= "`".explode("*",$key)[0]."`, ";
+                    $tckey = explode(".", $key);
+                    if (count($tckey) > 1) {
+                        $keys .= "`".$tckey[0]."`.`".explode("*",$tckey[1])[0]."`, ";
+                    } else {
+                        $keys .= "`".explode("*",$key)[0]."`, ";
+                    }
                     if ($val !== null) {
                         $vals .= "'".$val."', ";
                     } else {
@@ -363,7 +382,12 @@
                 return "(".$keystr.") VALUES (".$valstr.")";
             } else if ($mode == 4) {
                 foreach ($dic as $key => $value) {
-                    return "`".$key."` IN ('".implode("','", $value)."')";
+                    $tckey = explode(".", $key);
+                    if (count($tckey) > 1) {
+                        return "`".$tckey[0]."`.`".$tckey[1]."` IN ('".implode("','", $value)."')";
+                    } else {
+                        return "`".$key."` IN ('".implode("','", $value)."')";
+                    }
                 }
             } else {
                 $like = "=";
@@ -377,14 +401,19 @@
                 $modestrlen = strlen($modestr);
                 $keyval = "";
                 foreach ($dic as $key => $val) {
-                    $keyc = explode("*",$key)[0];
+                    $tckey = explode(".", $key);
+                    if (count($tckey) > 1) {
+                        $keyc = "`".$tckey[0]."`.`".explode("*",$tckey[1])[0]."`";
+                    } else {
+                        $keyc = "`".explode("*",$key)[0]."`";
+                    }
                     if ($val !== null) {
-                        $keyval .= "`".$keyc."` ".$like." '".$val."'".$modestr;
+                        $keyval .= $keyc." ".$like." '".$val."'".$modestr;
                     } else {
                         if ($mode == 2) {
-                            $keyval .= "`".$keyc."` IS NULL".$modestr;
+                            $keyval .= $keyc." IS NULL".$modestr;
                         } else {
-                            $keyval .= "`".$keyc."` ".$like." NULL".$modestr;
+                            $keyval .= $keyc." ".$like." NULL".$modestr;
                         }
                     }
                 }
