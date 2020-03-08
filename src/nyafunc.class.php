@@ -140,25 +140,31 @@ class nyafunc {
         return $returnarr;
     }
     /**
-     * @description: 取得用户个性化信息
-     * @param String userhash 用户哈希
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
-     * @return Array<Array> 用户信息数组（一个用户可以关联多条信息，但唯一的主信息一直在数组第一位）
+     * @description: 取得使用者個性化資訊
+     * @param String userhash 使用者雜湊
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
+     * @return Array<Array> 使用者資訊陣列（一個使用者可以關聯多條資訊，但唯一的主資訊一直在陣列第一位）
      */
-    function getuserinfo($userhash,$totpsecret) {
+    function getuserinfo($userhash,$totpsecret,$dbresult=null) {
         global $nlcore;
-        $tableStr = $nlcore->cfg->db->tables["info"];
-        $columnArr = ["belong","name","nameid","gender","address","profile","description","image","background"];
-        $whereDic = ["userhash" => $userhash];
-        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        $result = null;
+        if ($dbresult) {
+            $result = $dbresult;
+        } else {
+            $tableStr = $nlcore->cfg->db->tables["info"];
+            $columnArr = ["belong","infotype","name","nameid","gender","pronoun","address","profile","description","image","background"];
+            $whereDic = ["userhash" => $userhash];
+            $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        }
         if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040206,$totpsecret);
         $userinfos = $result[2];
         $newuserinfos = [];
         $maininfo = [];
         for ($i = 0; $i < count($userinfos); $i++) {
             $nowuserinfo = $userinfos[$i];
-            $nowuserinfo["image"] = $this->imageurl($nowuserinfo["image"]);
-            $nowuserinfo["background"] = $this->imageurl($nowuserinfo["background"]);
+            $nowuserinfo["image"] = $this->imagesurl($nowuserinfo["image"]);
+            $nowuserinfo["background"] = $this->imagesurl($nowuserinfo["background"]);
             if (isset($nowuserinfo["belong"])) {
                 array_push($newuserinfos,$nowuserinfo);
             } else {
