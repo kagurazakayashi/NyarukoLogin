@@ -294,12 +294,14 @@ class nyainfomsg {
         2060200 => "内部错误：外部程序失败。",
         ///// A=2\BB=06\CC=02\DD=01 :
         2060201 => "内部错误：未能连接到媒体转换服务。",
-        /// A=2\BB=07 : 用户资料异常 TODO:
+        /// A=2\BB=07 : 用户资料异常
         //// A=2\BB=07\CC=00 : 提交用户查询信息异常
         ///// A=2\BB=07\CC=00\DD=00 :
         2070000 => "内部错误：资料查询参数错误。",
         ///// A=2\BB=07\CC=00\DD=01 :
         2070001 => "错误：沒有找到该用户。",
+        ///// A=2\BB=07\CC=00\DD=02 :
+        2070002 => "错误：读取账户从属列表失败。",
         //// A=2\BB=07\CC=01 : 昵称查询
         ///// A=2\BB=07\CC=01\DD=01 :
         2070101 => "内部错误：昵称需要附加唯一编号或格式不符。",
@@ -353,6 +355,7 @@ class nyainfomsg {
     function stopmsg($code=null,$totpsecret=null,$str="",$showmsg=true) {
         if ($code && $showmsg > 0) {
             global $nlcore;
+            if ($totpsecret == "") $totpsecret = null;
             $msgmode = $totpsecret ? $totpsecret : 1;
             $json = $this->m($msgmode,$code,$str,$totpsecret);
             header('Content-Type:application/json;charset=utf-8');

@@ -144,35 +144,71 @@ class nyafunc {
      * @param String userhash 使用者雜湊
      * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
-     * @return Array<Array> 使用者資訊陣列（一個使用者可以關聯多條資訊，但唯一的主資訊一直在陣列第一位）
+     * @return Array<Array> 當前使用者資訊
      */
-    function getuserinfo($userhash,$totpsecret,$dbresult=null) {
+    function getuserinfo(string $userhash,string $totpsecret="",array $dbresult=null,$getfileinfo=true):array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
             $result = $dbresult;
         } else {
             $tableStr = $nlcore->cfg->db->tables["info"];
-            $columnArr = ["belong","infotype","name","nameid","gender","pronoun","address","profile","description","image","background"];
+            $columnArr = ["userhash","belong","infotype","name","nameid","gender","pronoun","address","profile","description","image","background"];
             $whereDic = ["userhash" => $userhash];
             $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         }
-        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040206,$totpsecret);
-        $userinfos = $result[2];
-        $newuserinfos = [];
-        $maininfo = [];
-        for ($i = 0; $i < count($userinfos); $i++) {
-            $nowuserinfo = $userinfos[$i];
-            $nowuserinfo["image"] = $this->imagesurl($nowuserinfo["image"]);
-            $nowuserinfo["background"] = $this->imagesurl($nowuserinfo["background"]);
-            if (isset($nowuserinfo["belong"])) {
-                array_push($newuserinfos,$nowuserinfo);
-            } else {
-                array_push($maininfo,$nowuserinfo);
-            }
+        if ($result[0] != 1010000 || !isset($result[2][0])) $nlcore->msg->stopmsg(2040206,$totpsecret);
+        $nowuserinfo = $result[2][0];
+        if ($getfileinfo) {
+            $filenone = ["path"=>""];
+            $nowuserinfo["image"] = strlen($nowuserinfo["image"]) > 1 ? $this->imagesurl($nowuserinfo["image"],$filenone) : [$filenone];
+            $nowuserinfo["background"] = strlen($nowuserinfo["background"]) > 1 ? $this->imagesurl($nowuserinfo["background"],$filenone) : [$filenone];
         }
-        if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);
-        return array_merge($maininfo,$newuserinfos);
+        return $nowuserinfo;
+        // 棄用：使用者資訊陣列（一個使用者可以關聯多條資訊，但唯一的主資訊一直在陣列第一位）
+        // $userinfos = $result[2];
+        // $newuserinfos = [];
+        // $maininfo = [];
+        // for ($i = 0; $i < count($userinfos); $i++) {
+        //     $nowuserinfo = $userinfos[$i];
+        //     $nowuserinfo["image"] = $this->imagesurl($nowuserinfo["image"]);
+        //     $nowuserinfo["background"] = $this->imagesurl($nowuserinfo["background"]);
+        //     if (isset($nowuserinfo["belong"])) {
+        //         array_push($newuserinfos,$nowuserinfo);
+        //     } else {
+        //         array_push($maininfo,$nowuserinfo);
+        //     }
+        // }
+        // if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpsecret);
+        // return array_merge($maininfo,$newuserinfos);
+    }
+    /**
+     * @description: 獲取此賬戶所屬的子賬戶資訊
+     * @param String belonguserhash 主賬戶雜湊
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @param Bool getuserinfos 是否查詢每一個子賬戶的詳細資訊
+    */
+    function subaccount(string $belonguserhash,string $totpsecret="",bool $getuserinfos=false) {
+        global $nlcore;
+        $columnArr = ["userhash"];
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $whereDic = ["belong" => $belonguserhash];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        $childs = [];
+        if ($result[0] == 1010000) {
+            $childs = $result[2];
+            if ($getuserinfos) {
+                for ($i=0; $i < count($childs); $i++) {
+                    $nowchild = $childs[$i];
+                    $nowuserinfo = $this->getuserinfo($nowchild["userhash"],$totpsecret);
+                    $childs[$i] = $nowuserinfo;
+                }
+            }
+        } else if ($result[0] == 1010001) {
+        } else {
+            $nlcore->msg->stopmsg(2070002,$totpsecret);
+        }
+        return $childs;
     }
     /**
      * @description: 获取目的地文件夹
