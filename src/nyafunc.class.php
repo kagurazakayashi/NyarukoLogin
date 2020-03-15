@@ -33,7 +33,7 @@ class nyafunc {
         $whereDic = [$logintypearr[$logintype] => $loginstr];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["users"],$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100,$totpsecret);
-        $datacount = $result[2][0];
+        $datacount = intval($result[2][0]["count(*)"]);
         if ($datacount == 0) {
             return false;
         } else if ($datacount == 1) {
@@ -70,7 +70,7 @@ class nyafunc {
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["info"],$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpsecret);
-        $datacount = $result[2][0][0];
+        $datacount = $result[2][0]["count(*)"];
         if ($datacount > 0) return true;
         return false;
     }
@@ -184,15 +184,16 @@ class nyafunc {
     }
     /**
      * @description: 獲取此賬戶所屬的子賬戶資訊
-     * @param String belonguserhash 主賬戶雜湊
+     * @param String mainuserhash 主賬戶雜湊
      * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param Bool getuserinfos 是否查詢每一個子賬戶的詳細資訊
+     * @return Array 子賬戶雜湊和詳細資訊
     */
-    function subaccount(string $belonguserhash,string $totpsecret="",bool $getuserinfos=false) {
+    function subaccount(string $mainuserhash,string $totpsecret="",bool $getuserinfos=false):array {
         global $nlcore;
         $columnArr = ["userhash"];
         $tableStr = $nlcore->cfg->db->tables["info"];
-        $whereDic = ["belong" => $belonguserhash];
+        $whereDic = ["belong" => $mainuserhash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         $childs = [];
         if ($result[0] == 1010000) {
@@ -209,6 +210,33 @@ class nyafunc {
             $nlcore->msg->stopmsg(2070002,$totpsecret);
         }
         return $childs;
+    }
+    /**
+     * @description: 查詢當前子賬戶是否屬於此賬戶
+     * @param String mainuserhash 主賬戶雜湊
+     * @param String subuserhash 子賬戶雜湊
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @param Bool getuserinfos 是否查詢子賬戶的詳細資訊
+     * @return Array [是否屬於,有則返回子賬戶否則返回主賬戶雜湊,可選子賬戶詳細資訊]
+    */
+    function issubaccount(string $mainuserhash,string $subuserhash,string $totpsecret="",bool $getuserinfos=false) {
+        global $nlcore;
+        // if (!$nlcore->safe->is_rhash64($mainuserhash) || !$nlcore->safe->is_rhash64($subuserhash)) $nlcore->msg->stopmsg(2070003,$totpsecret);
+        $columnArr = ["userhash"];
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $whereDic = [
+            "userhash" => $subuserhash,
+            "belong" => $mainuserhash
+        ];
+        $result = $nlcore->db->scount($tableStr,$whereDic);
+        if (intval($result[2][0]["count(*)"]) == 1) {
+            if ($getuserinfos) {
+                $nowuserinfo = $this->getuserinfo($nowchild["userhash"],$totpsecret);
+                return [true,$subuserhash,$nowuserinfo];
+            }
+            return [true,$subuserhash];
+        }
+        return [false,$mainuserhash];
     }
     /**
      * @description: 获取目的地文件夹
