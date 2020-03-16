@@ -208,6 +208,8 @@ class nyalogin {
         } else if ($alertinfo[0] != null) {
             $returnjson = $nlcore->msg->m(0,1020101);
             $returnjson["msg"] = $returnjson["msg"].$alertinfo[1];
+        } else {
+            $returnjson = $nlcore->msg->m(0,1020100);
         }
 
         $returnjson = array_merge($returnjson,[
@@ -230,6 +232,7 @@ class nyalogin {
      * @param Int/String fail 当前登录失败次数，-1 则清除失败次数
      */
     function loginfailuretimes($id,$totpsecret,$fail=-1) {
+        global $nlcore;
         $f = intval($fail) + 1;
         $updateDic = ["fail" => $f];
         $tableStr = $nlcore->cfg->db->tables["users"];
@@ -242,6 +245,7 @@ class nyalogin {
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      */
     function getcaptcha($code,$totpsecret) {
+        global $nlcore;
         $nyacaptcha = new nyacaptcha();
         $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
         $returnjson = $nlcore->msg->m(0,$code);
@@ -295,7 +299,7 @@ class nyalogin {
         if (!isset($maxlogin[$devtype])) $nlcore->msg->stopmsg(2040214,$totpsecret);
         if (count($thisdevsession) >= $maxlogin[$devtype]) {
             //删除本设备的旧登录状态
-            return removeoverflowsession($nyauser,$thisdevsession,$totpsecret);
+            return $this->removeoverflowsession($thisdevsession,$totpsecret);
         }
         return null;
     }

@@ -87,7 +87,7 @@ class nyasignup {
         $pwdend = $nlcore->safe->getdatetime(null,$pwdend)[1];
         $timestr = $datetime[1];
         //加密密码
-        $passwordhash = $nlcore->safe->passwordhash($password,$datetime[0]);
+        $passwordhash = $nlcore->safe->passwordhash($password,$pwdend);
         //注册 users 表
         $insertDic = [
             "hash" => $hash,

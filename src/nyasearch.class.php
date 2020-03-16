@@ -15,14 +15,14 @@ class nyasearch {
             $nlcore->msg->stopmsg(2000101,$totpsecret);
         }
         //检查搜索模式
-        $limit = null;
+        $limit = [];
         if (isset($jsonarr["limit"])) {
             $limits = explode("-", $jsonarr["limit"]);
             $limit = [intval($limits[0]),intval($limits[1])];
         }
         switch ($jsonarr["type"]) {
             case "username":
-                if (!$limit) $limit = 10;
+                if (!$limit) $limit = [10];
                 $result = $this->searchuser($jsonarr["word"],["name","nameid"],$limit,$totpsecret);
                 $returnjson["results"] = $result;
                 break;
@@ -47,7 +47,7 @@ class nyasearch {
         ];
         $whereMode = "LIKE";
         $tableStr = $nlcore->cfg->db->tables["info"];
-        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,"","AND",true,null,$limit);
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,"","AND",true,[],$limit);
         if ($result[0] != 1010000 && $result[0] != 1010001) $nlcore->msg->stopmsg(2040500,$totpsecret);
         if (isset($result[2])) {
             return $result[2];

@@ -680,7 +680,7 @@ class nyasafe {
             ];
             $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
             //空或查询失败都视为不正确
-            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$argv["t"]);
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$j);
             $secret = $result[2][0]["secret"];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
@@ -715,7 +715,11 @@ class nyasafe {
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
         $argv = $this->getarg();
-        $this->log($_SERVER['REQUEST_METHOD'],$argv);
+        if ($argv) {
+            $this->log($_SERVER['REQUEST_METHOD'],$argv);
+        } else {
+            $this->log($_SERVER['REQUEST_METHOD'],["[NULL!]".count($argv)]);
+        }
         //被要求强制进行 TOTP/XXTEA 加密
         if (!isset($argv["j"]) && $nlcore->cfg->app->alwayencrypt) {
             $nlcore->msg->stopmsg(2020415);
@@ -780,7 +784,11 @@ class nyasafe {
                 $nlcore->msg->stopmsg(2020411,null,$failinfo);
             }
             $jsonarr = json_decode($decrypt_data,true);
-            $this->log("DECODE",$jsonarr);
+            if ($jsonarr) {
+                $this->log("DECODE",$jsonarr);
+            } else {
+                $this->log("DECODE",["[ERROR!]".$decrypt_data]);
+            }
         } else { //未加密
             $jsonarr = $argv;
             unset($jsonarr["t"]);

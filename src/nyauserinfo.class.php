@@ -12,7 +12,7 @@ class userinfo {
         $userhash = null;
         if (isset($jsonarr["token"]) || $nlcore->cfg->verify->needlogin["userinfo"]) {
             $usertoken = $jsonarr["token"];
-            if (!$nlcore->safe->is_rhash64($usertoken)) $nlcore->msg->stopmsg(2040402,$totpsecret,"COMM".$usertoken);
+            if (!$nlcore->safe->is_rhash64($usertoken)) $nlcore->msg->stopmsg(2040402,$totpsecret,"UINF".$usertoken);
             $userpwdtimes = $nlcore->sess->sessionstatuscon($usertoken,true,$totpsecret);
             $userhash = $userpwdtimes["userhash"];
             if (!$userpwdtimes) $nlcore->msg->stopmsg(2040400,$totpsecret,"COMM".$usertoken); //token無效
