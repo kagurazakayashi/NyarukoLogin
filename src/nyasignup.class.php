@@ -48,12 +48,11 @@ class nyasignup {
         } else if ($nicknamelen > $newuserconf["nicknamelen"]) {
             //昵称太长
             $nlcore->msg->stopmsg(2040105,$totpsecret,$nickname);
-        } else {
-            //检查异常符号
-            $nlcore->safe->safestr($nickname,true,false,$totpsecret);
-            //检查敏感词
-            $nlcore->safe->wordfilter($nickname,true,$totpsecret);
         }
+        // 檢查異常符號
+        $nlcore->safe->safestr($nickname,true,false,$totpsecret);
+        // 檢查敏感詞
+        $nlcore->safe->wordfilter($nickname,true,$totpsecret);
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user,$totpsecret);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpsecret,$user);
@@ -88,7 +87,7 @@ class nyasignup {
         $timestr = $datetime[1];
         //加密密码
         $passwordhash = $nlcore->safe->passwordhash($password,$pwdend);
-        //注册 users 表
+        // 註冊 users 表
         $insertDic = [
             "hash" => $hash,
             "pwd" => $passwordhash,
@@ -114,8 +113,7 @@ class nyasignup {
         $tableStr = $nlcore->cfg->db->tables["users"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040108,$totpsecret);
-
-        //注册 usergroup 表
+        // 註冊 usergroup 表
         $insertDic = [
             "userhash" => $hash,
             "groupid" => $usergroup
@@ -123,16 +121,14 @@ class nyasignup {
         $tableStr = $nlcore->cfg->db->tables["usergroup"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040109,$totpsecret);
-
-        //注册 protection 表
+        // 註冊 protection 表
         $insertDic = [
             "userhash" => $hash
         ];
         $tableStr = $nlcore->cfg->db->tables["protection"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040110,$totpsecret);
-
-        //注册 info 表
+        // 註冊 info 表
         $insertDic = [
             "userhash" => $hash,
             "name" => $nickname,
@@ -141,8 +137,7 @@ class nyasignup {
         $tableStr = $nlcore->cfg->db->tables["info"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111,$totpsecret);
-
-        //记录 history 表
+        // 記錄 history 表
         $insertDic = [
             "userhash" => $hash,
             "apptoken" => $totptoken,
@@ -154,11 +149,10 @@ class nyasignup {
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
-
+        // 返回到客戶端
         $returnjson["msg"] = $nlcore->msg->imsg[$returnjson["code"]];
         $returnjson["username"] = $nickname."#".$nameid;
         $returnjson["timestamp"] = $timestamp;
-        //返回到客户端
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
     /**

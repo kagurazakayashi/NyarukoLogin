@@ -19,7 +19,7 @@ class userinfo {
         }
         // 取得使用者個性化資訊
         $cuser = $jsonarr["cuser"] ?? $userhash;
-        $userinfo = $nlcore->func->getuserinfo($cuser,$totpsecret,true);
+        $userinfo = $nlcore->func->getuserinfo($cuser,$totpsecret);
         if (count($userinfo) == 0) $nlcore->msg->stopmsg(2070001,$totpsecret);
         $returnjson = [
             "code" => 1000000,
