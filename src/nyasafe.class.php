@@ -783,6 +783,7 @@ class nyasafe {
                 $failinfo = strval($timestamp).'-'.strval(time()).','.strval($tryi).','.strval($numcode);
                 $nlcore->msg->stopmsg(2020411,null,$failinfo);
             }
+            // die(json_encode($decrypt_data));
             $jsonarr = json_decode($decrypt_data,true);
             if ($jsonarr) {
                 $this->log("DECODE",$jsonarr);
@@ -829,6 +830,22 @@ class nyasafe {
             if (!$this->logfile) $this->logfile = fopen($logfilepath,"a");
             fwrite($this->logfile,$logstr);
         }
+    }
+    /**
+     * @description: 驗證該使用者已登入並取得資訊，如果未登入直接返回錯誤資訊到客戶端。
+     * @param Array inputInformation 由 decryptargv 函式返回的結果陣列
+     * @return Array [會話令牌,使用者會話資訊,使用者雜湊]
+     */
+    function userLogged(array $inputinformation):array {
+        global $nlcore;
+        $jsonarr = $inputinformation[0];
+        $totpSecret = $inputinformation[1];
+        $userToken = $jsonarr["token"];
+        if (!$this->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402,$totpSecret,"T-".$userToken);
+        $userSessionInfo = $nlcore->sess->sessionstatuscon($userToken,true,$totpSecret);
+        if (!$userSessionInfo) $nlcore->msg->stopmsg(2040400,$totpSecret,"T-".$userToken);
+        $userHash = $userSessionInfo["userhash"];
+        return [$userToken,$userSessionInfo,$userHash];
     }
     /**
      * @description: 批量替换指定字符
