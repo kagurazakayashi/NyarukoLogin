@@ -21,10 +21,8 @@ class userinfo {
         $cuser = $jsonarr["cuser"] ?? $userhash;
         $userinfo = $nlcore->func->getuserinfo($cuser,$totpsecret);
         if (count($userinfo) == 0) $nlcore->msg->stopmsg(2070001,$totpsecret);
-        $returnjson = [
-            "code" => 1000000,
-            "uinfo" => $userinfo
-        ];
+        $returnjson = $nlcore->msg->m(0,1030300);
+        $returnjson["uinfo"] = $userinfo;
         echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
     }
 }

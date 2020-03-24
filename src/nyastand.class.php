@@ -4,21 +4,17 @@
  * @package NyarukoLogin
 */
 class stand {
-    function addstand():void {
-        global $nlcore;
+    function addstand(nyacore $nlcore, array $inputinformation, array $sessioninformation):array {
         // IP檢查和解密客戶端提交的資訊
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("signup");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
-        $ipid = $jsonarrTotpsecret[3];
-        $appid = $jsonarrTotpsecret[4];
+        $jsonarr = $inputinformation[0];
+        $totpsecret = $inputinformation[1];
+        $totptoken = $inputinformation[2];
+        $ipid = $inputinformation[3];
+        $appid = $inputinformation[4];
         // 檢查用戶是否登入
-        $usertoken = $jsonarr["token"];
-        if (!$nlcore->safe->is_rhash64($usertoken)) $nlcore->msg->stopmsg(2040402,$totpsecret,"T-".$usertoken);
-        $userpwdtimes = $nlcore->sess->sessionstatuscon($usertoken,true,$totpsecret);
-        $userhash = $userpwdtimes["userhash"];
-        if (!$userpwdtimes) $nlcore->msg->stopmsg(2040400,$totpsecret,"T-".$usertoken); //token無效
+        $usertoken = $sessioninformation[0];
+        $usersessioninfo = $sessioninformation[1];
+        $userhash = $sessioninformation[2];
         // 檢查必須提供的參數輸入是否齊全
         $getkeys = ["token","nickname"];
         if ($nlcore->safe->keyinarray($jsonarr,$getkeys) > 0) $nlcore->msg->stopmsg(2000101,$totpsecret);
@@ -85,7 +81,7 @@ class stand {
         // 註冊 info 表
         $insertDic = [
             "userhash" => $hash,
-            "belong" => $usertoken,
+            "belong" => $userhash,
             "name" => $nickname,
             "nameid" => $nameid
         ];
@@ -109,7 +105,7 @@ class stand {
         $returnjson["username"] = $nickname."#".$nameid;
         $returnjson["userhash"] = $hash;
         $returnjson["mainuser"] = $usertoken;
-        echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
+        return $returnjson;
     }
 }
 ?>
