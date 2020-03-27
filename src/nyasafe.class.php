@@ -544,7 +544,7 @@ class nyasafe {
             if ($result[0] != 1010001) return [2020404];
             $ipid = $result[1];
         }
-        if (!$ipid) return [2020402];
+        if ($ipid == null) return [2020402];
         return [0,$ipid];
     }
     /**
@@ -616,27 +616,27 @@ class nyasafe {
     /**
      * @description: 检查数据提交方式是否被允许，并自动选择提交方式获取数据
      * @param String allowmethod 允许的提交方式数组
-     * @return Array/String 客户端提交的数据
+     * @return Array 客户端提交的数据
      */
     function getarg($allowmethod=["POST","GET"]) {
         global $nlcore;
-        $argv = null;
+        $argvs = null;
         if (!isset($_SERVER['REQUEST_METHOD'])) die(header('HTTP/1.1 405 Method Not Allowed'));
         $method = $_SERVER['REQUEST_METHOD'];
         if ($method == "POST" && in_array("POST",$allowmethod)) {
-            $argv = $_POST;
+            $argvs = $_POST;
         } else if ($method == "GET" && in_array("GET",$allowmethod)) {
-            $argv = $_GET;
+            $argvs = $_GET;
         } else if ($method == "FILES" && in_array("FILES",$allowmethod)) {
-            $argv = $_FILES;
-        } else if ($method == "PUT" && in_array("PUT",$allowmethod)) {
-            $argv = $_PUT;
+            $argvs = $_FILES;
+        // } else if ($method == "PUT" && in_array("PUT",$allowmethod)) {
+        //     $argvs = $_PUT;
         } else if ($method == "DELETE" && in_array("DELETE",$allowmethod)) {
-            $argv = $_SERVER['REQUEST_URI'];
+            $argvs = $_SERVER['REQUEST_URI'];
         } else {
             die(header('HTTP/1.1 405 Method Not Allowed'));
         }
-        return $argv;
+        return $argvs;
     }
     /**
      * @description: [O数据发送]从数组创建JSON、加密、base64编码、变体
@@ -684,7 +684,7 @@ class nyasafe {
             $secret = $result[2][0]["secret"];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
-            $timestamp = isset($argv["s"]) ? $argv["s"] : time();
+            $timestamp = isset($argvs["s"]) ? $argvs["s"] : time();
             header('Content-Type:application/json;charset=utf-8');
             $totptimeslice = 3;
             $authcode = [];
@@ -714,25 +714,25 @@ class nyasafe {
             if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
-        $argv = $this->getarg();
-        if ($argv) {
-            $this->log($_SERVER['REQUEST_METHOD'],$argv);
+        $argvs = $this->getarg();
+        if ($argvs) {
+            $this->log($_SERVER['REQUEST_METHOD'],$argvs);
         } else {
-            $this->log($_SERVER['REQUEST_METHOD'],["[NULL!]".count($argv)]);
+            $this->log($_SERVER['REQUEST_METHOD'],["[NULL!]".count($argvs)]);
         }
         //被要求强制进行 TOTP/XXTEA 加密
-        if (!isset($argv["j"]) && $nlcore->cfg->app->alwayencrypt) {
+        if (!isset($argvs["j"]) && $nlcore->cfg->app->alwayencrypt) {
             $nlcore->msg->stopmsg(2020415);
         }
-        if (!isset($argv["t"])) { //检查是否提供了应用令牌
+        if (!isset($argvs["t"])) { //检查是否提供了应用令牌
             $nlcore->msg->stopmsg(2020408);
         }
-        if (!$this->is_rhash64($argv["t"])) { //检查应用令牌格式
+        if (!$this->is_rhash64($argvs["t"])) { //检查应用令牌格式
             $nlcore->msg->stopmsg(2020417);
         }
         //检查数据超长
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->maxlen_get : $nlcore->cfg->app->maxlen_post;
-        $arglen = strlen(implode("", $argv));
+        $arglen = strlen(implode("", $argvs));
         if ($arglen > $jsonlen) $nlcore->msg->stopmsg(2020414,null,$arglen);
         //检查 IP 是否被封禁
         $stime = $this->getdatetime();
@@ -742,23 +742,23 @@ class nyasafe {
         $ipid = $result[1];
         $jsonarr = null;
         $secret = null;
-        if (isset($argv["j"])) { //已加密，需要解密
+        if (isset($argvs["j"])) { //已加密，需要解密
             //检查加密字串是否有非法字符
-            if (!$this->isbase64($argv["j"],true)) {
+            if (!$this->isbase64($argvs["j"],true)) {
                 $nlcore->msg->stopmsg(2020410);
             }
             //查询apptoken对应的secret
             $datadic = [
-                "apptoken" => $argv["t"]
+                "apptoken" => $argvs["t"]
             ];
             $result = $nlcore->db->select(["secret"],$nlcore->cfg->db->tables["totp"],$datadic);
             //空或查询失败都视为不正确
-            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$argv["t"]);
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409,null,$argvs["t"]);
             $secret = $result[2][0]["secret"];
             //使用secret生成totp数字
             $ga = new PHPGangsta_GoogleAuthenticator();
             $gaisok = false;
-            $timestamp = isset($argv["s"]) ? $argv["s"] : time();
+            $timestamp = isset($argvs["s"]) ? $argvs["s"] : time();
             if ($timestamp > 1000000000000) {
                 $timestamp = intval($timestamp / 1000);
             }
@@ -771,7 +771,7 @@ class nyasafe {
                 //MD5
                 $numcode = md5($secret.$numcode);
                 //解密base64
-                $xxteadata = $this->urlb64decode($argv["j"]);
+                $xxteadata = $this->urlb64decode($argvs["j"]);
                 //使用totp数字解密
                 $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
                 if (strlen($decrypt_data) > 0) {
@@ -791,7 +791,7 @@ class nyasafe {
                 $this->log("DECODE",["[ERROR!]".$decrypt_data]);
             }
         } else { //未加密
-            $jsonarr = $argv;
+            $jsonarr = $argvs;
             unset($jsonarr["t"]);
         }
         //解析json
@@ -802,7 +802,7 @@ class nyasafe {
         if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64)) $nlcore->msg->stopmsg(2020401);
         $appid = $this->chkappsecret($jsonarr["appsecret"]);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
-        return [$jsonarr,$secret,$argv["t"],$ipid,$appid];
+        return [$jsonarr,$secret,$argvs["t"],$ipid,$appid];
     }
     /**
      * @description: 数据发送和接收时进行记录

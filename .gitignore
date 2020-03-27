@@ -21,3 +21,4 @@ tools/go/convertfile/tofile
 bin/
 *.bak
 git_stats
+.idea

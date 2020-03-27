@@ -1,0 +1,23 @@
+# vim /etc/systemd/system/nyaconvert.service
+[Unit]
+Description=NyarukoLogin Convert
+Documentation=https://github.com/kagurazakayashi/NyarukoLogin
+After=network.target
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/www/wwwroot/zyz/user/bin/
+ExecStart=/www/wwwroot/zyz/user/bin/mserver
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+
+# systemctl daemon-reload
+# systemctl start nyaconvert.service
+# systemctl status nyaconvert.service
