@@ -144,7 +144,7 @@ class nyasafe {
         global $nlcore;
         $timestampabs = abs($timestamp1 - $timestamp2);
         if ($timestampabs > $nlcore->cfg->app->timestamplimit) {
-            $nlcore->msg->stopmsg(2020413);
+            $nlcore->msg->stopmsg(2020413,null,$timestamp1."-".$timestamp2);
         }
     }
     /**

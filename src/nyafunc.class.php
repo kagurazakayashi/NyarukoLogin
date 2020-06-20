@@ -282,11 +282,12 @@ class nyafunc {
         $file = array_pop($dirarr);
         $dir = implode(DIRECTORY_SEPARATOR,$dirarr);
         $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
-        if (!is_dir($fulldir[0])) {
-            $this->log("W/ImageURL","找不到文件夹: ".strval($fulldir[0]));
+        $nowdir = $fulldir[0];
+        if (!is_dir($nowdir)) {
+            $this->log("W/ImageURL","找不到文件夹: ".strval($nowdir));
             return $none;
         }
-        $filesnames = scandir($fulldir[0]);
+        $filesnames = scandir($nowdir);
         $sizenames = [];
         $extnames = [];
         foreach ($filesnames as $nowfilename) {
@@ -299,7 +300,7 @@ class nyafunc {
             }
         }
         if (count($sizenames) == 0 || count($extnames) == 0) {
-            $this->log("W/ImageURL","找不到目标图片: ".strval($fulldir[0]));
+            $this->log("W/ImageURL","找不到目标图片: ".strval($nowdir).$file);
             return $none;
         }
         $fileinfo = [
