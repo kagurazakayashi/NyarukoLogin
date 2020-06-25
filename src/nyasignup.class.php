@@ -2,14 +2,13 @@
 require_once "nyacaptcha.class.php";
 require_once "nyaverification.class.php";
 class nyasignup {
-    function adduser() {
-        global $nlcore;
+    function adduser(nyacore $nlcore, array $inputInformation):array {
         //IP检查和解密客户端提交的信息
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("signup");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
-        $ipid = $jsonarrTotpsecret[3];
+        $inputInformation = $nlcore->safe->decryptargv("signup");
+        $jsonarr = $inputInformation[0];
+        $totpsecret = $inputInformation[1];
+        $totptoken = $inputInformation[2];
+        $ipid = $inputInformation[3];
         $returnjson = [];
         //检查参数输入是否齐全
         $getkeys = ["captcha","password","user","nickname"];
@@ -150,10 +149,11 @@ class nyasignup {
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpsecret);
         // 返回到客戶端
+        $returnjson["userhash"] = $hash;
         $returnjson["msg"] = $nlcore->msg->imsg[$returnjson["code"]];
         $returnjson["username"] = $nickname."#".$nameid;
         $returnjson["timestamp"] = $timestamp;
-        echo $nlcore->safe->encryptargv($returnjson,$totpsecret);
+        return $returnjson;
     }
     /**
      * @description: 仅做测试用，生成加密后密码
@@ -161,7 +161,7 @@ class nyasignup {
      * @param String timestr 密码到期时间的时间文本
      * @return 直接返回加密后的内容到客户端
      */
-    function passwordhashtest($password,$timestr) {
+    function passwordhashtest(string $password,string $timestr):string {
         global $nlcore;
         echo $nlcore->safe->passwordhash($password,$timestr);
     }
