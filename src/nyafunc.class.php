@@ -284,7 +284,7 @@ class nyafunc {
         $fulldir = $this->savepath("uploaddir",$mkdir=false,$dir);
         $nowdir = $fulldir[0];
         if (!is_dir($nowdir)) {
-            $this->log("W/ImageURL","找不到文件夹: ".strval($nowdir));
+            $this->log("W/MediaURL","找不到文件夹: ".strval($nowdir));
             return $none;
         }
         $filesnames = scandir($nowdir);
@@ -300,13 +300,33 @@ class nyafunc {
             }
         }
         if (count($sizenames) == 0 || count($extnames) == 0) {
-            $this->log("W/ImageURL","找不到目标图片: ".strval($nowdir).$file);
+            $this->log("W/MediaURL","找不到目标图片: ".strval($nowdir).$file);
             return $none;
+        }
+        $recommendsize = $nlcore->cfg->app->recommendsize;
+        $fsize = "";
+        for ($i=0; $i < count($recommendsize); $i++) {
+            $nowsize = $recommendsize[$i];
+            if (in_array($nowsize,$sizenames)) {
+                $fsize = $nowsize;
+                break;
+            }
+        }
+        $recommendext = $nlcore->cfg->app->recommendext;
+        $fext = "";
+        for ($i=0; $i < count($recommendext); $i++) {
+            $nowext = $recommendext[$i];
+            if (in_array($nowext,$extnames)) {
+                $fext = $nowext;
+                break;
+            }
         }
         $fileinfo = [
             "path" => $nlcore->safe->urlsep($dir."/".$file),
             "size" => $sizenames,
-            "ext" => $extnames
+            "fsize" => $fsize,
+            "ext" => $extnames,
+            "fext" => $fext
         ];
         return $fileinfo;
     }

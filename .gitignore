@@ -13,6 +13,7 @@ upload
 upload_tmp
 zeze
 log
+*.log
 .user.ini
 ClearSensitiveInformation
 tests/testconfig.json
