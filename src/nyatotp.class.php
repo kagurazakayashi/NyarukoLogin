@@ -50,7 +50,7 @@ class nyatotp {
         //检查客户端提供的时间差异，没有问题则用客户端时间
         $timeSlice = null;
         if (isset($argv["timestamp"])) {
-            $ltimestamp = $argv["timestamp"];
+            $ltimestamp = intval($argv["timestamp"]);
             $nlcore->safe->timestampdiff($time,$ltimestamp);
             $timeSlice = floor($ltimestamp / 30);
         }

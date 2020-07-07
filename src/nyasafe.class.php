@@ -578,20 +578,17 @@ class nyasafe {
         return $ip;
     }
     /**
-     * @description: 检查当前IP是否到达接口访问频率限制
-     * @param String module 功能名称（$conf->limittime）
-     * @param Array<String,String> module 自定义次数限制参数
-     * @return Array<Int,Int> [状态代码,第几次请求]
-     * 如果未加载Redis则自动关闭此功能，直接返回通过，请求数返回-1
+     * @description: 檢查當前IP是否到達介面訪問頻率限制
+     * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
+     * @param Int interval 在多少秒內
+     * @param Int times 允許請求多少次
+     * @param Array<String,String> module 自定義次數限制參數
+     * @return Array<Int,Int> [狀態碼,第幾次請求]
+     * 如果未載入Redis則自動關閉此功能，直接返回通過，請求數返回-1
      */
-    function frequencylimitation($module) {
+    function frequencylimitation(string $module="", int $interval=PHP_INT_MAX, int $times=PHP_INT_MAX) {
         global $nlcore;
-        $interval = PHP_INT_MAX;
-        $times = PHP_INT_MAX;
-        if (is_array($module)) {
-            $interval = $module[0];
-            $times = $module[1];
-        } else {
+        if (strlen($module) > 0) {
             $conf = $nlcore->cfg->app->limittime[$module];
             $interval = $conf[0];
             $times = $conf[1];
@@ -702,15 +699,17 @@ class nyasafe {
     /**
      * @description: [I数据接收]解析变体、base64解码、解密、解析JSON到数组
      * GET/POST参数：t=apptoken，j=JSON内容
-     * @param String module 功能名称（$conf->limittime）
+     * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
+     * @param Int interval 在多少秒內
+     * @param Int times 允許請求多少次
      * @param Array<String,String> module 自定义次数限制参数
      * @return Array<String> [〇解析后的JSON内容数组,①TOTP的secret,②TOTP的token,③IP地址ID,④APPID]
      */
-    function decryptargv($module=null) {
+    function decryptargv(string $module="", int $interval=PHP_INT_MAX, int $times=PHP_INT_MAX) {
         global $nlcore;
         //检查IP访问频率
-        if ($module) {
-            $result = $this->frequencylimitation($module);
+        if (strlen($module) > 0) {
+            $result = $this->frequencylimitation($module,$interval,$times);
             if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
         }
         //获取参数，验证格式（t=哈希、j=变形base64）
