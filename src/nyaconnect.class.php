@@ -88,7 +88,7 @@
          * @return String/Array 清理後的數組/字符串
          */
         function safe($data) {
-            $newdata;
+            $newdata = null;
             if (is_array($data)) {
                 $newdata = [];
                 foreach ($data as $key => $value) {

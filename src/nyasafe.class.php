@@ -765,14 +765,22 @@ class nyasafe {
             $tryi = 0;
             for ($i = -$totptimeslice; $i <= $totptimeslice; ++$i) {
                 $tryi++;
-                $timeSlice = floor($timestamp / 30) + $i;
-                $numcode = $ga->getCode($secret,$timeSlice)+$nlcore->cfg->app->totpcompensate;
+                $ntimestamp = $timestamp + ($i * 30);
+                $timeSlice = floor($ntimestamp / 30);
+                // otpauth://totp/ZeZeServerTOTP:25BA5YTKKYVBZPYEEB6LJF7WTFPOMRHNY2P6YE7VRJNLAXV5KL53KHREF235OFHW?secret=25BA5YTKKYVBZPYEEB6LJF7WTFPOMRHNY2P6YE7VRJNLAXV5KL53KHREF235OFHW&issuer=ZeZeServerTOTP
+                $numcode = intval($ga->getCode($secret,$timeSlice));
+                if ($numcode < 0 || $numcode > 999999) {
+                    $nlcore->msg->stopmsg(2020418,null,strval($numcode));
+                } else if ($numcode < 100000) {
+                    $numcode = str_pad($numcode,6,"0",STR_PAD_LEFT);
+                }
+                $numcode = strval($numcode)+$nlcore->cfg->app->totpcompensate;
                 //MD5
-                $numcode = md5($secret.$numcode);
+                $numcode5 = md5($secret.$numcode);
                 //解密base64
                 $xxteadata = $this->urlb64decode($argvs["j"]);
                 //使用totp数字解密
-                $decrypt_data = xxtea_decrypt($xxteadata, $numcode);
+                $decrypt_data = xxtea_decrypt($xxteadata, $numcode5);
                 if (strlen($decrypt_data) > 0) {
                     $gaisok = true;
                     break;
@@ -1046,4 +1054,3 @@ class nyasafe {
         unset($this->logfile);
     }
 }
-?>
