@@ -252,19 +252,17 @@ class nyasafe {
      * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return String 经过过滤的字符
      */
-    function safestr($str,$errdie=true,$dhtml=false,$totpsecret=null) {
+    function safestr($str,$errdie=true,$dhtml=false,$totpSecret=null) {
         global $nlcore;
         $ovalue = $str;
-        if (get_magic_quotes_gpc()) {
-            $str = stripslashes($str);
-        }
+        $str = stripslashes($str);
         if ($str != $ovalue && $errdie == true) {
-            $nlcore->msg->stopmsg(2020101,$totpsecret);
+            $nlcore->msg->stopmsg(2020101,$totpSecret);
         }
         if ($dhtml) {
             $str = htmlspecialchars($str);
             if ($str != $ovalue && $errdie == true) {
-                $nlcore->msg->stopmsg(2020103,$totpsecret);
+                $nlcore->msg->stopmsg(2020103,$totpSecret);
             }
         }
         return $str;
@@ -455,7 +453,7 @@ class nyasafe {
      * @return Array<Bool,String,String> [是否包含违禁词,河蟹后的字符串,触发的违禁词] ，如果不包含违禁词，返回 [false,原字符串]
      * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
      */
-    function wordfilter($str,$errdie=true,$totpsecret=null) {
+    function wordfilter($str,$errdie=true,$totpSecret=null) {
         global $nlcore;
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordjson = ""; //词库
@@ -467,14 +465,14 @@ class nyasafe {
             }
             $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
         } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
-            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302,$totpsecret);
+            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302,$totpSecret);
             $wordjson = fread($jfile,filesize($wordfilterpcfg["jsonfile"]));
             fclose($jfile);
         } else {
             return [false,$str];
         }
         //词汇资料库加载失败
-        if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303,$totpsecret);
+        if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303,$totpSecret);
         //删除输入字符串特殊符号
         $punctuations = $this->mbStrSplit($wordfilterpcfg["punctuations"]);
         foreach($punctuations as $punctuationword) {
@@ -494,7 +492,7 @@ class nyasafe {
             //同时满足多条件
             $nstr = preg_replace('/'.join(explode($wordfilterpcfg["wildcardchar"], $keyword),'.{1,'.$wordfilterpcfg["maxlength"].'}').'/',$replacechar,$nstr);
             if (strcmp($str,$nstr) != 0) {
-                if ($errdie) $nlcore->msg->stopmsg(2020300,$totpsecret);
+                if ($errdie) $nlcore->msg->stopmsg(2020300,$totpSecret);
                 return [true,$nstr,$keyword];
             }
         }
@@ -739,7 +737,7 @@ class nyasafe {
         $stime = $stime[1];
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
-        $jsonarr = null;
+        $argReceived = null;
         $secret = null;
         if (isset($argvs["j"])) { //已加密，需要解密
             //检查加密字串是否有非法字符
@@ -791,25 +789,25 @@ class nyasafe {
                 $nlcore->msg->stopmsg(2020411,null,$failinfo);
             }
             // die(json_encode($decrypt_data));
-            $jsonarr = json_decode($decrypt_data,true);
-            if ($jsonarr) {
-                $this->log("DECODE",$jsonarr);
+            $argReceived = json_decode($decrypt_data,true);
+            if ($argReceived) {
+                $this->log("DECODE",$argReceived);
             } else {
                 $this->log("DECODE",["[ERROR!]".$decrypt_data]);
             }
         } else { //未加密
-            $jsonarr = $argvs;
-            unset($jsonarr["t"]);
+            $argReceived = $argvs;
+            unset($argReceived["t"]);
         }
         //解析json
-        if (!$jsonarr || count($jsonarr) == 0) $nlcore->msg->stopmsg(2020400);
+        if (!$argReceived || count($argReceived) == 0) $nlcore->msg->stopmsg(2020400);
         //检查API版本是否一致
-        if (!isset($jsonarr["apiver"]) || intval($jsonarr["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
+        if (!isset($argReceived["apiver"]) || intval($argReceived["apiver"]) != 1) $nlcore->msg->stopmsg(2020412);
         //检查APP是否有效
-        if (!isset($jsonarr["appsecret"]) || !$this->isNumberOrEnglishChar($jsonarr["appsecret"],64,64)) $nlcore->msg->stopmsg(2020401);
-        $appid = $this->chkappsecret($jsonarr["appsecret"]);
+        if (!isset($argReceived["appsecret"]) || !$this->isNumberOrEnglishChar($argReceived["appsecret"],64,64)) $nlcore->msg->stopmsg(2020401);
+        $appid = $this->chkappsecret($argReceived["appsecret"]);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
-        return [$jsonarr,$secret,$argvs["t"],$ipid,$appid];
+        return [$argReceived,$secret,$argvs["t"],$ipid,$appid];
     }
     /**
      * @description: 数据发送和接收时进行记录
@@ -845,9 +843,9 @@ class nyasafe {
      */
     function userLogged(array $inputinformation):array {
         global $nlcore;
-        $jsonarr = $inputinformation[0];
+        $argReceived = $inputinformation[0];
         $totpSecret = $inputinformation[1];
-        $userToken = $jsonarr["token"];
+        $userToken = $argReceived["token"];
         if (!$this->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402,$totpSecret,"T-".$userToken);
         $userSessionInfo = $nlcore->sess->sessionstatuscon($userToken,true,$totpSecret);
         if (!$userSessionInfo) $nlcore->msg->stopmsg(2040400,$totpSecret,"T-".$userToken);

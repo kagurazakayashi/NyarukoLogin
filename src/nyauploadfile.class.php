@@ -6,13 +6,13 @@ class nyauploadfile {
 
     function getuploadfile($echojson=true) {
         global $nlcore;
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
-        $ipid = $jsonarrTotpsecret[3];
-        $appid = $jsonarrTotpsecret[4];
-        if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104,$totpsecret);
+        $inputInformation = $nlcore->safe->decryptargv("session");
+        $argReceived = $inputInformation[0];
+        $totpSecret = $inputInformation[1];
+        $totpToken = $inputInformation[2];
+        $ipid = $inputInformation[3];
+        $appid = $inputInformation[4];
+        if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104,$totpSecret);
         $uploadconf = $nlcore->cfg->app->upload;
         $uploadconf["type"] = $nlcore->cfg->app->uploadtype;
         //整理文件详细信息数组
@@ -35,7 +35,7 @@ class nyauploadfile {
             $info = [];
             $tmpfile = $nowfile["tmp_name"];
             if (is_numeric($mediatype)) {
-                $nlcore->msg->stopmsg($mediatype,$totpsecret);
+                $nlcore->msg->stopmsg($mediatype,$totpSecret);
             } else {
                 $info["type"] = $mediatype;
                 $info["code"] = $code;
@@ -62,7 +62,7 @@ class nyauploadfile {
                 "info" => $mediainfojson
             ];
             $returnfilepath = $nlcore->safe->urlsep($relativepaths.$newfilename);
-            $useto = isset($jsonarr["usefor"]) ? $jsonarr["usefor"] : "def";
+            $useto = isset($argReceived["usefor"]) ? $argReceived["usefor"] : "def";
             //是视频还是图片？
             if ($mediatype["media"] == "image") {
                 $rediskey = $nlcore->cfg->db->redis_tables["convertimage"];
@@ -74,7 +74,7 @@ class nyauploadfile {
                 if (isset($nlcore->cfg->app->imageresize[$useto])) {
                     $imageresize = $nlcore->cfg->app->imageresize[$useto];
                 } else {
-                    $nlcore->msg->stopmsg(2050106,$totpsecret);
+                    $nlcore->msg->stopmsg(2050106,$totpSecret);
                 }
                 // 创建json计划文件
                 $sizesavepath = [];
@@ -114,7 +114,7 @@ class nyauploadfile {
                 if (isset($nlcore->cfg->app->videoresize[$useto])) {
                     $videoresize = $nlcore->cfg->app->videoresize[$useto];
                 } else {
-                    $nlcore->msg->stopmsg(2050106,$totpsecret);
+                    $nlcore->msg->stopmsg(2050106,$totpSecret);
                 }
                 $mediainfojson = $this->getvideomediainfo($tmpfile,["width","height","duration","bit_rate"]);
                 $mediainfojson["width"] = intval($mediainfojson["width"]);
@@ -189,7 +189,7 @@ class nyauploadfile {
                             fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] [!ERROR!] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
                             fclose($logfile);
                         }
-                        $nlcore->msg->stopmsg(2060201,$totpsecret,strval($httpCode));
+                        $nlcore->msg->stopmsg(2060201,$totpSecret,strval($httpCode));
                     } else if (strlen($logfilepath) > 0) {
                         fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
                     }
@@ -201,7 +201,7 @@ class nyauploadfile {
         $returnarr["filegroups"] = $returnfile;
         $returnarr["code"] = 1000000;
         $returnarr["filecount"] = count($files);
-        if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpsecret);
+        if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpSecret);
         return $returnarr;
     }
 

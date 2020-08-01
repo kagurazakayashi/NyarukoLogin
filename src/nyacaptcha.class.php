@@ -19,10 +19,10 @@ class nyacaptcha {
      */
     function getcaptcha($extnow=true,$showcaptcha=false,$showimage=false) {
         global $nlcore;
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("captcha");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
+        $inputInformation = $nlcore->safe->decryptargv("captcha");
+        $argReceived = $inputInformation[0];
+        $totpSecret = $inputInformation[1];
+        $totpToken = $inputInformation[2];
         $captchaconf = $nlcore->cfg->verify->captcha;
         $c_time = $nlcore->safe->getdatetime();
         $timestamp = $c_time[0];
@@ -56,7 +56,7 @@ class nyacaptcha {
         }
         $tableStr = $nlcore->cfg->db->tables["totp"];
         $whereDic = [
-            "apptoken" => $totptoken
+            "apptoken" => $totpToken
         ];
         $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         $retuenarr = [
@@ -71,7 +71,7 @@ class nyacaptcha {
             // if (!$extnow) $retuenarr["file"] = $imgpath;
         // }
         if ($extnow) {
-            echo $nlcore->safe->encryptargv($retuenarr,$totpsecret);
+            echo $nlcore->safe->encryptargv($retuenarr,$totpSecret);
         } else {
             return $retuenarr;
         }
@@ -86,12 +86,12 @@ class nyacaptcha {
      * @param String totpsecret totp加密码
      * @return Array<String> 验证码相关信息（其中code、msg会不同）
      */
-    function verifyfailgetnew($code,$totpsecret) {
+    function verifyfailgetnew($code,$totpSecret) {
         global $nlcore;
         $retuenarr = $this->getcaptcha(false);
         $retuenarr["code"] = $code;
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
-        echo $nlcore->safe->encryptargv($retuenarr,$totpsecret);
+        echo $nlcore->safe->encryptargv($retuenarr,$totpSecret);
         return $retuenarr;
     }
 
@@ -101,26 +101,26 @@ class nyacaptcha {
      * @param String totpsecret totp加密码
      * @return Bool 是否可以通行
      */
-    function verifycaptcha($totptoken,$totpsecret,$captchacode) {
+    function verifycaptcha($totpToken,$totpSecret,$captchacode) {
         global $nlcore;
         $columnArr = ["id","c_code","c_time"];
         $tableStr = $nlcore->cfg->db->tables["totp"];
         $whereDic = [
-            "apptoken" => $totptoken
+            "apptoken" => $totpToken
         ];
         $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($dbreturn[0] != 1010000) {
-            die($nlcore->msg->m($totpsecret,2020501));
+            die($nlcore->msg->m($totpSecret,2020501));
         }
         $cinfo = $dbreturn[2][0];
         $c_time = strtotime($cinfo["c_time"]);
         $endtime = $c_time+$nlcore->cfg->verify->timeout["captcha"];
         if (time() > $endtime) {
-            $this->verifyfailgetnew(2020502,$totpsecret);
+            $this->verifyfailgetnew(2020502,$totpSecret);
             return false;
         }
         if (strtolower($captchacode) != strtolower($cinfo["c_code"])) {
-            $this->verifyfailgetnew(2020503,$totpsecret);
+            $this->verifyfailgetnew(2020503,$totpSecret);
             return false;
         }
         //删除已经验证通过的信息

@@ -363,12 +363,12 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
-    function stopmsg($code=null,$totpsecret=null,$str="",$showmsg=true) {
+    function stopmsg($code=null,$totpSecret=null,$str="",$showmsg=true) {
         if ($code && $showmsg > 0) {
             global $nlcore;
-            if ($totpsecret == "") $totpsecret = null;
-            $msgmode = $totpsecret ? $totpsecret : 1;
-            $json = $this->m($msgmode,$code,$str,$totpsecret);
+            if ($totpSecret == "") $totpSecret = null;
+            $msgmode = $totpSecret ? $totpSecret : 1;
+            $json = $this->m($msgmode,$code,$str,$totpSecret);
             header('Content-Type:application/json;charset=utf-8');
             echo $json;
         } else {

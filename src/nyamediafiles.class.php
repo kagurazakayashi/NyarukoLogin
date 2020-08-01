@@ -2,24 +2,24 @@
 class nyamediafiles {
     function mediafiles() {
         global $nlcore;
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
-        $ipid = $jsonarrTotpsecret[3];
-        $appid = $jsonarrTotpsecret[4];
+        $inputInformation = $nlcore->safe->decryptargv("session");
+        $argReceived = $inputInformation[0];
+        $totpSecret = $inputInformation[1];
+        $totpToken = $inputInformation[2];
+        $ipid = $inputInformation[3];
+        $appid = $inputInformation[4];
 
-        if (!isset($jsonarr["path"])) {
-            $nlcore->msg->stopmsg(2050201,$totpsecret);
+        if (!isset($argReceived["path"])) {
+            $nlcore->msg->stopmsg(2050201,$totpSecret);
         }
         $uploaddir = $nlcore->cfg->app->upload["uploaddir"];
-        $mediainfo = $nlcore->func->imageurl($jsonarr["path"]);
+        $mediainfo = $nlcore->func->imageurl($argReceived["path"]);
         if (count($mediainfo) > 0) {
             $mediainfo["code"] = 1000000;
         } else {
             $mediainfo["code"] = 2050200;
         }
-        echo $nlcore->safe->encryptargv($mediainfo,$totpsecret);
+        echo $nlcore->safe->encryptargv($mediainfo,$totpSecret);
     }
 }
 ?>

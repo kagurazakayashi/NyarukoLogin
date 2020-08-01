@@ -9,7 +9,7 @@ class nyaverification {
      * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Array 多个信息
      */
-    function sendmail($userhash,$nickname,$mailto,$language=null,$totpsecret=null) {
+    function sendmail($userHash,$nickname,$mailto,$language=null,$totpSecret=null) {
         global $nlcore;
         $language = $nlcore->safe->getlanguage($language);
         $mailtemplatefilepath = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."template".DIRECTORY_SEPARATOR."signupmail.".$language.".html";
@@ -41,14 +41,14 @@ class nyaverification {
         //写入邮件发送记录
         $tableStr = $nlcore->cfg->db->tables["verification_sending_log"];
         $insertDic = array(
-            "hash" => $userhash,
+            "hash" => $userHash,
             "verification_category" => 2, //1:站内信，2:电子邮件，3:短信
             "recipient" => $mailto,
             "verification_message" => $mailhtml,
             "api_return_result" => $api_return_result
         );
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2030201,$totpsecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2030201,$totpSecret);
         return [$mailhtml,$vcode];
     }
 }

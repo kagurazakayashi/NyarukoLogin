@@ -14,25 +14,25 @@ class nyasession {
             }
             die();
         }
-        $jsonarrTotpsecret = $nlcore->safe->decryptargv("session");
-        $jsonarr = $jsonarrTotpsecret[0];
-        $totpsecret = $jsonarrTotpsecret[1];
-        $totptoken = $jsonarrTotpsecret[2];
-        $ipid = $jsonarrTotpsecret[3];
-        $appid = $jsonarrTotpsecret[4];
-        $returnjson = [];
-        $usertoken = $jsonarr["token"] ?? null;
-        if (!$usertoken || !$nlcore->safe->is_rhash64($jsonarr["token"])) {
-            $nlcore->msg->stopmsg(2040400,$totpsecret,$usertoken);
+        $inputInformation = $nlcore->safe->decryptargv("session");
+        $argReceived = $inputInformation[0];
+        $totpSecret = $inputInformation[1];
+        $totpToken = $inputInformation[2];
+        $ipid = $inputInformation[3];
+        $appid = $inputInformation[4];
+        $returnJson = [];
+        $usertoken = $argReceived["token"] ?? null;
+        if (!$usertoken || !$nlcore->safe->is_rhash64($argReceived["token"])) {
+            $nlcore->msg->stopmsg(2040400,$totpSecret,$usertoken);
         }
-        $status = $this->sessionstatuscon($jsonarr["token"],false,$totpsecret);
+        $status = $this->sessionstatuscon($argReceived["token"],false,$totpSecret);
         if ($status) {
             $statinfo = $nlcore->msg->m(0,1030200);
             $statinfo = array_merge($statinfo,$status);
             $statinfo["timestamp"] = time();
-            echo $nlcore->safe->encryptargv($statinfo,$totpsecret);
+            echo $nlcore->safe->encryptargv($statinfo,$totpSecret);
         } else {
-            $nlcore->msg->stopmsg(1030201,$totpsecret);
+            $nlcore->msg->stopmsg(1030201,$totpSecret);
         }
     }
     /**
@@ -42,7 +42,7 @@ class nyasession {
      * @param String totpsecret totp加密码
      * @return Null/Array 空(无效) 或 起始-结束 时间数组
      */
-    function sessionstatuscon($token,$getuserhash,$totpsecret) {
+    function sessionstatuscon($token,$getuserhash,$totpSecret) {
         $rtoken = $this->redisload($token);
         if ($rtoken) {
             if (!$getuserhash) array_pop($rtoken,"userhash");
@@ -54,13 +54,13 @@ class nyasession {
         $whereDic = ["token" => $token];
         $customWhere = "`endtime` > CURRENT_TIME";
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,$customWhere);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401,$totpsecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401,$totpSecret);
         if (isset($result[2][0]["endtime"])) {
             $startend = $result[2][0];
             $starttime = strtotime($startend["time"]);
             $endtime = strtotime($startend["endtime"]);
-            $userhash = $startend["userhash"];
-            $this->redissave($token,$starttime,$endtime,$userhash);
+            $userHash = $startend["userhash"];
+            $this->redissave($token,$starttime,$endtime,$userHash);
             $returnarr = ["starttime"=>$starttime,"endtime"=>$endtime];
             if ($getuserhash) $returnarr["userhash"] = $startend["userhash"];
             return $returnarr;
@@ -74,14 +74,14 @@ class nyasession {
      * @param String endtime 用户有效期结束时间戳
      * @param String userhash 用户唯一哈希
      */
-    function redissave($token,$time,$endtime,$userhash) {
+    function redissave($token,$time,$endtime,$userHash) {
         global $nlcore;
         if (!$nlcore->db->initRedis()) return false;
         $key = $nlcore->cfg->db->redis_tables["session"].$token;
         $timelen = $endtime - time();
         if ($timelen < 0) die("endtimeERR".$time); //DEBUG
         if ($timelen > $nlcore->cfg->app->sessioncachemaxtime) $timelen = $nlcore->cfg->app->sessioncachemaxtime;
-        $val = json_encode([$time,$endtime,$userhash]);
+        $val = json_encode([$time,$endtime,$userHash]);
         $nlcore->db->redis->setex($key,$timelen,$val);
     }
     /**
