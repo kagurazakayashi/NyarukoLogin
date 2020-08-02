@@ -10,10 +10,7 @@ class stand {
         $totpSecret = $inputinformation[1];
         $totpToken = $inputinformation[2];
         $ipid = $inputinformation[3];
-        $appid = $inputinformation[4];
         // 檢查用戶是否登入
-        $usertoken = $sessioninformation[0];
-        $usersessioninfo = $sessioninformation[1];
         $userHash = $sessioninformation[2];
         // 檢查必須提供的參數輸入是否齊全
         $argReceivedKeys = ["token","nickname"];
@@ -24,7 +21,7 @@ class stand {
         $newuserconf = $nlcore->cfg->app->newuser;
         $nickname = $argReceived["nickname"];
         $nicknamelen = mb_strlen($nickname,"utf-8");
-        if ($nicknamelen > $newuserconf["nicknamelen"]) $nlcore->msg->stopmsg(2040105,$totpSecret,$nickname); //暱稱太長
+        if ($nicknamelen > $nlcore->cfg->app->maxLen["name"]) $nlcore->msg->stopmsg(2040105,$totpSecret,$nickname); //暱稱太長
         // 檢查異常符號
         $nlcore->safe->safestr($nickname,true,false,$totpSecret);
         // 檢查敏感詞
@@ -104,7 +101,7 @@ class stand {
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpSecret);
         $returnJson["username"] = $nickname."#".$nameid;
         $returnJson["userhash"] = $hash;
-        $returnJson["mainuser"] = $usertoken;
+        $returnJson["mainuser"] = $userHash;
         return $returnJson;
     }
 }

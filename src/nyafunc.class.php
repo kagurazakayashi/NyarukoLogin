@@ -44,13 +44,42 @@ class nyafunc {
         }
     }
     /**
-     * @description: 检查该用户是否已存在
-     * @param String mergename 昵称#四位代码
+     * @description: 生成使用者暱稱四位程式碼
+     * @param String name 新的暱稱
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @return Int 新生成的四位數ID
+     */
+    function genuserid(string $name,string $totpSecret=null) {
+        global $nlcore;
+        $currid = [];
+        $tableStr = $nlcore->cfg->db->tables["info"];
+        $columnArr = ["nameid"];
+        $whereDic = ["name" => $name];
+        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040114,$totpSecret);
+        $nameids = $result[2];
+        foreach ($nameids as $nameid) {
+            $nowid = intval($nameid["nameid"]);
+            array_push($currid,$nowid);
+        }
+        $nameidbook = [];
+        for ($i = 1000; $i < 9999; $i++) {
+            if (in_array($i,$currid)) continue;
+            array_push($nameidbook,$i);
+        }
+        $nameidbookcount = count($nameidbook);
+        if ($nameidbookcount == 0) $this->nlcore->msg->stopmsg(2040106,$this->totpSecret,$name);
+        $nameidi = rand(0, $nameidbookcount);
+        return $nameidbook[$nameidi];
+    }
+    /**
+     * @description: 檢查該使用者是否已存在
+     * @param String mergename 暱稱#四位程式碼
      * 或使用：
-     * @param String name 昵称
-     * @param String nameid 四位代码
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
-     * @return Bool 是否有此用户
+     * @param String name 暱稱
+     * @param String nameid 四位程式碼
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @return Bool 是否有此使用者
      */
     function useralreadyexists($mergename=null,$name=null,$nameid=null,$totpSecret=null) {
         global $nlcore;

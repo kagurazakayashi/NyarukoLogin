@@ -202,7 +202,7 @@
             $whereDic = $this->safe($whereDic);
             $update = $this->dic2sql($updateDic,1);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $sqlcmd = "UPDATE `".$tableStr."` SET ".$update." WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }
@@ -259,7 +259,7 @@
             $this->initWriteDbs();
             $whereDic = $this->safe($whereDic);
             $whereStr = $this->dic2sql($whereDic,2);
-            if ($customWhere != "" && $whereDic) $customWhere = " ".$wheremode." ".$customWhere;
+            if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $sqlcmd = "DELETE FROM `".$tableStr."` WHERE ".$whereStr.$customWhere.";";
             return $this->sqlc($sqlcmd);
         }

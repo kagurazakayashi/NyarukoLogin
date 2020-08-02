@@ -4,7 +4,6 @@ require_once "nyaverification.class.php";
 class nyasignup {
     function adduser(nyacore $nlcore, array $inputInformation):array {
         //IP检查和解密客户端提交的信息
-        $inputInformation = $nlcore->safe->decryptargv("signup");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -25,8 +24,9 @@ class nyasignup {
         if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->stopmsg(2040103,$totpSecret);
         //检查输入格式是否正确
         $newuserconf = $nlcore->cfg->app->newuser;
+        $maxLen = $nlcore->cfg->app->maxLen;
         $userstrlen = strlen($user);
-        if ($logintype == 0 && ($userstrlen < 5 || $userstrlen > $newuserconf["emaillen"] || !$nlcore->safe->isEmail($user))) {
+        if ($logintype == 0 && ($userstrlen < 5 || $userstrlen > $maxLen["email"] || !$nlcore->safe->isEmail($user))) {
             $nlcore->msg->stopmsg(2020207,$totpSecret,$user);
         } else if ($logintype == 1 && $userstrlen != 11) {
             $nlcore->msg->stopmsg(2020205,$totpSecret,$user);
@@ -44,7 +44,7 @@ class nyasignup {
             } else {
                 $nickname = $newuserconf["nickname"].rand(100, 999);
             }
-        } else if ($nicknamelen > $newuserconf["nicknamelen"]) {
+        } else if ($nicknamelen > $maxLen["name"]) {
             //昵称太长
             $nlcore->msg->stopmsg(2040105,$totpSecret,$nickname);
         }
@@ -55,17 +55,9 @@ class nyasignup {
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user,$totpSecret);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpSecret,$user);
-        //生成账户代码，遇到重复的重试100次
-        $nameid = null;
-        for ($i=0; $i < 100; $i++) {
-            $nameid = rand(1000, 9999);
-            //检查昵称和状态代码是否重复
-            $exists = $nlcore->func->useralreadyexists(null,$nickname,$nameid,$totpSecret);
-            if ($exists) $nameid = null;
-            else break;
-        }
-        if ($nameid == null) $nlcore->msg->stopmsg(2040200,$totpSecret,$nickname."#".$nameid);
-        //生成唯一哈希，遇到重复的重试10次
+        //生成账户代码
+        $nameid = $this->nlcore->func->genuserid($nickname,$this->totpSecret);
+        //生成唯一哈希，遇到重复的重试100次
         $hash = null;
         for ($i=0; $i < 10; $i++) {
             $hash = $nlcore->safe->randstr(64);
