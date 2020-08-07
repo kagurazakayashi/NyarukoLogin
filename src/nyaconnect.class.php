@@ -121,20 +121,22 @@
 
         /**
          * @description: 查詢資料
-         * @param Array<String/Array> columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]
+         * @param Array<String/Array/Null> columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
          * @param String tableStr 表名或 *JOIN*ON* 語句
          * @param Array<String/String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
          * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-         * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]，[]为不使用
-         * @param Array<Int>/Array<Int,Int> limit 區間， [前N條] 或 [從多少,取多少]，[]为不使用
+         * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]，[]為不使用
+         * @param Array<Int>/Array<Int,Int> limit 區間， [前N條] 或 [從多少,取多少]，[]為不使用
          * @param Boolean islike 模糊搜素（可選，預設關）
          * @return Array<Int,Array> 返回的狀態碼和內容
          */
-        function select(array $columnArr,string $tableStr,array $whereDic,string $customWhere="",string $whereMode="AND",bool $islike=false,array $order=[],array $limit=[]):array {
+        function select(array $columnArr=[],string $tableStr,array $whereDic,string $customWhere="",string $whereMode="AND",bool $islike=false,array $order=[],array $limit=[]):array {
             $this->initReadDbs();
             $columnStr = null;
-            if (is_array($columnArr[0])) {
+            if (count($columnArr) == 0) {
+                $columnStr = "*";
+            } else if (is_array($columnArr[0])) {
                 $tablecolumnarr = [];
                 foreach ($columnArr as $tc) {
                     $table = $this->safe($tc[0]);
@@ -142,7 +144,7 @@
                     array_push($tablecolumnarr,"`".$table."`.`".$column."`");
                 }
                 $columnStr = implode(",",$tablecolumnarr);
-            } else {
+            } else if (is_string($columnArr[0])) {
                 $columnStr = "`".implode("`,`",$this->safe($columnArr))."`";
             }
             $whereDic = $this->safe($whereDic);

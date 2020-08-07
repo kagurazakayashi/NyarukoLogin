@@ -44,17 +44,18 @@ class nyafunc {
         }
     }
     /**
-     * @description: 生成使用者暱稱四位程式碼
+     * @description: 生成使用者暱稱四位碼
      * @param String name 新的暱稱
+     * @param String userhash 使用者雜湊
      * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @return Int 新生成的四位數ID
      */
-    function genuserid(string $name,string $totpSecret=null) {
+    function genuserid(string $name, string $userhash, string $totpSecret=null) {
         global $nlcore;
         $currid = [];
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["nameid"];
-        $whereDic = ["name" => $name];
+        $whereDic = ["userhash" => $userhash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040114,$totpSecret);
         $nameids = $result[2];
@@ -74,10 +75,10 @@ class nyafunc {
     }
     /**
      * @description: 檢查該使用者是否已存在
-     * @param String mergename 暱稱#四位程式碼
+     * @param String mergename 暱稱#四位碼
      * 或使用：
      * @param String name 暱稱
-     * @param String nameid 四位程式碼
+     * @param String nameid 四位碼
      * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @return Bool 是否有此使用者
      */
@@ -104,9 +105,29 @@ class nyafunc {
         return false;
     }
     /**
-     * @description: 检查是否需要输入验证码，并根据配置决定显示哪种验证码
-     * @param Int 失败次数计数
-     * @return String 需要的验证方式
+     * @description: 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
+     * @param String totpsecret 加密用secret（可選，不加則明文返回）
+     * @param String gender 性別名稱
+     * @param String localization 本地化性別名稱
+     * @param Int list 性別列表ID
+     * @return String 性別資訊查詢結果
+     */
+    function getgender(string $totpSecret="", int $id=-1, string $gender="",string $localization="",int $list=-1) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["gender"];
+        $whereDic = [];
+        if ($id > 0) $whereDic["id"] = $id;
+        if (strlen($gender) > 0) $whereDic["gender"] = $gender;
+        if (strlen($localization) > 0) $whereDic["localization"] = $localization;
+        $whereDic["list"] = ($list >= 0) ? $list : $this->nlcore->cfg->app->genderlist;
+        $result = $nlcore->db->select([],$tableStr,$whereDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040605,$totpSecret);
+        return $result[2];
+    }
+    /**
+     * @description: 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
+     * @param Int 失敗次數計數
+     * @return String 需要的驗證方式
      */
     function needcaptcha($loginfail) {
         global $nlcore;

@@ -11,8 +11,6 @@ class userInfoEdit {
     private $tableStr;
     private $updateDic = [];
     private $whereDic;
-    private $pronounEnum = ['it', 'he', 'she'];
-    private $genderEnum = ['male'=>1,'female'=>2,'other'=>0];
     /**
      * @description: 構造：載入從客戶端輸入的資訊，取出所需資訊
      * @param nyacore NyarukoLogin 核心
@@ -112,23 +110,25 @@ class userInfoEdit {
         $this->updateDic["nameid"] = $nameid;
     }
     /**
-     * @description: 檢查性別
-     * @param String gender 新的性別ID
-     * @param Bool autoPronoun 自動檢查人稱代詞
-     */
-    function verifyGender(string $gender, bool $autoPronoun=true) {
-        $genders = array_keys($this->genderEnum);
-        if (!in_array($gender,$genders)) $this->nlcore->msg->stopmsg(2040600,$this->totpSecret,$gender);
-        $updateDic["gender"] = $gender;
-        if ($autoPronoun) $this->verifyPronoun($this->pronounEnum[$genders[$gender]]);
-    }
-    /**
      * @description: 檢查人稱代詞
      * @param String pronoun 新的人稱代詞
      */
-    function verifyPronoun(string $pronoun) {
-        if (!in_array($pronoun,$this->pronounEnum)) $this->nlcore->msg->stopmsg(2040601,$this->totpSecret,$pronoun);
+    function verifyPronoun(int $pronoun) {
+        if ($pronoun < 0 || $pronoun > 2) $this->nlcore->msg->stopmsg(2040601,$this->totpSecret,$pronoun);
         $this->updateDic["pronoun"] = $pronoun;
+    }
+    /**
+     * @description: 檢查性別
+     * @param Int gender 新的性別ID
+     * @param Bool autoPronoun 自動檢查人稱代詞
+     */
+    function verifyGender(int $gender, bool $autoPronoun=true) {
+        $genders = $this->nlcore->func->getgender($this->totpSecret,$gender);
+        if (count($genders) == 0) {
+            $this->nlcore->msg->stopmsg(2040600,$this->totpSecret,strval($gender));
+        }
+        $this->updateDic["gender"] = $gender;
+        if ($autoPronoun) $this->verifyPronoun($genders[0]["person"]);
     }
     /**
      * @description: 檢查地址
