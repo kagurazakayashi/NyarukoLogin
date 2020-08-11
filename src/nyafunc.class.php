@@ -119,7 +119,7 @@ class nyafunc {
         if ($id > 0) $whereDic["id"] = $id;
         if (strlen($gender) > 0) $whereDic["gender"] = $gender;
         if (strlen($localization) > 0) $whereDic["localization"] = $localization;
-        $whereDic["list"] = ($list >= 0) ? $list : $this->nlcore->cfg->app->genderlist;
+        $whereDic["list"] = ($list >= 0) ? $list : $nlcore->cfg->app->genderlist;
         $result = $nlcore->db->select([],$tableStr,$whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040605,$totpSecret);
         return $result[2];
@@ -271,8 +271,6 @@ class nyafunc {
     */
     function issubaccount(string $mainuserhash,string $subuserhash,string $totpSecret="",bool $getuserinfos=false) {
         global $nlcore;
-        // if (!$nlcore->safe->is_rhash64($mainuserhash) || !$nlcore->safe->is_rhash64($subuserhash)) $nlcore->msg->stopmsg(2070003,$totpSecret);
-        $columnArr = ["userhash"];
         $tableStr = $nlcore->cfg->db->tables["info"];
         $whereDic = [
             "userhash" => $subuserhash,
@@ -281,7 +279,7 @@ class nyafunc {
         $result = $nlcore->db->scount($tableStr,$whereDic);
         if (intval($result[2][0]["count(*)"]) == 1) {
             if ($getuserinfos) {
-                $nowuserinfo = $this->getuserinfo($nowchild["userhash"],$totpSecret);
+                $nowuserinfo = $this->getuserinfo($subuserhash,$totpSecret);
                 return [true,$subuserhash,$nowuserinfo];
             }
             return [true,$subuserhash];
@@ -465,7 +463,7 @@ class nyafunc {
      * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return Null/String 用户哈希
      */
-    function userhash2fullnickname($userHash) {
+    function userhash2fullnickname($userHash,$totpSecret="") {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["name","nameid"];

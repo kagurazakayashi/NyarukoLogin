@@ -157,8 +157,8 @@
             if ($customWhere != "" && $whereDic) $customWhere = " ".$whereMode." ".$customWhere;
             $orderstr = "";
             if (count($order) > 0) {
-                $orderstr = " order by ".$order[0];
-                if ($order[1] === true) $orderstr.= " desc";
+                $orderstr = " ORDER BY `".$order[0]."`";
+                if ($order[1] === true) $orderstr .= " DESC";
             }
             if (count($limit) > 0) {
                 $orderstr.= " limit ";
@@ -178,14 +178,17 @@
         /**
          * @description: 插入數據
          * @param String tableStr 錶名
-         * @param Array<String:String> insertDic 要插入的數據字典
-         * @return Array<Int,Array> 返回的狀態碼和內容
+         * @param Array <String:String> insertDic 要插入的數據字典
+         * @param Bool ignoreExisting 如果数据已经存在则不添加
+         * （僅適用於主鍵和索引，綜合所有輸入用 insertInNull 函式）
+         * @return Array <Int,Array> 返回的狀態碼和內容
          */
-        function insert($tableStr,$insertDic) {
+        function insert(string $tableStr, array $insertDic, bool $ignoreExisting=false):array {
             $this->initWriteDbs();
             $insertDic = $this->safe($insertDic);
             $insertStr = $this->dic2sql($insertDic,0);
-            $sqlcmd = "INSERT INTO `".$tableStr."` ".$insertStr.";";
+            $ignore = $ignoreExisting ? " IGNORE" : "";
+            $sqlcmd = "INSERT".$ignore." INTO `".$tableStr."` ".$insertStr.";";
             return $this->sqlc($sqlcmd);
         }
 
@@ -211,16 +214,17 @@
 
         /**
          * @description: 如果有則更新數據，冇有則插入數據
+         * 已棄用：請使用 insert 函式中的 ignoreExisting
          * @param String tableStr 錶名
          * @param Array<String:String> dataDic 要更新或插入的數據字典
          * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @return Array<Int,Array> 返回的狀態碼和內容
          */
-        function insertupdate($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
+        function insertUpdate($tableStr,$dataDic,$whereDic=null,$customWhere="",$whereMode="AND") {
             $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
             if ($result[0] >= 2000000) return [$result[0]];
-            $datacount = $result[2][0][0];
+            $datacount = $result[2][0]["count(*)"];
             if ($datacount == 0) {
                 return $this->insert($tableStr,$dataDic);
             } else if ($datacount == 1) {
@@ -238,10 +242,10 @@
          * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
          * @return Array<Int,Array> 返回的狀態碼和內容
          */
-        function insertnull($tableStr,$dataDic,$customWhere="",$whereMode="AND") {
+        function insertInNull($tableStr,$dataDic,$customWhere="",$whereMode="AND") {
             $result = $this->scount($tableStr,$dataDic,$customWhere,$whereMode);
             if ($result[0] >= 2000000) return [$result[0]];
-            $datacount = $result[2][0][0];
+            $datacount = $result[2][0]["count(*)"];
             if ($datacount == 0) {
                 return $this->insert($tableStr,$dataDic);
             } else {
@@ -296,7 +300,7 @@
         /**
          * @description: 執行SQL連接
          * @param String sqlcmd SQL語句
-         * @return Array[Int,Int,Array,Int,String] 0狀態碼,1新建的ID,2返回的數據,3受影響的行數,4所使用的SQL語句
+         * @return Array [Int,Int,Array,Int,String] 0狀態碼,1新建的ID,2返回的數據,3受影響的行數,4所使用的SQL語句
          */
         function sqlc($sqlcmd) {
             global $nlcore;
@@ -348,9 +352,10 @@
 
         /**
          * @description: 將字典類型轉換為SQL語句
-         * @param Dictionary<String:String> dic 要轉換的字典 ["表名"=>"列名"]
-         *     key 中如果包含「.」，则视为 `表名`.`列名`
+         * @param Dictionary [String:String] dic 要轉換的字典 ["表名"=>"列名"]
+         *     key 中如果包含「.」，則視為 `表名`.`列名`
          *     key 中如果包含「*」，「*」及之後內容將被捨棄。用於處理要包括同名 key 的需要。
+         *     val 中如果以「$」开头，则視為表示式，只用於 mode 1 。注意检查安全。
          * @param Int mode 返回字符串的格式
          *     0:  (列1, 列2) VALUES (值1, 值2)
          *     1:  `列1`='值1', `列2`='值2'
@@ -410,7 +415,12 @@
                         $keyc = "`".explode("*",$key)[0]."`";
                     }
                     if ($val !== null) {
-                        $keyval .= $keyc." ".$like." '".$val."'".$modestr;
+                        $valqm = "'";
+                        if (strlen($val) > 0 && substr($val,0,1) === "\$") {
+                            $val = substr($val, 1);
+                            $valqm = "";
+                        }
+                        $keyval .= $keyc." ".$like." ".$valqm.$val.$valqm.$modestr;
                     } else {
                         if ($mode == 2) {
                             $keyval .= $keyc." IS NULL".$modestr;
