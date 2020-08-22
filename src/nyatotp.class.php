@@ -12,7 +12,6 @@ class nyatotp {
      * @return String otpauth URL
      */
     function newusertotp($appname,$mail,$username) {
-        global $nlcore;
         $secret = $this->ga->createSecret();
         $otpauth = "otpauth://totp/".$appname.":".$mail."?secret=".$secret."&issuer=".$username;
         return $otpauth;

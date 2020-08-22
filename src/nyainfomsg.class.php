@@ -165,6 +165,10 @@ class nyainfomsg {
         2020417 => '内部错误：应用令牌格式不正确',
         ///// A=2\BB=02\CC=04\DD=18 :
         2020418 => '内部错误：产生动态加密码错误',
+        ///// A=2\BB=02\CC=04\DD=19 :
+        2020419 => '内部错误：密钥创建不成功',
+        ///// A=2\BB=02\CC=04\DD=20 :
+        2020420 => '内部错误：公钥不正确',
         //// A=2\BB=02\CC=05 : 图形验证码
         ///// A=2\BB=02\CC=05\DD=01 :
         2020501 => '错误：图形验证码检查失败',
@@ -380,9 +384,8 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
-    function stopmsg($code=null,$totpSecret=null,$str="",$showmsg=true) {
-        if ($code && $showmsg > 0) {
-            global $nlcore;
+    function stopmsg(int $code=-1, string $totpSecret="", $str="",$showmsg=true) {
+        if ($code > 0 && $showmsg) {
             if ($totpSecret == "") $totpSecret = null;
             $msgmode = $totpSecret ? $totpSecret : 1;
             $json = $this->m($msgmode,$code,$str,$totpSecret);

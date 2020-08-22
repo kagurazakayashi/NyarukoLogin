@@ -4,6 +4,7 @@
  * @package NyarukoLogin
 */
     class nyadbconnect {
+        const SQL_DEBUG = true; //出错时同时返回SQL语句原文（警告：请勿在生产服务器上开启）
         private $conR = null; //隻讀資料庫
         private $conW = null; //可寫入資料庫
         private $con = null; //當前 MySQL 資料庫（指針變數）
@@ -341,6 +342,7 @@
             } else {
                 if ($rowaffected <= 0) {
                     $this->log("[ERROR] mysqli_connect_error.");
+                    if (self::SQL_DEBUG) die($nlcore->msg->m(1,2010106,$sqlcmd));
                     die($nlcore->msg->m(1,2010106));
                 } else {
                     $this->log("[WARN] no_result: ".$result.mysqli_connect_error());
