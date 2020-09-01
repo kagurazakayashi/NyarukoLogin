@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 # pip install onetimepass
 # pip install demjson
+# pip install rsa
 import sys
 import onetimepass as otp
 from urllib import parse,request
@@ -10,6 +11,7 @@ import test_core
 import platform
 import datetime
 import base64
+import rsa
 test_core.title("请求加密密钥")
 # 需要提供与数据库 app 表中记录的内容
 test_core.tlog("读入配置文件 ...")
@@ -20,7 +22,11 @@ jsonfiledata = demjson.decode(lines)
 if jsonfiledata["appsecret"] == "" or jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
     test_core.terr("错误： 'testconfig.json' 配置不完全。")
     exit()
-publickey = b'-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAts5Z5Q6AA0RTwm8UZgt7\ncC2zFIzSYuEJz+ZjUUKuQI5UTI53L2x/zvr7TogPVho9EEmd9VqLBZqFQA1C0+hf\nZmArOyYuJna2t+AXaTCWR5txRyTCKaXmMxcwTMNsoJdW2iJssJ5Cd9OJv+v7X/QW\njDSJz7NxiFOQ48t4F51fG72sl5G7NjhsVF9bsOxFtQUh8AN3z7hjbfCRAgn7dFM9\nPyCYOowXWEGmK6VVuan8LYgOdJO5lH0hmAsVLDVSOpJf8TxcUpHtC7p+FxM3ePOh\nfRQRjztXXuG/Il8RG25HeNcyQZh0okPnfv8x2fo28NZf3wj72L6JxRDy4OSJ0ldl\nbyO2TCxnB/xW+bFTNHGUfrDG1l4/ZgdzhjPna9HPPjuLDRPZteNoZyJgWoRwzydb\nXNs9YB7MRqINGfvGESEGyNo8MHHIqN6pekpSpyQZB7pBlfsviRsXsBbeZmuz82ga\nHQsD/xvzGkKIsg4v+iqXK6O/Fkk6cO4Tz32J3KevbyHaujCdUXpehMl4STmwbMX1\neS+58qoUf+JuAqWkRs7D5f44b+F2cUinxEQlFRbxj5HKH1zE55aE+MRyAmU9TccW\niXYQDElpaY+U0JMmmvBpuFItlPGAJIGf72fAFqu0zfbA/7bTMcOexIDNuQVleEpu\nJx7B1hkr3bT5L9nhIzE73YkCAwEAAQ==\n-----END PUBLIC KEY-----\n'
+# 创建一个密钥对
+test_core.tlog("正在生成本地密钥，这需要一些时间 ...")
+(pubkey, privkey) = rsa.newkeys(4096)
+publickey = pubkey.save_pkcs1()
+privatekey = privkey.save_pkcs1()
 publickey = base64.b64encode(publickey).decode()
 publickey = publickey.replace('+','-').replace('/','_').replace('=','')
 postData = {
@@ -44,11 +50,11 @@ postRes = postRes.read()
 postRes = postRes.decode(encoding='utf-8')
 test_core.tlog("↓ 收到数据:")
 test_core.tlog(postRes)
-# test_core.tlog("检查返回的数据 ...")
-# resArr = demjson.decode(postRes)
-# if resArr['code'] != 1000000:
-#     test_core.terr("返回状态码错误。")
-#     exit()
+test_core.tlog("检查返回的数据 ...")
+resArr = demjson.decode(postRes)
+if resArr['code'] != 1000000:
+    test_core.terr("返回状态码错误。")
+    exit()
 # totp_secret = resArr['totp_secret']
 # totp_code = resArr['totp_code']
 # totp_token = resArr['totp_token']

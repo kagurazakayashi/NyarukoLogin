@@ -25,7 +25,10 @@ class nyaencryption {
         $enableEncrypt = $nlcore->cfg->enc->enable;
         if ($enableEncrypt) {
             $clientPublicKey = $argv["publickey"] ?? $nlcore->msg->stopmsg(2020420);
-            $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
+            if (strcmp(substr($clientPublicKey,0,5),"-----") != 0) {
+                $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
+            }
+            $clientPublicKey = $nlcore->safe->convertRsaHeaderInformation($clientPublicKey);
             $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey);
             if ($clientPublicKeyType != 1) $nlcore->msg->stopmsg(2020420, "", strval($clientPublicKeyType));
         }
@@ -86,7 +89,9 @@ class nyaencryption {
         );
         if ($enableEncrypt) {
             $datadic["private"] = $nlcore->safe->rsaRmTag($nlcore->safe->privateKey);
+            // $datadic["private"] = $nlcore->safe->rsaRmBCode($datadic["private"]);
             $datadic["public"] = $nlcore->safe->rsaRmTag($clientPublicKey);
+            // $datadic["public"] = $nlcore->safe->rsaRmBCode($datadic["public"]);
         }
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"], $datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
@@ -102,6 +107,17 @@ class nyaencryption {
         if ($enableEncrypt) {
             $returnClientData["publickey"] = $nlcore->safe->publicKey;
             $returnClientData["apptoken"] = $apptoken;
+            $redisTimeout = $nlcore->cfg->enc->redisCacheTimeout;
+            if ($redisTimeout != 0 && $nlcore->db->initRedis()) {
+                $redisName = $nlcore->cfg->db->redis_tables["rsa"];
+                $redisKey = $redisName.$apptoken;
+                $redisVal = $datadic["public"]."|".$datadic["private"];
+                if ($redisTimeout < 0) {
+                    $nlcore->db->redis->set($redisKey,$redisVal);
+                } else {
+                    $nlcore->db->redis->setex($redisKey,$redisTimeout,$redisVal);
+                }
+            }
         }
         $nlcore->safe->publicKey = $clientPublicKey;
         echo json_encode($returnClientData);

@@ -7,6 +7,10 @@ class nyasafe {
     const PRI_E = "\n-----END ENCRYPTED PRIVATE KEY-----";
     const PUB_B = "-----BEGIN PUBLIC KEY-----\n";
     const PUB_E = "\n-----END PUBLIC KEY-----";
+    const PUR_B = "-----BEGIN RSA PUBLIC KEY-----";
+    const PUR_E = "-----END RSA PUBLIC KEY-----";
+    const PRI_S = "MIIFDjBABgkqhkiG9w0BBQ0wMzAbBgkq";
+    const PUB_S = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8A";
     /**
      * @description: 建構函式
      */
@@ -29,6 +33,18 @@ class nyasafe {
         } catch (Exception $e) {
             $nlcore->msg->stopmsg(2020419, "", $e->getMessage());
         }
+    }
+    /**
+     * @description: 轉換公鑰格式到相容
+     * @param String data  PKCS#8 公鑰(任一位數) 或 PKCS#1 公鑰(4096位)
+     * @return String PKIX (X.509) 公鑰
+     */
+    function convertRsaHeaderInformation(string $key): string {
+        if (strpos($key, self::PUB_S) !== false) return $key;
+        $key = $this->rsaRmTag($key);
+        $key = self::PUB_S . str_replace("\n", '', $key);
+        $key = self::PUB_B . wordwrap($key, 64, "\n", true) . self::PUB_E;
+        return $key;
     }
     /**
      * @description: RSA 加密
@@ -87,10 +103,10 @@ class nyasafe {
      *   -1.是無效公鑰 -2.是無效私鑰 -3.是無效加密私鑰
      *   -4.長度不正確 -5.標識錯誤　 -6.字元不匹配
      */
-    function isRsaKey(string $key, string $privateKeyPassword=""):int {
+    function isRsaKey(string $key, string $privateKeyPassword = ""): int {
         if (strlen($key) < 54) return -4;
-        $noTag = $this->rsaRmTag($key,"");
-        if (strcmp(base64_encode(base64_decode($noTag, true)),$noTag) != 0){
+        $noTag = $this->rsaRmTag($key, "");
+        if (strcmp(base64_encode(base64_decode($noTag, true)), $noTag) != 0) {
             return -6;
         }
         $iskey = 0;
@@ -103,7 +119,7 @@ class nyasafe {
             if (count(explode("PUBLIC", $keyarr[0])) > 1 && count(explode("PUBLIC", $keyarr[$keyarrIndex])) > 1) {
                 $iskey = 1;
                 try {
-                    openssl_public_encrypt("t", $encrypted, $key);
+                    if (!openssl_public_encrypt("t", $encrypted, $key)) $iskey *= -1;
                 } catch (Exception $e) {
                     $iskey *= -1;
                 }
@@ -139,7 +155,7 @@ class nyasafe {
      * @param String explodeChar 使用此字符分隔行
      * @return String 移除首尾標記的金鑰對
      */
-    function rsaRmTag(string $rsaStr, string $implodeChar="\n", string $explodeChar="\n"): string {
+    function rsaRmTag(string $rsaStr, string $implodeChar = "\n", string $explodeChar = "\n"): string {
         $newRsaArr = [];
         $lines = explode($explodeChar, $rsaStr);
         for ($i = 0; $i < count($lines); $i++) {
@@ -160,6 +176,26 @@ class nyasafe {
             return self::PRI_B . $str . self::PRI_E;
         } else {
             return self::PUB_B . $str . self::PUB_E;
+        }
+    }
+    /**
+     * @description: 移除前部分資料
+     * @param String str 在 rsaRmTag 之後的資料
+     * @return String 削減後的金鑰
+     */
+    function rsaRmBCode(string $str) {
+        return substr($str,32);
+    }
+    /**
+     * @description: 補充前部分資料
+     * @param String str 在 rsaRmBCode 之後的資料
+     * @return String 用於 rsaAddTag 的全內容金鑰
+     */
+    function rsaAddBCode(string $str, bool $isPrivateKey = false) {
+        if ($isPrivateKey) {
+            return self::PRI_S.$str;
+        } else {
+            return self::PUB_S.$str;
         }
     }
     /**
@@ -872,7 +908,7 @@ class nyasafe {
         $j = $_GET['t'] ?? $_POST['t'] ?? null;
         $timestamp = $_GET['s'] ?? $_POST['s'] ?? time();
         if ($j) {
-            //查询apptoken对应的secret
+            //查询 apptoken 对应的secret
             $datadic = [
                 "apptoken" => $j
             ];
