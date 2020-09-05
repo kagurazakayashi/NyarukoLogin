@@ -400,7 +400,7 @@ class nyafunc {
      */
     function getdeviceid($totpToken,$totpSecret) {
         global $nlcore;
-        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
         $columnArr = ["devid"];
         $whereDic = ["apptoken" => $totpToken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);

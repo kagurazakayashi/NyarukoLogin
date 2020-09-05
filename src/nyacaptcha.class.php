@@ -54,7 +54,7 @@ class nyacaptcha {
         if (!$showcaptcha) {
             $updateDic["c_img"] = $c_img;
         }
-        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
             "apptoken" => $totpToken
         ];
@@ -104,7 +104,7 @@ class nyacaptcha {
     function verifycaptcha($totpToken,$totpSecret,$captchacode) {
         global $nlcore;
         $columnArr = ["id","c_code","c_time"];
-        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
             "apptoken" => $totpToken
         ];

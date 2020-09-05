@@ -260,7 +260,7 @@ class nyalogin {
     function chkoverflowsession($userHash,$totpToken,$totpSecret) {
         global $nlcore;
         //在 totp 表取 devid 获得当前设备信息
-        $tableStr = $nlcore->cfg->db->tables["totp"];
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
         $columnArr = ["devid"];
         $whereDic = ["apptoken" => $totpToken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);

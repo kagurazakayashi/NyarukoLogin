@@ -11,25 +11,25 @@ class nyaencryption {
         $time = $ipinfo[0];
         $stime = $ipinfo[1];
         $ipid = $ipinfo[2];
-        $appSecret = isset($argv["appsecret"]) ? $argv["appsecret"] : $nlcore->msg->stopmsg(2000101, "", "", true);
+        $appKey = isset($argv["appkey"]) ? $argv["appkey"] : $nlcore->msg->stopmsg(2000101, "", "", true);
         // 檢查應用名稱和金鑰
-        if (!$nlcore->safe->is_rhash64($appSecret)) $nlcore->msg->stopmsg(2020417);
-        $datadic = ["secret" => $appSecret];
+        if (!$nlcore->safe->is_rhash64($appKey)) $nlcore->msg->stopmsg(2020417);
+        $datadic = ["appkey" => $appKey];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["app"], $datadic);
         if ($result[0] >= 2000000 || $result[2][0]["count(*)"] == 0) $nlcore->msg->stopmsg(2020401);
-        // 檢查APP是否已經註冊 appSecret
-        $appid = $nlcore->safe->chkappSecret($appSecret);
+        // 檢查APP是否已經註冊 appKey
+        $appid = $nlcore->safe->chkappSecret($appKey);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
         // 獲取客戶端的公鑰
         $clientPublicKey = null;
         $enableEncrypt = $nlcore->cfg->enc->enable;
         if ($enableEncrypt) {
             $clientPublicKey = $argv["publickey"] ?? $nlcore->msg->stopmsg(2020420);
-            if (strcmp(substr($clientPublicKey,0,5),"-----") != 0) {
+            if (strcmp(substr($clientPublicKey, 0, 5), "-----") != 0) {
                 $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
             }
             $clientPublicKey = $nlcore->safe->convertRsaHeaderInformation($clientPublicKey);
-            $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey);
+            $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey, true);
             if ($clientPublicKeyType != 1) $nlcore->msg->stopmsg(2020420, "", strval($clientPublicKeyType));
         }
         // 建立 apptoken
@@ -37,7 +37,7 @@ class nyaencryption {
         // 檢查 session_totp 表
         $datadic = ["apptoken" => $apptoken];
         // 如果 apptoken 已存在則刪除
-        $table = $nlcore->cfg->db->tables["totp"];
+        $table = $nlcore->cfg->db->tables["encryption"];
         $result = $nlcore->db->delete($table, $datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020405);
         // 獲取裝置提供的資訊，寫入 device 表
@@ -110,12 +110,12 @@ class nyaencryption {
             $redisTimeout = $nlcore->cfg->enc->redisCacheTimeout;
             if ($redisTimeout != 0 && $nlcore->db->initRedis()) {
                 $redisName = $nlcore->cfg->db->redis_tables["rsa"];
-                $redisKey = $redisName.$apptoken;
-                $redisVal = $datadic["public"]."|".$datadic["private"];
+                $redisKey = $redisName . $apptoken;
+                $redisVal = $datadic["public"] . "|" . $datadic["private"];
                 if ($redisTimeout < 0) {
-                    $nlcore->db->redis->set($redisKey,$redisVal);
+                    $nlcore->db->redis->set($redisKey, $redisVal);
                 } else {
-                    $nlcore->db->redis->setex($redisKey,$redisTimeout,$redisVal);
+                    $nlcore->db->redis->setex($redisKey, $redisTimeout, $redisVal);
                 }
             }
         }

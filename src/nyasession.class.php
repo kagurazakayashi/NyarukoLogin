@@ -1,10 +1,14 @@
 <?php
 class nyasession {
-    // 检查 token 是否有效API
-    function sessionstatus() {
+    /**
+     * @description: 檢查 token 是否有效
+     * @param String token 會話令牌
+     * @return Void 無返回值為透過，如果出問題則直接將異常返回給客戶端
+     */
+    function sessionstatus(string $token):void {
         global $nlcore;
         if ($nlcore->cfg->app->sessioncachefirst && isset($_GET["quick"])) {
-            $startend = $this->sessionstatuscon($token,false,null);
+            $startend = $this->sessionstatuscon($token,false,"");
             if ($startend) {
                 $statinfo = $nlcore->msg->m(0,1030200);
                 $statinfo = array_merge($statinfo,$startend);
@@ -26,7 +30,7 @@ class nyasession {
             $nlcore->msg->stopmsg(2040400,$totpSecret,$usertoken);
         }
         $status = $this->sessionstatuscon($argReceived["token"],false,$totpSecret);
-        if ($status) {
+        if (count($status) > 0) {
             $statinfo = $nlcore->msg->m(0,1030200);
             $statinfo = array_merge($statinfo,$status);
             $statinfo["timestamp"] = time();
@@ -36,15 +40,15 @@ class nyasession {
         }
     }
     /**
-     * @description: 检查 token 是否有效
-     * @param String token 会话令牌
-     * @param Bool getuserhash 需要获取用户哈希
-     * @param String totpsecret totp加密码
-     * @return Null/Array 空(无效) 或 起始-结束 时间数组
+     * @description: 檢查 token 是否有效
+     * @param String token 會話令牌
+     * @param Bool getuserhash 需要獲取使用者雜湊
+     * @param String totpsecret totp加密碼
+     * @return Array 空陣列(無效) 或 起始-結束 時間陣列
      */
-    function sessionstatuscon($token,$getuserhash,$totpSecret) {
-        $rtoken = $this->redisload($token);
-        if ($rtoken) {
+    function sessionstatuscon(string $token,bool $getuserhash,string $totpSecret):array {
+        $rtoken = $this->redisLoadToken($token);
+        if (count($rtoken) > 0) {
             if (!$getuserhash) array_pop($rtoken,"userhash");
             return $rtoken;
         }
@@ -65,18 +69,18 @@ class nyasession {
             if ($getuserhash) $returnarr["userhash"] = $startend["userhash"];
             return $returnarr;
         }
-        return null;
+        return [];
     }
     /**
-     * @description: 将 token 存储到 Redis
-     * @param String token 会话令牌
-     * @param String time 用户有效期起始时间戳
-     * @param String endtime 用户有效期结束时间戳
-     * @param String userhash 用户唯一哈希
+     * @description: 將 token 儲存到 Redis
+     * @param String token 會話令牌
+     * @param Int time 使用者有效期起始時間戳
+     * @param Int endtime 使用者有效期結束時間戳
+     * @param String userhash 使用者唯一雜湊
      */
-    function redissave($token,$time,$endtime,$userHash) {
+    function redissave(string $token,int $time,int $endtime,string $userHash):void {
         global $nlcore;
-        if (!$nlcore->db->initRedis()) return false;
+        if (!$nlcore->db->initRedis()) return;
         $key = $nlcore->cfg->db->redis_tables["session"].$token;
         $timelen = $endtime - time();
         if ($timelen < 0) die("endtimeERR".$time); //DEBUG
@@ -85,11 +89,11 @@ class nyasession {
         $nlcore->db->redis->setex($key,$timelen,$val);
     }
     /**
-     * @description: 从 Redis 检查 token 是否有效
-     * @param String token 会话令牌
-     * @return Null/Array 空(无效) 或 起始-结束 时间数组
+     * @description: 從 Redis 檢查 token 是否有效
+     * @param String token 會話令牌
+     * @return Array 空陣列(無效) 或 起始-結束 時間陣列
      */
-    function redisload($token) {
+    function redisLoadToken(string $token):array {
         global $nlcore;
         if (!$nlcore->db->initRedis()) return false;
         $key = $nlcore->cfg->db->redis_tables["session"].$token;
@@ -102,8 +106,7 @@ class nyasession {
                 "userhash" => $val[2]
             ];
         } else {
-            return null;
+            return [];
         }
     }
 }
-?>
