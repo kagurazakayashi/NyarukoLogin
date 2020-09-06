@@ -14,7 +14,7 @@ class userInfoEdit {
     /**
      * @description: 構造：載入從客戶端輸入的資訊，取出所需資訊
      * @param nyacore NyarukoLogin 核心
-     * @param Array inputinformation 客戶端輸入的資訊（$nlcore->safe->decryptargv）
+     * @param Array inputinformation 客戶端輸入的資訊（$nlcore->sess->decryptargv）
      * @param Array sessioninformation 使用者登入資訊（$nlcore->safe->userLogged）
      */
     function __construct(nyacore $nlcore, array $inputinformation, array $sessioninformation) {

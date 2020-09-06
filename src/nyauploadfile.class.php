@@ -6,7 +6,7 @@ class nyauploadfile {
 
     function getuploadfile($echojson=true) {
         global $nlcore;
-        $inputInformation = $nlcore->safe->decryptargv("session");
+        $inputInformation = $nlcore->sess->decryptargv("session");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -201,7 +201,7 @@ class nyauploadfile {
         $returnarr["filegroups"] = $returnfile;
         $returnarr["code"] = 1000000;
         $returnarr["filecount"] = count($files);
-        if ($echojson) echo $nlcore->safe->encryptargv($returnarr,$totpSecret);
+        if ($echojson) echo $nlcore->sess->encryptargv($returnarr,$totpSecret);
         return $returnarr;
     }
 

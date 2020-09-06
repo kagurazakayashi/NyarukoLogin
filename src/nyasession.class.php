@@ -1,5 +1,8 @@
 <?php
 class nyasession {
+    public $privateKey = ""; // 用於解密來自客戶端資料的私鑰
+    public $publicKey = "";  // 用於加密傳送到客戶端資料的公鑰
+    const HEADER_JSON = "Content-Type:application/json;charset=utf-8";
     /**
      * @description: 檢查 token 是否有效
      * @param String token 會話令牌
@@ -12,13 +15,13 @@ class nyasession {
             if ($startend) {
                 $statinfo = $nlcore->msg->m(0,1030200);
                 $statinfo = array_merge($statinfo,$startend);
-                echo $nlcore->safe->encryptargv($statinfo,null);
+                echo $nlcore->sess->encryptargv($statinfo,null);
             } else {
                 $nlcore->msg->stopmsg(1030201,null);
             }
             die();
         }
-        $inputInformation = $nlcore->safe->decryptargv("session");
+        $inputInformation = $nlcore->sess->decryptargv("session");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -34,7 +37,7 @@ class nyasession {
             $statinfo = $nlcore->msg->m(0,1030200);
             $statinfo = array_merge($statinfo,$status);
             $statinfo["timestamp"] = time();
-            echo $nlcore->safe->encryptargv($statinfo,$totpSecret);
+            echo $nlcore->sess->encryptargv($statinfo,$totpSecret);
         } else {
             $nlcore->msg->stopmsg(1030201,$totpSecret);
         }
@@ -108,5 +111,275 @@ class nyasession {
         } else {
             return [];
         }
+    }
+    /**
+     * @description: ☆資料接收☆ 解析變體、base64解碼、解密、解析 JSON 到陣列
+     * GET/POST: 見 WiKi : 加密通訊處理流程.md
+     * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
+     * @param Int interval 在多少秒內
+     * @param Int times 允許請求多少次
+     * @param Bool onlyCheckIP 只檢查 IP 是否合法，不進行資料解析
+     * @return Array [〇解析後的JSON內容陣列,①TOTP的secret,②TOTP的token,③IP地址ID,④APPID]
+     */
+    function decryptargv(string $module = "", int $interval = PHP_INT_MAX, int $times = PHP_INT_MAX, bool $onlyCheckIP = false) {
+        global $nlcore;
+        // 檢查 IP 訪問頻率
+        if (strlen($module) > 0) {
+            $result = $nlcore->safe->frequencylimitation($module, $interval, $times);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg($result[0]);
+        }
+        // 記錄到除錯日誌檔案（如果啟用）
+        $argvs = $nlcore->safe->getarg();
+        if ($argvs) {
+            $nlcore->safe->log($_SERVER['REQUEST_METHOD'], $argvs);
+        } else {
+            $nlcore->safe->log($_SERVER['REQUEST_METHOD'], ["[NULL!]" . count($argvs)]);
+        }
+        // 檢查資料是否超過指定長度
+        $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->maxlen_get : $nlcore->cfg->app->maxlen_post;
+        $arglen = strlen(implode("", $argvs));
+        if ($arglen > $jsonlen) $nlcore->msg->stopmsg(2020414, null, $arglen);
+        // 檢查 IP 是否被封禁
+        $stime = $nlcore->safe->getdatetime();
+        $time = $stime[0];
+        $result = $nlcore->safe->chkip($stime[0]);
+        $stime = $stime[1];
+        if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
+        $ipid = $result[1];
+        $argReceived = null;
+        $secret = null;
+        if ($onlyCheckIP) {
+            return [$time, $stime, $ipid];
+        }
+        // 檢查客戶端提交是否應用了加密功能
+        $isEncrypt = false;
+        $argks = array_keys($argvs);
+        $apptoken = null;
+        $encryptedJson = null;
+        if (count($argks) == 1 && strlen($argks[0]) == 64) {
+            $apptoken = $argks[0];
+            $encryptedJson = $argvs[$apptoken];
+            $isEncrypt = true;
+        } else if ($nlcore->cfg->app->alwayencrypt) {
+            $nlcore->msg->stopmsg(2020415); // 要求加密但沒有加密
+        } else if (isset($argvs["t"]) && strlen($argvs["t"]) == 64) {
+            $apptoken = $argvs["t"];
+        }
+        if (!$nlcore->safe->is_rhash64($apptoken)) { // 檢查應用令牌格式
+            $nlcore->msg->stopmsg(2020417);
+        }
+        if ($isEncrypt) { // 已加密，需要解密
+            // 進行解密，快取 publicKey 和 privateKey
+            $argReceived = $nlcore->safe->decryptRsaMode($encryptedJson, $apptoken);
+            if ($argReceived) {
+                $nlcore->safe->log("DECODE", $argReceived);
+            } else {
+                $nlcore->safe->log("DECODE", ["[ERROR!]"]);
+            }
+        } else { // 未加密
+            $argReceived = $argvs;
+            unset($argReceived["t"]);
+        }
+        if (!$argReceived || count($argReceived) == 0) $nlcore->msg->stopmsg(2020400);
+        // 檢查 API 版本是否一致
+        if (!isset($argReceived["v"]) || intval($argReceived["v"]) != 2) $nlcore->msg->stopmsg(2020412);
+        // 如果提供了 appkey ，則檢查 APP 是否有效，並查詢 appid
+        $appid = null;
+        if (isset($argReceived["appkey"])) {
+            if (!$nlcore->safe->isNumberOrEnglishChar($argReceived["appkey"], 64, 64)) $nlcore->msg->stopmsg(2020401);
+            $appid = $nlcore->safe->chkAppKey($argReceived["appkey"]);
+            if ($appid == null) $nlcore->msg->stopmsg(2020401);
+        }
+        if (!$isEncrypt) {
+            $this->privateKey = "";
+            $this->publicKey = "";
+        }
+        return [$argReceived, $secret, $argvs["t"], $ipid, $appid];
+    }
+    /**
+     * @description: 使用 RSA 方式進行解密
+     * @param String encryptedJson 客戶端提交的加密資料
+     * @param String apptoken 應用令牌
+     * @return Array [string:string] 客戶端提交的資料（解密後）
+     */
+    function decryptRsaMode(string $encryptedJson, string $apptoken) {
+        global $nlcore;
+        $redisTimeout = $nlcore->cfg->enc->redisCacheTimeout;
+        // 查詢 apptoken 對應的 公鑰 和 私鑰
+        // 先嚐試從 Redis 中載入
+        $redisName = $nlcore->cfg->db->redis_tables["rsa"];
+        $redisKey = $redisName . $apptoken;
+        if ($redisTimeout != 0 && $nlcore->db->initRedis()) {
+            if ($nlcore->db->redis->exists($redisKey)) {
+                $redisVal = $nlcore->db->redis->get($redisKey);
+                $keyArr = explode("|", $redisVal);
+                $this->publicKey = $keyArr[0];
+                $this->privateKey = $keyArr[1];
+            }
+        }
+        // 校驗是否為私鑰和公鑰
+        $nlcore->safe->autoRsaAddTag();
+        if (!$nlcore->safe->autoCheck()) {
+            // 不能從 Redis 中載入，從 MySQL 中載入
+            $datadic = ["apptoken" => $apptoken];
+            $tableStr = $nlcore->cfg->db->tables["encryption"];
+            $result = $nlcore->db->select(["secret"], $tableStr, $datadic);
+            // 空或查詢失敗都視為不正確
+            if (!$result || $result[0] != 1010000 || !isset($result[2][0])) {
+                $nlcore->msg->stopmsg(2020409, null, $apptoken);
+            }
+            $rdata = $result[2][0];
+            if (!isset($rdata["private"]) || !isset($rdata["public"])) {
+                $nlcore->msg->stopmsg(2020421, null, $apptoken);
+            }
+            // 再次校驗是否為私鑰和公鑰，這次還有問題則錯誤
+            $nlcore->safe->autoRsaAddTag();
+            if (!$nlcore->safe->autoCheck()) {
+                $nlcore->msg->stopmsg(2020421, null, strval(strlen($this->publicKey)) . "-" . strval(strlen($this->privateKey)));
+            }
+            if ($redisTimeout != 0) {
+                // 重新建立 Redis 快取
+                $redisVal = $datadic["public"] . "|" . $datadic["private"];
+                if ($redisTimeout < 0) {
+                    $nlcore->db->redis->set($redisKey, $redisVal);
+                } else {
+                    $nlcore->db->redis->setex($redisKey, $redisTimeout, $redisVal);
+                }
+            }
+        }
+        // 解密資料，自動判斷是否是變種 base64
+        $encryptedData = null;
+        if ($nlcore->safe->isbase64($encryptedJson, true)) {
+            $encryptedData = $nlcore->safe->urlb64decode($encryptedJson);
+            if (strlen($encryptedData) == 0) {
+                $nlcore->msg->stopmsg(2020411);
+            }
+        } else if ($nlcore->safe->isbase64($encryptedJson, false)) {
+            $encryptedData = base64_decode($encryptedJson);
+            if (strlen($encryptedData) == 0) {
+                $nlcore->msg->stopmsg(2020410, "1");
+            }
+        } else {
+            $nlcore->msg->stopmsg(2020410, "0");
+        }
+        $decryptData = $nlcore->safe->rsaDecrypt($encryptedData, true);
+        if (strlen($decryptData) == 0) {
+            $nlcore->msg->stopmsg(2020422);
+        }
+        $decryptData = json_decode($decryptData, true);
+        if (strlen($decryptData) == 0) {
+            $nlcore->msg->stopmsg(2020410);
+        }
+        return $decryptData;
+    }
+    /**
+     * @description: [已棄用] 使用 TOTP + XXTea 方式進行解密
+     * @param String argvs 客戶端提交的加密引數
+     * @return Array [string:string] 客戶端提交的引數（解密後）
+     */
+    function decryptTotpXXteaMode($argvs) {
+        global $nlcore;
+        // 查詢 apptoken 對應的 secret
+        $datadic = ["apptoken" => $argvs["t"]];
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
+        $result = $nlcore->db->select(["secret"], $tableStr, $datadic);
+        // 空或查詢失敗都視為不正確
+        if (!$result || $result[0] != 1010000 || !isset($result[2][0]["secret"])) $nlcore->msg->stopmsg(2020409, null, $argvs["t"]);
+        $secret = $result[2][0]["secret"];
+        // 使用 Secret 生成 TOTP 數字
+        $ga = new PHPGangsta_GoogleAuthenticator();
+        $gaisok = false;
+        $timestamp = isset($argvs["s"]) ? $argvs["s"] : time();
+        if ($timestamp > 1000000000000) {
+            $timestamp = intval($timestamp / 1000);
+        }
+        $totptimeslice = $nlcore->cfg->app->totptimeslice;
+        $tryi = 0;
+        for ($i = -$totptimeslice; $i <= $totptimeslice; ++$i) {
+            $tryi++;
+            $ntimestamp = $timestamp + ($i * 30);
+            $timeSlice = floor($ntimestamp / 30);
+            $numcode = intval($ga->getCode($secret, $timeSlice));
+            if ($numcode < 0 || $numcode > 999999) {
+                $nlcore->msg->stopmsg(2020418, null, strval($numcode));
+            } else if ($numcode < 100000) {
+                $numcode = str_pad($numcode, 6, "0", STR_PAD_LEFT);
+            }
+            $numcode = strval($numcode) + $nlcore->cfg->app->totpcompensate;
+            // MD5
+            $numcode5 = md5($secret . $numcode);
+            // 解密 Base64
+            $xxteadata = $nlcore->safe->urlb64decode($argvs["j"]);
+            // 使用 TOTP 數字解密
+            $decrypt_data = xxtea_decrypt($xxteadata, $numcode5);
+            if (strlen($decrypt_data) > 0) {
+                $gaisok = true;
+                break;
+            }
+        }
+        if (!$gaisok) {
+            $failinfo = strval($timestamp) . '-' . strval(time()) . ',' . strval($tryi) . ',' . strval($numcode);
+            $nlcore->msg->stopmsg(2020411, null, $failinfo);
+        }
+        // die(json_encode($decrypt_data));
+        $argReceived = json_decode($decrypt_data, true);
+        return $argReceived;
+    }
+    /**
+     * @description: ☆資料傳送☆ 從陣列建立 JSON、加密、base64 編碼、變體
+     * @param String dataarray 要返回到客戶端的內容字典
+     * @return String 如果加密啟用，回傳加密後的資訊；否則返回明文 JSON
+     */
+    function encryptargv($dataarray) {
+        global $nlcore;
+        //加时间戳
+        if (!isset($dataarray["timestamp"])) $dataarray["timestamp"] = time();
+        //转换为json
+        $nlcore->safe->log("RETURN", $dataarray);
+        $json = json_encode($dataarray);
+        $json = $this->encryptRsaMode($json);
+        header(self::HEADER_JSON);
+        return $json;
+    }
+    /**
+     * @description: 使用 RSA 方式進行加密
+     * @param String json 要加密的 JSON
+     * @return String 加密後的資訊（JSON變種）
+     */
+    function encryptRsaMode(string $json) {
+        global $nlcore;
+        if (strlen($this->privateKey) < 4 || strlen($this->publicKey) < 4) {
+            return $json;
+        }
+        $encryptJson = $nlcore->safe->rsaEncrypt($json);
+        $returndata = $nlcore->safe->urlb64encode($encryptJson);
+        return $returndata;
+    }
+    /**
+     * @description: [已棄用] 使用 TOTP + XXTea 方式進行加密
+     * @param String json 要加密的 JSON
+     * @param String secret totp加密碼（可選，不加不進行加密）
+     * @return String 加密後的資訊（JSON變種）
+     */
+    function encryptTotpXXteaMode($json, $secret = null) {
+        if ($secret) {
+            global $nlcore;
+            //使用secret生成totp数字
+            $ga = new PHPGangsta_GoogleAuthenticator();
+            $numcode = $ga->getCode($secret) + $nlcore->cfg->app->totpcompensate;
+            //MD5
+            $numcode = md5($secret . $numcode);
+            //使用totp数字加密
+            $json = xxtea_encrypt($json, $numcode);
+            $returndata = $nlcore->safe->urlb64encode($json);
+            return $returndata;
+        }
+        return $json;
+    }
+    function __destruct() {
+        $this->publicKey = null;
+        unset($this->publicKey);
+        $this->privateKey = null;
+        unset($this->privateKey);
     }
 }

@@ -4,7 +4,7 @@ class nyalogin {
     function login() {
         global $nlcore;
         //IP检查和解密客户端提交的信息
-        $inputInformation = $nlcore->safe->decryptargv("signup");
+        $inputInformation = $nlcore->sess->decryptargv("signup");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -97,7 +97,7 @@ class nyalogin {
             $nlcore->func->writehistory("USER_SIGN_IN",2040205,$userHash,$totpToken,$totpSecret,$ipid,$user,$process);
             $returnJson = $nlcore->msg->m(0,2040205,$alertinfo[1]);
             $returnJson["enabletime"] = $userinfoarr["enabletime"];
-            echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+            echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
             die();
         }
         //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
@@ -119,7 +119,7 @@ class nyalogin {
                 if (in_array("qa", $faarr)) {
                     $returnJson["question"] = $nlcore->func->getquestion($userHash,$totpSecret);
                 }
-                echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+                echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
                 die();
             }
             if (!in_array($argReceived["2famode"], $faarr)) {
@@ -220,7 +220,7 @@ class nyalogin {
             "userinfo" => $userexinfoarr
         ]);
         if ($overflowsession) $returnJson["logout"] = $overflowsession;
-        echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+        echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
     }
     /**
      * @description: 修改当前用户的登录失败计数
@@ -248,7 +248,7 @@ class nyalogin {
         $returnJson = $nlcore->msg->m(0,$code);
         $returnJson["img"] = $newcaptcha["img"];
         $returnJson["timestamp"] = $newcaptcha["timestamp"];
-        echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+        echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
         die();
     }
     /**

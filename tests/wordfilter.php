@@ -7,7 +7,7 @@ if (isset($argv["w"])) {
     $returnarr = $nlcore->msg->m(0,1000000);
     if ($words[0]) $returnarr = $nlcore->msg->m(0,2020300);
     $returnarr = array_merge($returnarr,$words);
-    echo $nlcore->safe->encryptargv($returnarr);
+    echo $nlcore->sess->encryptargv($returnarr);
 } else {
     $nlcore->msg->stopmsg(2000101);
 }

@@ -64,7 +64,7 @@ class nyatotp {
             "apptoken" => $apptoken
         ];
         //如果 secret 或者 apptoken 已存在则删除
-        $result = $nlcore->db->delete($nlcore->cfg->db->tables["totp"],$datadic,"","OR");
+        $result = $nlcore->db->delete($nlcore->cfg->db->tables["encryption"],$datadic,"","OR");
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020405);
         //写入 device 表
         $datadic = array();
@@ -102,7 +102,7 @@ class nyatotp {
             "devid" => $deviceid,
             "time" => $stime
         );
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"],$datadic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["encryption"],$datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
         header('Content-Type:application/json;charset=utf-8');
         echo json_encode(array(
@@ -129,10 +129,10 @@ class nyatotp {
     //验证加密信息
     function encrypttest() {
         global $nlcore;
-        $argvarr = $nlcore->safe->decryptargv("encrypttest");
+        $argvarr = $nlcore->sess->decryptargv("encrypttest");
         $dataarray = $argvarr[0];
         $secret = $argvarr[1];
-        $nlcore->safe->encryptargv($dataarray,$secret);
+        $nlcore->sess->encryptargv($dataarray,$secret);
     }
     function __destruct() {
         $this->ga = null;

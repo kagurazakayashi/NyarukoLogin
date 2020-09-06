@@ -2,7 +2,7 @@
 class userinfo {
     function getuserinfo($echojson=true) {
         global $nlcore;
-        $inputInformation = $nlcore->safe->decryptargv("session");
+        $inputInformation = $nlcore->sess->decryptargv("session");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -23,6 +23,6 @@ class userinfo {
         if (count($userinfo) == 0) $nlcore->msg->stopmsg(2070001,$totpSecret);
         $returnJson = $nlcore->msg->m(0,1030300);
         $returnJson["uinfo"] = $userinfo;
-        echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+        echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
     }
 }

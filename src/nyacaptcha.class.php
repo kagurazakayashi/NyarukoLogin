@@ -19,7 +19,7 @@ class nyacaptcha {
      */
     function getcaptcha($extnow=true,$showcaptcha=false,$showimage=false) {
         global $nlcore;
-        $inputInformation = $nlcore->safe->decryptargv("captcha");
+        $inputInformation = $nlcore->sess->decryptargv("captcha");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -71,7 +71,7 @@ class nyacaptcha {
             // if (!$extnow) $retuenarr["file"] = $imgpath;
         // }
         if ($extnow) {
-            echo $nlcore->safe->encryptargv($retuenarr,$totpSecret);
+            echo $nlcore->sess->encryptargv($retuenarr,$totpSecret);
         } else {
             return $retuenarr;
         }
@@ -91,7 +91,7 @@ class nyacaptcha {
         $retuenarr = $this->getcaptcha(false);
         $retuenarr["code"] = $code;
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
-        echo $nlcore->safe->encryptargv($retuenarr,$totpSecret);
+        echo $nlcore->sess->encryptargv($retuenarr,$totpSecret);
         return $retuenarr;
     }
 

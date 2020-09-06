@@ -18,7 +18,7 @@ class nyaencryption {
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["app"], $datadic);
         if ($result[0] >= 2000000 || $result[2][0]["count(*)"] == 0) $nlcore->msg->stopmsg(2020401);
         // 檢查APP是否已經註冊 appKey
-        $appid = $nlcore->safe->chkappSecret($appKey);
+        $appid = $nlcore->safe->chkAppKey($appKey);
         if ($appid == null) $nlcore->msg->stopmsg(2020401);
         // 獲取客戶端的公鑰
         $clientPublicKey = null;
@@ -74,7 +74,7 @@ class nyaencryption {
         // 建立新的金鑰對和 secret
         if ($enableEncrypt) {
             $nlcore->safe->rsaCreateKey();
-            $secret = $nlcore->safe->md6($nlcore->safe->privateKey . $clientPublicKey);
+            $secret = $nlcore->safe->md6($nlcore->sess->privateKey . $clientPublicKey);
         } else {
             $secret = $nlcore->safe->randhash($time);
         }
@@ -88,12 +88,12 @@ class nyaencryption {
             "time" => $stime
         );
         if ($enableEncrypt) {
-            $datadic["private"] = $nlcore->safe->rsaRmTag($nlcore->safe->privateKey);
+            $datadic["private"] = $nlcore->safe->rsaRmTag($nlcore->sess->privateKey);
             // $datadic["private"] = $nlcore->safe->rsaRmBCode($datadic["private"]);
             $datadic["public"] = $nlcore->safe->rsaRmTag($clientPublicKey);
             // $datadic["public"] = $nlcore->safe->rsaRmBCode($datadic["public"]);
         }
-        $result = $nlcore->db->insert($nlcore->cfg->db->tables["totp"], $datadic);
+        $result = $nlcore->db->insert($nlcore->cfg->db->tables["encryption"], $datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
         // 將執行結果返回給客戶端
         header('Content-Type:application/json;charset=utf-8');
@@ -105,7 +105,7 @@ class nyaencryption {
             "encrypt" => strval($enableEncrypt)
         ];
         if ($enableEncrypt) {
-            $returnClientData["publickey"] = $nlcore->safe->publicKey;
+            $returnClientData["publickey"] = $nlcore->sess->publicKey;
             $returnClientData["apptoken"] = $apptoken;
             $redisTimeout = $nlcore->cfg->enc->redisCacheTimeout;
             if ($redisTimeout != 0 && $nlcore->db->initRedis()) {
@@ -119,7 +119,7 @@ class nyaencryption {
                 }
             }
         }
-        $nlcore->safe->publicKey = $clientPublicKey;
+        $nlcore->sess->publicKey = $clientPublicKey;
         echo json_encode($returnClientData);
     }
 }

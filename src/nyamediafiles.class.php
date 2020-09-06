@@ -2,7 +2,7 @@
 class nyamediafiles {
     function mediafiles() {
         global $nlcore;
-        $inputInformation = $nlcore->safe->decryptargv("session");
+        $inputInformation = $nlcore->sess->decryptargv("session");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -19,7 +19,7 @@ class nyamediafiles {
         } else {
             $mediainfo["code"] = 2050200;
         }
-        echo $nlcore->safe->encryptargv($mediainfo,$totpSecret);
+        echo $nlcore->sess->encryptargv($mediainfo,$totpSecret);
     }
 }
 ?>

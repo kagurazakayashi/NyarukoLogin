@@ -3,7 +3,7 @@ class nyasearch {
     function search() {
         global $nlcore;
         //IP检查和解密客户端提交的信息
-        $inputInformation = $nlcore->safe->decryptargv("fastsearch");
+        $inputInformation = $nlcore->sess->decryptargv("fastsearch");
         $argReceived = $inputInformation[0];
         $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
@@ -30,7 +30,7 @@ class nyasearch {
                 break;
         }
         $returnJson["timestamp"] = time();
-        echo $nlcore->safe->encryptargv($returnJson,$totpSecret);
+        echo $nlcore->sess->encryptargv($returnJson,$totpSecret);
     }
     /**
      * @description: 输入关键词，模糊搜索用户

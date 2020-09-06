@@ -378,7 +378,7 @@ class nyainfomsg {
             return json_encode($returnarr);
         } else {
             global $nlcore;
-            return $nlcore->safe->encryptargv($returnarr,$msgmode);
+            return $nlcore->sess->encryptargv($returnarr,$msgmode);
         }
     }
     /**
