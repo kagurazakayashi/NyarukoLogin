@@ -370,6 +370,16 @@
         function dic2sql($dic=null,$mode=0,$islike=false) {
             if ($dic === null) return "*";
             else if (count($dic) == 0) return "";
+            $dicKey = array_keys($dic);
+            for ($i=0; $i < count($dicKey); $i++) {
+                $nowKey = $dicKey[$i];
+                $nowVal = $dic[$nowKey];
+                if (is_array($nowVal)) {
+                    global $nlcore;
+                    $nowVal = $nlcore->safe->multiAarray2array($nowVal);
+                    $dic[$nowKey] = implode("", $nowVal);
+                }
+            }
             if ($mode == 0) {
                 $keys = "";
                 $vals = "";
