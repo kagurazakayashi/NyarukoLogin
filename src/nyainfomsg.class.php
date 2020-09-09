@@ -13,6 +13,9 @@ class nyainfomsg {
         //// A=1\BB=00\CC=00 : 通用成功
         ///// A=1\BB=00\CC=00\DD=00 :
         1000000 => '执行成功。',
+        //// A=1\BB=00\CC=01 : 加密
+        ///// A=1\BB=00\CC=01\DD=00 :
+        1000100 => '密钥创建成功。',
         /// A=1\BB=01 : 数据库类
         //// A=1\BB=01\CC=00 : 数据库相关
         ///// A=1\BB=01\CC=00\DD=00 :
@@ -148,9 +151,9 @@ class nyainfomsg {
         ///// A=2\BB=02\CC=04\DD=09 :
         2020409 => '内部错误：应用令牌不正确',
         ///// A=2\BB=02\CC=04\DD=10 :
-        2020410 => '内部错误：json解析失败',
+        2020410 => '内部错误：JSON 解析失败',
         ///// A=2\BB=02\CC=04\DD=11 :
-        2020411 => '内部错误：加密json解析失败',
+        2020411 => '内部错误：加密数据解析失败',
         ///// A=2\BB=02\CC=04\DD=12 :
         2020412 => '错误：客户端版本不匹配',
         ///// A=2\BB=02\CC=04\DD=13 :
@@ -171,8 +174,6 @@ class nyainfomsg {
         2020420 => '内部错误：公钥不正确',
         ///// A=2\BB=02\CC=04\DD=21 :
         2020421 => '内部错误：加載密钥失败',
-        ///// A=2\BB=02\CC=04\DD=22 :
-        2020422 => '内部错误：解密失败',
         //// A=2\BB=02\CC=05 : 图形验证码
         ///// A=2\BB=02\CC=05\DD=01 :
         2020501 => '错误：图形验证码检查失败',
@@ -362,7 +363,6 @@ class nyainfomsg {
      * @param String msgmode 输入 totp secret 而不是数字的话，会用此 secret 加密并返回。
      * @param Int code 错误代码
      * @param String/Array info 附加错误信息
-     * @param String totpsecret 加密用secret（不加则自动）
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
     function m($msgmode = 0,$code = 2000000,$info = null) {
@@ -388,13 +388,14 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
-    function stopmsg(int $code=-1, string $totpSecret="", $str="",$showmsg=true) {
+    function stopmsg(int $code=-1, $str="",$showmsg=true) {
+        $showmsg=true;
         if ($code > 0 && $showmsg) {
-            if ($totpSecret == "") $totpSecret = null;
-            $msgmode = $totpSecret ? $totpSecret : 1;
-            $json = $this->m($msgmode,$code,$str,$totpSecret);
+            global $nlcore;
+            $msgmode = (strlen($nlcore->sess->publicKey) > 0) ? 0 : 1;
+            $json = $this->m($msgmode,$code,$str);
             header('Content-Type:application/json;charset=utf-8');
-            echo $json;
+            $nlcore->sess->returnToClient($json);
         } else {
             header('HTTP/1.1 403 Forbidden');
         }

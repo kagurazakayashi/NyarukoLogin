@@ -1,14 +1,16 @@
 <?php
 class nyasafe {
     private $logfile = null; // 記錄詳細除錯資訊到檔案
-    const PRI_B = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n";
-    const PRI_E = "\n-----END ENCRYPTED PRIVATE KEY-----";
-    const PUB_B = "-----BEGIN PUBLIC KEY-----\n";
-    const PUB_E = "\n-----END PUBLIC KEY-----";
-    const PUR_B = "-----BEGIN RSA PUBLIC KEY-----";
-    const PUR_E = "-----END RSA PUBLIC KEY-----";
-    const PRI_S = "MIIFDjBABgkqhkiG9w0BBQ0wMzAbBgkq";
-    const PUB_S = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8A";
+    const PKBE_PRIE_B = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n";
+    const PKBE_PRIE_E = "\n-----END ENCRYPTED PRIVATE KEY-----";
+    const PKBE_PRI_B = "-----BEGIN PRIVATE KEY-----\n";
+    const PKBE_PRI_E = "\n-----END PRIVATE KEY-----";
+    const PKBE_PUB_B = "-----BEGIN PUBLIC KEY-----\n";
+    const PKBE_PUB_E = "\n-----END PUBLIC KEY-----";
+    const PKBE_PUBR_B = "-----BEGIN RSA PUBLIC KEY-----";
+    const PKBE_PUBR_E = "-----END RSA PUBLIC KEY-----";
+    const PKB_PRIB_B = "MIIFDjBABgkqhkiG9w0BBQ0wMzAbBgkq";
+    const PKB_PUBB_B = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8A";
     const HEADER_405 = "HTTP/1.1 405 Method Not Allowed";
     /**
      * @description: 建構函式
@@ -17,14 +19,16 @@ class nyasafe {
     }
     /**
      * @description: RSA 建立私鑰和公鑰
+     * @param String privateKeyPassword 私钥密码
      */
-    function rsaCreateKey() {
+    function rsaCreateKey(string $privateKeyPassword = ""): void {
         global $nlcore;
+        if (strlen($privateKeyPassword) == 0) $privateKeyPassword = null;
         try {
             // 建立公鑰和私鑰
             $rsaRes = openssl_pkey_new($nlcore->cfg->enc->pkeyConfig);
             // 獲取私鑰給 privateKey
-            openssl_pkey_export($rsaRes, $nlcore->sess->privateKey, $nlcore->cfg->enc->privateKeyPassword, $nlcore->cfg->enc->pkeyConfig);
+            openssl_pkey_export($rsaRes, $nlcore->sess->privateKey, $privateKeyPassword, $nlcore->cfg->enc->pkeyConfig);
             // 獲取公鑰給 publicKey
             $nlcore->sess->publicKey = openssl_pkey_get_details($rsaRes)["key"];
             // 釋放私鑰
@@ -39,16 +43,16 @@ class nyasafe {
      * @return String PKIX (X.509) 公鑰
      */
     function convertRsaHeaderInformation(string $key): string {
-        if (strpos($key, self::PUB_S) !== false) return $key;
+        if (strpos($key, self::PKB_PUBB_B) !== false) return $key;
         $key = $this->rsaRmTag($key);
-        $key = self::PUB_S . str_replace("\n", '', $key);
-        $key = self::PUB_B . wordwrap($key, 64, "\n", true) . self::PUB_E;
+        $key = self::PKB_PUBB_B . str_replace("\n", '', $key);
+        $key = self::PKBE_PUB_B . wordwrap($key, 64, "\n", true) . self::PKBE_PUB_E;
         return $key;
     }
     /**
      * @description: RSA 加密
      * @param String str 明文字串
-     * @param Bool isPrivateKey 是否使用私钥加密
+     * @param Bool isPrivateKey 是否使用私鑰加密
      * @return String 加密資料
      */
     function rsaEncrypt(string $str, bool $isPrivateKey = false): string {
@@ -71,28 +75,75 @@ class nyasafe {
         return $encrypted;
     }
     /**
+     * @description: RSA 分段加密
+     * @param String str 明文字串
+     * @param Bool isPrivateKey 是否使用私鑰加密
+     * @param Int chunkLen 分段位數，0為不分段  chunkLen/16-11
+     * @return String 加密資料
+     */
+    function rsaEncryptChunk(string $str, bool $isPrivateKey = false, int $chunkLen = 245): string {
+        if ($chunkLen == 0) {
+            return $this->rsaEncrypt($str, $isPrivateKey);
+        } else {
+            $fulldata = "";
+            foreach (str_split($str, $chunkLen) as $chunk) {
+                $fulldata .= $this->rsaEncrypt($chunk, $isPrivateKey);
+            }
+            return $fulldata;
+        }
+    }
+    /**
      * @description: RSA 解密
      * @param String data 加密資料
+     * @param Bool isPrivateKey 是否使用私鑰解密
      * @return String 明文字串
      */
-    function rsaDecrypt(string $data, bool $isPrivateKey = false): string {
+    function rsaDecrypt(string $data, bool $isPrivateKey = true): string {
         global $nlcore;
+        // die(json_encode(["publicKey"=>$nlcore->sess->publicKey,"privateKey"=>$nlcore->sess->privateKey,"privateKeyPassword"=>$nlcore->cfg->enc->privateKeyPassword]));
         $decrypted = null;
         try {
             if ($isPrivateKey) {
                 if ($nlcore->cfg->enc->privateKeyPassword) {
                     $dkey = openssl_pkey_get_private($nlcore->sess->privateKey, $nlcore->cfg->enc->privateKeyPassword);
-                    openssl_private_decrypt($data, $decrypted, $dkey);
+                    // OPENSSL_PKCS1_PADDING, OPENSSL_SSLV23_PADDING, OPENSSL_PKCS1_OAEP_PADDING, OPENSSL_NO_PADDING.
+                    if (!openssl_private_decrypt($data, $decrypted, $dkey, OPENSSL_PKCS1_PADDING)) {
+                        $nlcore->msg->stopmsg(2020411, "D_PWPRI");
+                    }
                 } else {
-                    openssl_private_decrypt($data, $decrypted, $nlcore->sess->privateKey);
+                    if (!openssl_private_decrypt($data, $decrypted, $nlcore->sess->privateKey)) {
+                        $nlcore->msg->stopmsg(2020411, "D_PRI");
+                    }
                 }
             } else {
-                openssl_public_decrypt($data, $decrypted, $nlcore->sess->publicKey);
+                if (!openssl_public_decrypt($data, $decrypted, $nlcore->sess->publicKey)) {
+                    $nlcore->msg->stopmsg(2020411, "D_PUB");
+                }
             }
         } catch (Exception $e) {
-            $nlcore->msg->stopmsg(2020411, "", $e->getMessage());
+            $nlcore->msg->stopmsg(2020411, $e->getMessage());
         }
+        if (!$decrypted) $nlcore->msg->stopmsg(2020411, "D_NIL");
         return $decrypted;
+    }
+    /**
+     * @description: RSA 分段解密
+     * @param String data 加密資料
+     * @param Bool isPrivateKey 是否使用私鑰解密
+     * @param Int chunkLen 分段位數，0為不分段  chunkLen/8
+     * @return String 明文字串
+     */
+    function rsaDecryptChunk(string $data, bool $isPrivateKey = true, int $chunkLen = 512): string {
+        if ($chunkLen == 0) {
+            return $this->rsaDecrypt($data, $isPrivateKey);
+        } else {
+            $fullData = "";
+            foreach (str_split($data, $chunkLen) as $chunk) {
+                $chunkData = $this->rsaDecrypt($chunk, $isPrivateKey);
+                $fullData .= $chunkData;
+            }
+            return $fullData;
+        }
     }
     /**
      * @description: 檢查快取的私鑰和公鑰是否正確
@@ -192,9 +243,9 @@ class nyasafe {
     function rsaAddTag(string $str, bool $isPrivateKey = false): string {
         if (strlen($str) < 4) return "";
         if ($isPrivateKey) {
-            return self::PRI_B . $str . self::PRI_E;
+            return self::PKBE_PRIE_B . $str . self::PKBE_PRIE_E;
         } else {
-            return self::PUB_B . $str . self::PUB_E;
+            return self::PKBE_PUB_B . $str . self::PKBE_PUB_E;
         }
     }
     /**
@@ -221,9 +272,9 @@ class nyasafe {
      */
     function rsaAddBCode(string $str, bool $isPrivateKey = false) {
         if ($isPrivateKey) {
-            return self::PRI_S . $str;
+            return self::PKB_PRIB_B . $str;
         } else {
-            return self::PUB_S . $str;
+            return self::PKB_PUBB_B . $str;
         }
     }
     /**
@@ -246,7 +297,8 @@ class nyasafe {
         $data = str_replace(['-', '_'], ['+', '/'], $fstring);
         $mod4 = strlen($data) % 4;
         if ($mod4) $data .= substr('====', $mod4);
-        return base64_decode($data);
+        $data = base64_decode($data);
+        return ($data === FALSE) ? "" : $data;
     }
     /**
      * @description: gzflate 壓縮字串到字串
@@ -928,22 +980,6 @@ class nyasafe {
         }
     }
     /**
-     * @description: 驗證該使用者已登入並取得資訊，如果未登入直接返回錯誤資訊到客戶端。
-     * @param Array inputInformation 由 decryptargv 函式返回的結果陣列
-     * @return Array [會話令牌,使用者會話資訊,使用者雜湊]
-     */
-    function userLogged(array $inputinformation): array {
-        global $nlcore;
-        $argReceived = $inputinformation[0];
-        $totpSecret = $inputinformation[1];
-        $userToken = $argReceived["token"];
-        if (!$this->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402, $totpSecret, "T-" . $userToken);
-        $userSessionInfo = $nlcore->sess->sessionstatuscon($userToken, true, $totpSecret);
-        if (!$userSessionInfo) $nlcore->msg->stopmsg(2040400, $totpSecret, "T-" . $userToken);
-        $userHash = $userSessionInfo["userhash"];
-        return [$userToken, $userSessionInfo, $userHash];
-    }
-    /**
      * @description: 批量替换指定字符
      * @param String string 规定被搜索的字符串
      * @param Array<String:String> findreplace 要替换的内容字典
@@ -1058,6 +1094,21 @@ class nyasafe {
             if ($value != null) return false;
         }
         return true;
+    }
+    /**
+     * @method 多维数组转一维数组
+     * @param Array array 多维数组
+     * @return Array array 一维数组
+     */
+    function multiAarray2array($array) {
+        static $result_array = array();
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $this->multiAarray2array($value);
+            } else
+                $result_array[$key] = $value;
+        }
+        return $result_array;
     }
     /**
      * @description: 对明文密码进行加密以便存储到数据库

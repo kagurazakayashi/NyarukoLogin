@@ -3,15 +3,21 @@ class nyaencryption {
     /**
      * @description: 建立新的裝置金鑰
      * @param Array argv 客戶端提供的資訊
-     * @param Array ipinfo 獲取的客戶端資訊
-     * @param Int timestamp 時間戳
+     * @param Int ipid 
+     * @param Bool retention 保持密钥对缓存区中原有的密钥
+     * @return Array 執行結果陣列，可以直接 json 化返回客戶端
      */
-    function newDeviceKey(array $argv, array $ipinfo) {
+    function newDeviceKey(array $argv, int $ipid, bool $retention=false):array {
         global $nlcore;
-        $time = $ipinfo[0];
-        $stime = $ipinfo[1];
-        $ipid = $ipinfo[2];
-        $appKey = isset($argv["appkey"]) ? $argv["appkey"] : $nlcore->msg->stopmsg(2000101, "", "", true);
+        $datetime = $nlcore->safe->getdatetime();
+        $time = $datetime[0];
+        $stime = $datetime[1];
+        $oldKey = [];
+        if ($retention) {
+            // 如果金鑰對快取空間中已經有金鑰對，先備份，返回客戶端前再還原
+            $oldKey = [$nlcore->sess->publicKey,$nlcore->sess->privateKey];
+        }
+        $appKey = isset($argv["appkey"]) ? $argv["appkey"] : $nlcore->msg->stopmsg(2000101);
         // 檢查應用名稱和金鑰
         if (!$nlcore->safe->is_rhash64($appKey)) $nlcore->msg->stopmsg(2020417);
         $datadic = ["appkey" => $appKey];
@@ -73,7 +79,7 @@ class nyaencryption {
         }
         // 建立新的金鑰對和 secret
         if ($enableEncrypt) {
-            $nlcore->safe->rsaCreateKey();
+            $nlcore->safe->rsaCreateKey($nlcore->cfg->enc->privateKeyPassword);
             $secret = $nlcore->safe->md6($nlcore->sess->privateKey . $clientPublicKey);
         } else {
             $secret = $nlcore->safe->randhash($time);
@@ -96,9 +102,8 @@ class nyaencryption {
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["encryption"], $datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
         // 將執行結果返回給客戶端
-        header('Content-Type:application/json;charset=utf-8');
         $returnClientData = [
-            "code" => 1000000,
+            "code" => 1000100,
             "time" => $stime,
             "timestamp" => $time,
             "timezone" => date_default_timezone_get(),
@@ -119,7 +124,12 @@ class nyaencryption {
                 }
             }
         }
-        $nlcore->sess->publicKey = $clientPublicKey;
-        echo json_encode($returnClientData);
+        if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
+            $nlcore->sess->privateKey = $oldKey[1];
+            $nlcore->sess->publicKey = $oldKey[0];
+        } else {
+            $nlcore->sess->publicKey = $clientPublicKey;
+        }
+        return $returnClientData;
     }
 }
