@@ -203,7 +203,7 @@ class nyasession {
         }
         if (!$argReceived || count($argReceived) == 0) $nlcore->msg->stopmsg(2020400);
         // 檢查 API 版本是否一致
-        if (!isset($argReceived["apiver"]) || intval($argReceived["apiver"]) != 2) $nlcore->msg->stopmsg(2020412);
+        if (!isset($argReceived["apiver"]) || intval($argReceived["apiver"]) != 2) $nlcore->msg->stopmsg(2020412,$argReceived["apiver"] ?? "");
         // 如果提供了 appkey ，則檢查 APP 是否有效，並查詢 appid
         $appid = null;
         if (isset($argReceived["appkey"])) {
@@ -289,6 +289,9 @@ class nyasession {
         for ($i = 0; $i < count($subEncryptedJsonArr); $i++) {
             $encryptedData = null;
             $subEncryptedJson = $subEncryptedJsonArr[$i];
+
+
+
             // 解密資料，自動判斷是否是變種 base64
             if ($nlcore->safe->isbase64($subEncryptedJson, true)) {
                 $encryptedData = $nlcore->safe->urlb64decode($subEncryptedJson);
@@ -303,20 +306,15 @@ class nyasession {
             } else {
                 $nlcore->msg->stopmsg(2020410, "0");
             }
+
             // 開始解密
-
-
             $decryptData = $nlcore->safe->rsaDecryptChunk($encryptedData);
-            // die($decryptData);
-            // $decryptData = json_decode($decryptData, true);
-            // die($decryptData);
             if ($decryptData === FALSE) {
                 $nlcore->msg->stopmsg(2020410);
             }
             $decryptDataFull .= $decryptData;
         }
         $decryptDataFull = json_decode($decryptDataFull, true);
-
         return $decryptDataFull;
     }
     /**

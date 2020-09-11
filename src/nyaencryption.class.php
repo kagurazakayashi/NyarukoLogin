@@ -3,7 +3,7 @@ class nyaencryption {
     /**
      * @description: 建立新的裝置金鑰
      * @param Array argv 客戶端提供的資訊
-     * @param Int ipid 
+     * @param Int ipid IP 地址 ID，从 sess 获得
      * @param Bool retention 保持密钥对缓存区中原有的密钥
      * @return Array 執行結果陣列，可以直接 json 化返回客戶端
      */
@@ -32,7 +32,8 @@ class nyaencryption {
         if ($enableEncrypt) {
             $clientPublicKey = $argv["publickey"] ?? $nlcore->msg->stopmsg(2020420);
             if (strcmp(substr($clientPublicKey, 0, 5), "-----") != 0) {
-                $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
+                $clientPublicKey = base64_decode($clientPublicKey);
+                // $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
             }
             $clientPublicKey = $nlcore->safe->convertRsaHeaderInformation($clientPublicKey);
             $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey, true);
@@ -124,11 +125,15 @@ class nyaencryption {
                 }
             }
         }
-        if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
-            $nlcore->sess->privateKey = $oldKey[1];
-            $nlcore->sess->publicKey = $oldKey[0];
+        if ($retention) {
+            if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
+                $nlcore->sess->privateKey = $oldKey[1];
+                $nlcore->sess->publicKey = $oldKey[0];
+            } else {
+                $nlcore->sess->publicKey = $clientPublicKey;
+            }
         } else {
-            $nlcore->sess->publicKey = $clientPublicKey;
+            $nlcore->sess->publicKey = $nlcore->safe::PKBE_PUB_B . $nlcore->cfg->enc->defaultPublicKey . $nlcore->safe::PKBE_PUB_E;
         }
         return $returnClientData;
     }

@@ -14,6 +14,6 @@ $inputInformation = $nlcore->sess->decryptargv("encryption", PHP_INT_MAX, PHP_IN
 $returnClientData = $nyaencryption->newDeviceKey($nlcore->sess->argReceived,$nlcore->sess->ipId);
 // echo $nlcore->sess->privateKey;
 // echo $nlcore->sess->publicKey;
-header('Content-Type:application/json;charset=utf-8');
+// header('Content-Type:application/json;charset=utf-8');
 $returnClientData = $nlcore->sess->encryptargv($returnClientData);
 exit($returnClientData);

@@ -62,12 +62,12 @@ class nyasafe {
             if ($isPrivateKey) {
                 if ($nlcore->cfg->enc->privateKeyPassword) {
                     $dkey = openssl_pkey_get_private($nlcore->sess->privateKey, $nlcore->cfg->enc->privateKeyPassword);
-                    openssl_private_encrypt($str, $encrypted, $dkey);
+                    openssl_private_encrypt($str, $encrypted, $dkey, OPENSSL_PKCS1_PADDING);
                 } else {
-                    openssl_private_encrypt($str, $encrypted, $nlcore->sess->privateKey);
+                    openssl_private_encrypt($str, $encrypted, $nlcore->sess->privateKey, OPENSSL_PKCS1_PADDING);
                 }
             } else {
-                openssl_public_encrypt($str, $encrypted, $nlcore->sess->publicKey);
+                openssl_public_encrypt($str, $encrypted, $nlcore->sess->publicKey, OPENSSL_PKCS1_PADDING);
             }
         } catch (Exception $e) {
             $nlcore->msg->stopmsg(2020406, "", $e->getMessage());
@@ -107,7 +107,7 @@ class nyasafe {
                 if ($nlcore->cfg->enc->privateKeyPassword) {
                     $dkey = openssl_pkey_get_private($nlcore->sess->privateKey, $nlcore->cfg->enc->privateKeyPassword);
                     // OPENSSL_PKCS1_PADDING, OPENSSL_SSLV23_PADDING, OPENSSL_PKCS1_OAEP_PADDING, OPENSSL_NO_PADDING.
-                    if (!openssl_private_decrypt($data, $decrypted, $dkey, OPENSSL_PKCS1_PADDING)) {
+                    if (!openssl_private_decrypt($data, $decrypted, $dkey)) {
                         $nlcore->msg->stopmsg(2020411, "D_PWPRI");
                     }
                 } else {
