@@ -7,16 +7,12 @@ class nyaencryption {
      * @param Bool retention 保持密钥对缓存区中原有的密钥
      * @return Array 執行結果陣列，可以直接 json 化返回客戶端
      */
-    function newDeviceKey(array $argv, int $ipid, bool $retention=false):array {
+    function newDeviceKey(array $argv, int $ipid):array {
         global $nlcore;
         $datetime = $nlcore->safe->getdatetime();
         $time = $datetime[0];
         $stime = $datetime[1];
         $oldKey = [];
-        if ($retention) {
-            // 如果金鑰對快取空間中已經有金鑰對，先備份，返回客戶端前再還原
-            $oldKey = [$nlcore->sess->publicKey,$nlcore->sess->privateKey];
-        }
         $appKey = isset($argv["appkey"]) ? $argv["appkey"] : $nlcore->msg->stopmsg(2000101);
         // 檢查應用名稱和金鑰
         if (!$nlcore->safe->is_rhash64($appKey)) $nlcore->msg->stopmsg(2020417);
@@ -35,9 +31,14 @@ class nyaencryption {
                 $clientPublicKey = base64_decode($clientPublicKey);
                 // $clientPublicKey = base64_decode(str_replace(['-', '_'], ['+', '/'], $clientPublicKey));
             }
-            $clientPublicKey = $nlcore->safe->convertRsaHeaderInformation($clientPublicKey);
             $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey, true);
-            if ($clientPublicKeyType != 1) $nlcore->msg->stopmsg(2020420, "", strval($clientPublicKeyType));
+            if ($clientPublicKeyType == -1) {
+                $clientPublicKey = $nlcore->safe->convertRsaHeaderInformation($clientPublicKey);
+                $clientPublicKeyType = $nlcore->safe->isRsaKey($clientPublicKey, true);
+                if ($clientPublicKeyType != 1) $nlcore->msg->stopmsg(2020420, "", strval($clientPublicKeyType));
+            } else if ($clientPublicKeyType != 1) {
+                $nlcore->msg->stopmsg(2020420, "", strval($clientPublicKeyType));
+            }
         }
         // 建立 apptoken
         $apptoken = $nlcore->safe->randhash();
@@ -99,6 +100,7 @@ class nyaencryption {
             // $datadic["private"] = $nlcore->safe->rsaRmBCode($datadic["private"]);
             $datadic["public"] = $nlcore->safe->rsaRmTag($clientPublicKey);
             // $datadic["public"] = $nlcore->safe->rsaRmBCode($datadic["public"]);
+            if (isset($argv["keylength"])) $datadic["length"] = intval($argv["keylength"]);
         }
         $result = $nlcore->db->insert($nlcore->cfg->db->tables["encryption"], $datadic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2020406);
@@ -108,7 +110,8 @@ class nyaencryption {
             "time" => $stime,
             "timestamp" => $time,
             "timezone" => date_default_timezone_get(),
-            "encrypt" => strval($enableEncrypt)
+            "encrypt" => strval($enableEncrypt),
+            "keylength" => $datadic["length"] ?? 4096
         ];
         if ($enableEncrypt) {
             $returnClientData["publickey"] = $nlcore->sess->publicKey;
@@ -125,15 +128,11 @@ class nyaencryption {
                 }
             }
         }
-        if ($retention) {
-            if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
-                $nlcore->sess->privateKey = $oldKey[1];
-                $nlcore->sess->publicKey = $oldKey[0];
-            } else {
-                $nlcore->sess->publicKey = $clientPublicKey;
-            }
+        if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
+            $nlcore->sess->privateKey = $oldKey[1];
+            $nlcore->sess->publicKey = $oldKey[0];
         } else {
-            $nlcore->sess->publicKey = $nlcore->safe::PKBE_PUB_B . $nlcore->cfg->enc->defaultPublicKey . $nlcore->safe::PKBE_PUB_E;
+            $nlcore->sess->publicKey = $clientPublicKey;
         }
         return $returnClientData;
     }

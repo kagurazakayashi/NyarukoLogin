@@ -237,7 +237,7 @@ class nyasession {
             } else {
                 $this->privateKey = $nlcore->safe::PKBE_PRI_B . $nlcore->cfg->enc->defaultPrivateKey . $nlcore->safe::PKBE_PRI_E;
             }
-            $this->publicKey = $nlcore->safe::PKBE_PUB_B . $nlcore->cfg->enc->defaultPublicKey . $nlcore->safe::PKBE_PUB_E;
+            // $this->publicKey = $nlcore->safe::PKBE_PUB_B . $nlcore->cfg->enc->defaultPublicKey . $nlcore->safe::PKBE_PUB_E;
         } else {
             $redisTimeout = $nlcore->cfg->enc->redisCacheTimeout;
             // 查詢 apptoken 對應的 公鑰 和 私鑰
@@ -289,9 +289,6 @@ class nyasession {
         for ($i = 0; $i < count($subEncryptedJsonArr); $i++) {
             $encryptedData = null;
             $subEncryptedJson = $subEncryptedJsonArr[$i];
-
-
-
             // 解密資料，自動判斷是否是變種 base64
             if ($nlcore->safe->isbase64($subEncryptedJson, true)) {
                 $encryptedData = $nlcore->safe->urlb64decode($subEncryptedJson);

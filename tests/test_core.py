@@ -181,7 +181,6 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         tlog("解密数据 ...")
     try:
         postRes = base64.b64decode(postRes)
-        privateKey = str.encode(privateKey)
         postRes = rsaDecrypt(privateKey, postRes, showAllInfo)
     except:
         terr("解密不成功。")
