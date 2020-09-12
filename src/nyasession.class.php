@@ -258,7 +258,8 @@ class nyasession {
                 // 不能從 Redis 中載入，從 MySQL 中載入
                 $datadic = ["apptoken" => $apptoken];
                 $tableStr = $nlcore->cfg->db->tables["encryption"];
-                $result = $nlcore->db->select(["secret"], $tableStr, $datadic);
+                $columnArr = ["public","private"];
+                $result = $nlcore->db->select($columnArr, $tableStr, $datadic);
                 // 空或查詢失敗都視為不正確
                 if (!$result || $result[0] != 1010000 || !isset($result[2][0])) {
                     $nlcore->msg->stopmsg(2020409, $apptoken ?? "no token");

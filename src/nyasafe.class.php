@@ -151,9 +151,15 @@ class nyasafe {
      */
     function autoCheck(): bool {
         global $nlcore;
-        if ($this->isRsaKey($nlcore->sess->publicKey) != 1) return false;
+        $isRsaKey = $this->isRsaKey($nlcore->sess->publicKey);
+        if ($isRsaKey != 1) {
+            return false;
+        }
         $privateKeyPassword = $nlcore->cfg->enc->privateKeyPassword;
-        if ($this->isRsaKey($nlcore->sess->privateKey, false, $privateKeyPassword) != 2) return false;
+        $isRsaKey = $this->isRsaKey($nlcore->sess->privateKey, false, $privateKeyPassword);
+        if ($isRsaKey != 2 && $isRsaKey != 3) {
+            return false;
+        }
         return true;
     }
     /**
@@ -215,6 +221,7 @@ class nyasafe {
         } else {
             $iskey = -4;
         }
+        // if ($iskey < 0) die("RsaKeyErr=".strval($iskey));
         return $iskey;
     }
     /**
@@ -254,8 +261,14 @@ class nyasafe {
      */
     function autoRsaAddTag() {
         global $nlcore;
-        $nlcore->sess->publicKey = $this->rsaAddTag($nlcore->sess->publicKey, false);
-        $nlcore->sess->privateKey = $this->rsaAddTag($nlcore->sess->privateKey, true);
+        $pubKey = $nlcore->sess->publicKey;
+        if (strcmp(substr($pubKey, 0, 5), "-----") != 0) {
+            $nlcore->sess->publicKey = $this->rsaAddTag($pubKey, false);
+        }
+        $priKey = $nlcore->sess->privateKey;
+        if (strcmp(substr($priKey, 0, 5), "-----") != 0) {
+            $nlcore->sess->privateKey = $this->rsaAddTag($priKey, true);
+        }
     }
     /**
      * @description: 移除前部分資料

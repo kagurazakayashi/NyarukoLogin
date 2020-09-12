@@ -69,11 +69,10 @@ postData = {
 }
 url = jsonfiledata["url"]+"nyaencryption.php"
 resArr = test_core.postarray(
-    url, postData, True, default_public_key, privatekey)
+    url, postData, True, default_public_key, privatekey,0)
 test_core.tlog("保存到数据文件 ...")
-jsonfiledata["publickey"] = base64.b64encode(
-    resArr['publickey'].encode()).decode()
-jsonfiledata["privateKey"] = base64.b64encode(privatekey).decode()
+jsonfiledata["publickey"] = resArr['publickey']
+jsonfiledata["privateKey"] = privatekey.decode()
 jsonfiledata["apptoken"] = resArr['apptoken']
 jsonfiledata["updatetime"] = [resArr['time'],
                               resArr['timestamp'], resArr['timezone']]

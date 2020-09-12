@@ -126,8 +126,8 @@ def postarray_p(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据�
     tok("完成。")
     return dataarr
 
-
-def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数组", showAllInfo=True, publicKey: "服务器公钥" = None, privateKey: "客户端私钥" = None):
+# appKeyMode:  0.使用'd'  1.apptoken作为key  2.apptoken加入json
+def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数组", showAllInfo=True, publicKey: "服务器公钥" = None, privateKey: "客户端私钥" = None, appKeyMode=1):
     """[加密传输]向服务器提交内容并显示返回内容，自动处理加密解密"""
     jsonfiledata = getjsonfiledata(True)
     if (showAllInfo):
@@ -141,7 +141,7 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         privateKey = jsonfiledata["privateKey"]
     if (showAllInfo):
         tlog("插入固定提交信息 ...")
-    if jsonfiledata["apptoken"]:
+    if appKeyMode == 2:
         jsonDataArr["apptoken"] = jsonfiledata["apptoken"]
     jsonDataArr["apiver"] = jsonfiledata["apiver"]
     if (showAllInfo):
@@ -153,8 +153,12 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     if (showAllInfo):
         tlog("正在加密数据 ...")
     publicKey = str.encode(publicKey)
+    if appKeyMode == 0:
+        postKey = 'd'
+    elif appKeyMode == 1:
+        postKey = jsonfiledata["apptoken"]
     postData = {
-        'd': rsaEncrypt(publicKey, jsondata, showAllInfo)
+        postKey: rsaEncrypt(publicKey, jsondata, showAllInfo)
     }
     postMod = parse.urlencode(postData).encode(encoding='utf-8')
     if (showAllInfo):
@@ -169,8 +173,11 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     postRes = postRes.decode(encoding='utf-8')
     if (showAllInfo):
         tlog(postRes)
+    if re.match("^[A-Za-z0-9_-]*$", postRes) == False:
+        terr("返回了非预期数据")
+        quit()
     if (showAllInfo):
-        tlog("还原 JSON ...")
+        tlog("还原 BASE64 ...")
     postRes = postRes.replace('-', '+').replace('_', '/')
     mod4 = len(postRes) % 4
     if mod4:
@@ -187,6 +194,9 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         quit()
     if (showAllInfo):
         tlog("检查返回的数据 ...")
+    if postRes[0:1] != b'[' and postRes[0:1] != b'{' :
+        terr("返回数据错误。")
+        quit()
     if (showAllInfo):
         tlog(str(postRes, encoding="utf-8"))
     try:
