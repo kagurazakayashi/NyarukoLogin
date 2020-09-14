@@ -5,31 +5,30 @@ class nyasignup {
     function adduser(nyacore $nlcore, array $inputInformation):array {
         //IP检查和解密客户端提交的信息
         $argReceived = $inputInformation[0];
-        $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
         $ipid = $inputInformation[3];
         $returnJson = [];
         //检查参数输入是否齐全
         $argReceivedKeys = ["captcha","password","user","nickname"];
         if ($nlcore->safe->keyinarray($argReceived,$argReceivedKeys) > 0) {
-            $nlcore->msg->stopmsg(2000101,$totpSecret);
+            $nlcore->msg->stopmsg(2000101);
         }
         //检查验证码是否正确
         $nyacaptcha = new nyacaptcha();
-        if (!$nyacaptcha->verifycaptcha($totpToken,$totpSecret,$argReceived["captcha"])) die();
+        if (!$nyacaptcha->verifycaptcha($totpToken,$argReceived["captcha"])) die();
         //检查输入的是邮箱还是手机号
         $user = $argReceived["user"];
-        $logintype = $nlcore->func->logintype($user,$totpSecret); //0:邮箱 1:手机号
+        $logintype = $nlcore->func->logintype($user); //0:邮箱 1:手机号
         //检查是否允许使用这种方式注册
-        if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->stopmsg(2040103,$totpSecret);
+        if (!$nlcore->cfg->app->logintype[$logintype]) $nlcore->msg->stopmsg(2040103);
         //检查输入格式是否正确
         $newuserconf = $nlcore->cfg->app->newuser;
         $maxLen = $nlcore->cfg->app->maxLen;
         $userstrlen = strlen($user);
         if ($logintype == 0 && ($userstrlen < 5 || $userstrlen > $maxLen["email"] || !$nlcore->safe->isEmail($user))) {
-            $nlcore->msg->stopmsg(2020207,$totpSecret,$user);
+            $nlcore->msg->stopmsg(2020207,$user);
         } else if ($logintype == 1 && $userstrlen != 11) {
-            $nlcore->msg->stopmsg(2020205,$totpSecret,$user);
+            $nlcore->msg->stopmsg(2020205,$user);
         }
         //检查密码强度是否符合规则
         $password = $argReceived["password"];
@@ -46,28 +45,28 @@ class nyasignup {
             }
         } else if ($nicknamelen > $maxLen["name"]) {
             //昵称太长
-            $nlcore->msg->stopmsg(2040105,$totpSecret,$nickname);
+            $nlcore->msg->stopmsg(2040105,$nickname);
         }
         // 檢查異常符號
-        $nlcore->safe->safestr($nickname,true,false,$totpSecret);
+        $nlcore->safe->safestr($nickname,true,false);
         // 檢查敏感詞
-        $nlcore->safe->wordfilter($nickname,true,$totpSecret);
+        $nlcore->safe->wordfilter($nickname,true);
         //检查邮箱或者手机号是否已经重复
-        $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user,$totpSecret);
-        if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$totpSecret,$user);
+        $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user);
+        if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$user);
         //生成账户代码
-        $nameid = $this->nlcore->func->genuserid($nickname,$this->totpSecret);
+        $nameid = $this->nlcore->func->genuserid($nickname);
         //生成唯一哈希，遇到重复的重试100次
         $hash = null;
         for ($i=0; $i < 10; $i++) {
             $hash = $nlcore->safe->randstr(64);
             // $hash = $nlcore->safe->rhash64$datetime[0]);
             // 检查哈希是否存在
-            $exists = $nlcore->func->isalreadyexists(2,$hash,$totpSecret);
+            $exists = $nlcore->func->isalreadyexists(2,$hash);
             if ($exists) $hash = null;
             else break;
         }
-        if ($hash == null) $nlcore->msg->stopmsg(2040107,$totpSecret);
+        if ($hash == null) $nlcore->msg->stopmsg(2040107);
         //分配预设的用户组
         $usergroup = $newuserconf["group"];
         //生成密码到期时间
@@ -103,7 +102,7 @@ class nyasignup {
         }
         $tableStr = $nlcore->cfg->db->tables["users"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040108,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040108);
         // 註冊 usergroup 表
         $insertDic = [
             "userhash" => $hash,
@@ -111,14 +110,14 @@ class nyasignup {
         ];
         $tableStr = $nlcore->cfg->db->tables["usergroup"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040109,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040109);
         // 註冊 protection 表
         $insertDic = [
             "userhash" => $hash
         ];
         $tableStr = $nlcore->cfg->db->tables["protection"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040110,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040110);
         // 註冊 info 表
         $insertDic = [
             "userhash" => $hash,
@@ -127,7 +126,7 @@ class nyasignup {
         ];
         $tableStr = $nlcore->cfg->db->tables["info"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111);
         // 記錄 history 表
         $insertDic = [
             "userhash" => $hash,
@@ -139,7 +138,7 @@ class nyasignup {
         ];
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
         // 返回到客戶端
         $returnJson["userhash"] = $hash;
         $returnJson["msg"] = $nlcore->msg->imsg[$returnJson["code"]];

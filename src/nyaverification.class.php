@@ -6,10 +6,9 @@ class nyaverification {
      * @param String nickname 用户昵称
      * @param String mailto 收件人邮箱
      * @param String language 使用指定语言发送邮件(可选，默认自动检测)
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Array 多个信息
      */
-    function sendmail($userHash,$nickname,$mailto,$language=null,$totpSecret=null) {
+    function sendmail($userHash,$nickname,$mailto,$language=null) {
         global $nlcore;
         $language = $nlcore->safe->getlanguage($language);
         $mailtemplatefilepath = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."template".DIRECTORY_SEPARATOR."signupmail.".$language.".html";
@@ -48,7 +47,7 @@ class nyaverification {
             "api_return_result" => $api_return_result
         );
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2030201,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2030201);
         return [$mailhtml,$vcode];
     }
 }

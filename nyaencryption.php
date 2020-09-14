@@ -2,7 +2,7 @@
 require_once "src/nyacore.class.php";
 require_once 'src/nyaencryption.class.php';
 $nyaencryption = new nyaencryption();
-$argv = count($_POST) > 0 ? $_POST : $_GET;
+// $argv = count($_POST) > 0 ? $_POST : $_GET;
 
 // 完整收發內含變數演示
 $inputInformation = $nlcore->sess->decryptargv("encryption", PHP_INT_MAX, PHP_INT_MAX, false);

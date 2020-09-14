@@ -30,41 +30,35 @@ class nyasession {
             if ($startend) {
                 $statinfo = $nlcore->msg->m(0, 1030200);
                 $statinfo = array_merge($statinfo, $startend);
-                echo $nlcore->sess->encryptargv($statinfo, null);
+                echo $this->encryptargv($statinfo, null);
             } else {
                 $nlcore->msg->stopmsg(1030201);
             }
             die();
         }
-        $inputInformation = $nlcore->sess->decryptargv("session");
-        $argReceived = $inputInformation[0];
-        $totpSecret = $inputInformation[1];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $appid = $inputInformation[4];
-        $returnJson = [];
+        $this->decryptargv("session");
+        $argReceived = $this->argReceived;
         $usertoken = $argReceived["token"] ?? null;
         if (!$usertoken || !$nlcore->safe->is_rhash64($argReceived["token"])) {
             $nlcore->msg->stopmsg(2040400, $usertoken);
         }
-        $status = $this->sessionstatuscon($argReceived["token"], false, $totpSecret);
+        $status = $this->sessionstatuscon($argReceived["token"], false);
         if (count($status) > 0) {
             $statinfo = $nlcore->msg->m(0, 1030200);
             $statinfo = array_merge($statinfo, $status);
             $statinfo["timestamp"] = time();
-            echo $nlcore->sess->encryptargv($statinfo, $totpSecret);
+            echo $this->encryptargv($statinfo);
         } else {
-            $nlcore->msg->stopmsg(1030201, $totpSecret);
+            $nlcore->msg->stopmsg(1030201);
         }
     }
     /**
      * @description: 檢查 token 是否有效
      * @param String token 會話令牌
      * @param Bool getuserhash 需要獲取使用者雜湊
-     * @param String totpsecret totp加密碼
      * @return Array 空陣列(無效) 或 起始-結束 時間陣列
      */
-    function sessionstatuscon(string $token, bool $getuserhash, string $totpSecret): array {
+    function sessionstatuscon(string $token, bool $getuserhash): array {
         $rtoken = $this->redisLoadToken($token);
         if (count($rtoken) > 0) {
             if (!$getuserhash) array_pop($rtoken, "userhash");
@@ -76,7 +70,7 @@ class nyasession {
         $whereDic = ["token" => $token];
         $customWhere = "`endtime` > CURRENT_TIME";
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic, $customWhere);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401, $totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401);
         if (isset($result[2][0]["endtime"])) {
             $startend = $result[2][0];
             $starttime = strtotime($startend["time"]);
@@ -137,6 +131,7 @@ class nyasession {
      */
     function decryptargv(string $module = "", int $interval = PHP_INT_MAX, int $times = PHP_INT_MAX, bool $onlyCheckIP = false): void {
         global $nlcore;
+        $stime = $nlcore->safe->getdatetime();
         // 檢查 IP 訪問頻率
         if (strlen($module) > 0) {
             $result = $nlcore->safe->frequencylimitation($module, $interval, $times);
@@ -154,7 +149,6 @@ class nyasession {
         $arglen = strlen(implode("", $argvs));
         if ($arglen > $jsonlen) $nlcore->msg->stopmsg(2020414, $arglen);
         // 檢查 IP 是否被封禁
-        $stime = $nlcore->safe->getdatetime();
         $this->timeStamp = $stime[0];
         $this->timeString = $stime[1];
         $time = $stime[0];
@@ -191,7 +185,7 @@ class nyasession {
         }
         if ($isEncrypt) { // 已加密，需要解密
             // 進行解密，快取 publicKey 和 privateKey
-            $argReceived = $nlcore->sess->decryptRsaMode($encryptedJson, $apptoken);
+            $argReceived = $this->decryptRsaMode($encryptedJson, $apptoken);
             if ($argReceived) {
                 $nlcore->safe->log("DECODE", $argReceived);
             } else {
@@ -219,7 +213,6 @@ class nyasession {
         $this->appSecret = $secret;
         $this->appToken = $apptoken;
         $this->appId = $appid;
-        return;
     }
     /**
      * @description: 使用 RSA 方式進行解密
@@ -420,19 +413,19 @@ class nyasession {
     }
     /**
      * @description: 驗證該使用者已登入並取得資訊，如果未登入直接返回錯誤資訊到客戶端。
-     * @param Array inputInformation 由 decryptargv 函式返回的結果陣列
      * @return Array [會話令牌,使用者會話資訊,使用者雜湊]
      */
-    function userLogged(array $inputinformation): array {
+    function userLogged(): void {
         global $nlcore;
-        $argReceived = $inputinformation[0];
-        $totpSecret = $inputinformation[1];
+        $argReceived = $this->argReceived;
         $userToken = $argReceived["token"];
-        if (!$nlcore->safe->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402, $totpSecret, "T-" . $userToken);
-        $userSessionInfo = $nlcore->sess->sessionstatuscon($userToken, true, $totpSecret);
-        if (!$userSessionInfo) $nlcore->msg->stopmsg(2040400, $totpSecret, "T-" . $userToken);
+        if (!$nlcore->safe->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402, "T-" . $userToken);
+        $userSessionInfo = $this->sessionstatuscon($userToken, true);
+        if (!$userSessionInfo) $nlcore->msg->stopmsg(2040400, "T-" . $userToken);
         $userHash = $userSessionInfo["userhash"];
-        return [$userToken, $userSessionInfo, $userHash];
+        $this->userToken = $userToken;
+        $this->userSessionInfo = $userSessionInfo;
+        $this->userHash = $userHash;
     }
     /**
      * @description: 将准备好的数组打包成 JSON 返回给客户端，并停止当前 PHP 程序

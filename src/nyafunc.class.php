@@ -4,10 +4,9 @@ class nyafunc {
     /**
      * @description: 检查登录凭据是邮箱还是手机号
      * @param String loginstr 要检查的登录凭据字符串
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Int 0:直接将错误返回给客户端 0:邮箱 1:手机号
      */
-    function logintype($loginstr,$totpSecret=null) {
+    function logintype($loginstr) {
         global $nlcore;
         $telareaarr = $nlcore->safe->telarea($loginstr);
         if ($nlcore->safe->isPhoneNumCN($telareaarr[1])) {
@@ -15,7 +14,7 @@ class nyafunc {
         } else if ($nlcore->safe->isEmail($loginstr)) {
             return 0;
         } else {
-            $nlcore->msg->stopmsg(2020206,$totpSecret);
+            $nlcore->msg->stopmsg(2020206);
             return -1;
         }
     }
@@ -23,41 +22,39 @@ class nyafunc {
      * @description: 检查指定信息地址是否已经存在于数据库
      * @param Int logintype 要检查的凭据类型 0:邮箱 1:手机号 2:哈希
      * @param String loginstr 要检查的登录凭据字符串
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Bool 是否已经存在。如果出现多个结果则直接将错误返回客户端
      */
-    function isalreadyexists($logintype,$loginstr,$totpSecret=null) {
+    function isalreadyexists($logintype,$loginstr) {
         global $nlcore;
         $logintypearr = ["mail","tel","hash"];
         $logintypestr = $logintypearr[$logintype];
         $whereDic = [$logintypearr[$logintype] => $loginstr];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["users"],$whereDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040100);
         $datacount = intval($result[2][0]["count(*)"]);
         if ($datacount == 0) {
             return false;
         } else if ($datacount == 1) {
-            // $nlcore->msg->stopmsg(2040102,$totpSecret);
+            // $nlcore->msg->stopmsg(2040102);
             return true;
         } else {
-            $nlcore->msg->stopmsg(2040101,$totpSecret);
+            $nlcore->msg->stopmsg(2040101);
         }
     }
     /**
      * @description: 生成使用者暱稱四位碼
      * @param String name 新的暱稱
      * @param String userhash 使用者雜湊
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @return Int 新生成的四位數ID
      */
-    function genuserid(string $name, string $userhash, string $totpSecret=null) {
+    function genuserid(string $name, string $userhash) {
         global $nlcore;
         $currid = [];
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["nameid"];
         $whereDic = ["userhash" => $userhash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040114,$totpSecret);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040114);
         $nameids = $result[2];
         foreach ($nameids as $nameid) {
             $nowid = intval($nameid["nameid"]);
@@ -69,7 +66,7 @@ class nyafunc {
             array_push($nameidbook,$i);
         }
         $nameidbookcount = count($nameidbook);
-        if ($nameidbookcount == 0) $this->nlcore->msg->stopmsg(2040106,$this->totpSecret,$name);
+        if ($nameidbookcount == 0) $this->nlcore->msg->stopmsg(2040106,$name);
         $nameidi = rand(0, $nameidbookcount);
         return $nameidbook[$nameidi];
     }
@@ -79,10 +76,9 @@ class nyafunc {
      * 或使用：
      * @param String name 暱稱
      * @param String nameid 四位碼
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @return Bool 是否有此使用者
      */
-    function useralreadyexists($mergename=null,$name=null,$nameid=null,$totpSecret=null) {
+    function useralreadyexists($mergename=null,$name=null,$nameid=null) {
         global $nlcore;
         if ($mergename) {
             $namearr = explode("#", $mergename);
@@ -99,20 +95,19 @@ class nyafunc {
             "nameid" => $nameid
         ];
         $result = $nlcore->db->scount($nlcore->cfg->db->tables["info"],$whereDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040200);
         $datacount = $result[2][0]["count(*)"];
         if ($datacount > 0) return true;
         return false;
     }
     /**
      * @description: 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param String gender 性別名稱
      * @param String localization 本地化性別名稱
      * @param Int list 性別列表ID
      * @return String 性別資訊查詢結果
      */
-    function getgender(string $totpSecret="", int $id=-1, string $gender="",string $localization="",int $list=-1) {
+    function getgender( int $id=-1, string $gender="",string $localization="",int $list=-1) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["gender"];
         $whereDic = [];
@@ -121,7 +116,7 @@ class nyafunc {
         if (strlen($localization) > 0) $whereDic["localization"] = $localization;
         $whereDic["list"] = ($list >= 0) ? $list : $nlcore->cfg->app->genderlist;
         $result = $nlcore->db->select([],$tableStr,$whereDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040605,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040605);
         return $result[2];
     }
     /**
@@ -147,11 +142,10 @@ class nyafunc {
      * @param String userhash 用户哈希
      * @param String totptoken 应用识别码
      * @param String code 错误代码
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @param String process 过程记录
      * @param String session 当前会话
      */
-    function writehistory($operation,$code,$userHash,$totpToken,$totpSecret,$ipid,$sender,$process=null,$session=null) {
+    function writehistory($operation,$code,$userHash,$totpToken,$ipid,$sender,$process=null,$session=null) {
         global $nlcore;
         $insertDic = [
             "userhash" => $userHash,
@@ -164,25 +158,24 @@ class nyafunc {
         ];
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112,$totpSecret);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
     }
     /**
      * @description: 取出密码提示问题
      * @param String userhash 用户哈希
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @param Boolean all : true=顺序全部取出 false=乱序取出随机两个
      * @return Array<String> 密码提示问题数组
      */
-    function getquestion($userHash,$totpSecret,$all=false) {
+    function getquestion($userHash,$all=false) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["protection"];
         $columnArr = ["question1","question2","question3"];
         $whereDic = ["userhash" => $userHash];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040301,$totpSecret);
+        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040301);
         $questions = $result[2][0];
         if (!isset($questions["question1"]) || $questions["question1"] == "" || !isset($questions["question2"]) || $questions["question2"] == "" || !isset($questions["question3"]) || $questions["question3"] == "") {
-            $nlcore->msg->stopmsg(2040301,$totpSecret);
+            $nlcore->msg->stopmsg(2040301);
         }
         $returnarr = [$questions["question1"],$questions["question2"],$questions["question3"]];
         shuffle($returnarr);
@@ -192,11 +185,10 @@ class nyafunc {
     /**
      * @description: 取得使用者個性化資訊
      * @param String userhash 使用者雜湊
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
      * @return Array<Array> 當前使用者資訊
      */
-    function getuserinfo(string $userHash,string $totpSecret="",array $dbresult=null,$getfileinfo=true):array {
+    function getuserinfo(string $userHash,array $dbresult=null,$getfileinfo=true):array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
@@ -207,7 +199,7 @@ class nyafunc {
             $whereDic = ["userhash" => $userHash];
             $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         }
-        if ($result[0] != 1010000 || !isset($result[2][0])) $nlcore->msg->stopmsg(2040206,$totpSecret);
+        if ($result[0] != 1010000 || !isset($result[2][0])) $nlcore->msg->stopmsg(2040206);
         $nowuserinfo = $result[2][0];
         if ($getfileinfo) {
             $filenone = ["path"=>""];
@@ -229,17 +221,16 @@ class nyafunc {
         //         array_push($maininfo,$nowuserinfo);
         //     }
         // }
-        // if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207,$totpSecret);
+        // if (count($maininfo) != 1) $nlcore->msg->stopmsg(2040207);
         // return array_merge($maininfo,$newuserinfos);
     }
     /**
      * @description: 獲取此賬戶所屬的子賬戶資訊
      * @param String mainuserhash 主賬戶雜湊
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param Bool getuserinfos 是否查詢每一個子賬戶的詳細資訊
      * @return Array 子賬戶雜湊和詳細資訊
     */
-    function subaccount(string $mainuserhash,string $totpSecret="",bool $getuserinfos=false):array {
+    function subaccount(string $mainuserhash,bool $getuserinfos=false):array {
         global $nlcore;
         $columnArr = ["userhash"];
         $tableStr = $nlcore->cfg->db->tables["info"];
@@ -251,13 +242,13 @@ class nyafunc {
             if ($getuserinfos) {
                 for ($i=0; $i < count($childs); $i++) {
                     $nowchild = $childs[$i];
-                    $nowuserinfo = $this->getuserinfo($nowchild["userhash"],$totpSecret);
+                    $nowuserinfo = $this->getuserinfo($nowchild["userhash"]);
                     $childs[$i] = $nowuserinfo;
                 }
             }
         } else if ($result[0] == 1010001) {
         } else {
-            $nlcore->msg->stopmsg(2070002,$totpSecret);
+            $nlcore->msg->stopmsg(2070002);
         }
         return $childs;
     }
@@ -265,11 +256,10 @@ class nyafunc {
      * @description: 查詢當前子賬戶是否屬於此賬戶
      * @param String mainuserhash 主賬戶雜湊
      * @param String subuserhash 子賬戶雜湊
-     * @param String totpsecret 加密用secret（可選，不加則明文返回）
      * @param Bool getuserinfos 是否查詢子賬戶的詳細資訊
      * @return Array [是否屬於,有則返回子賬戶否則返回主賬戶雜湊,可選子賬戶詳細資訊]
     */
-    function issubaccount(string $mainuserhash,string $subuserhash,string $totpSecret="",bool $getuserinfos=false) {
+    function issubaccount(string $mainuserhash,string $subuserhash,bool $getuserinfos=false) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
         $whereDic = [
@@ -279,7 +269,7 @@ class nyafunc {
         $result = $nlcore->db->scount($tableStr,$whereDic);
         if (intval($result[2][0]["count(*)"]) == 1) {
             if ($getuserinfos) {
-                $nowuserinfo = $this->getuserinfo($subuserhash,$totpSecret);
+                $nowuserinfo = $this->getuserinfo($subuserhash);
                 return [true,$subuserhash,$nowuserinfo];
             }
             return [true,$subuserhash];
@@ -395,35 +385,33 @@ class nyafunc {
     /**
      * @description: 获取设备ID
      * @param String totptoken 设备代码
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @return Int 此设备在设备表中的ID
      */
-    function getdeviceid($totpToken,$totpSecret) {
+    function getdeviceid($totpToken) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $columnArr = ["devid"];
         $whereDic = ["apptoken" => $totpToken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040210,$totpSecret);
+        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040210);
         return $result[2][0]["devid"];
     }
     /**
      * @description: 获取设备信息
      * @param String deviceid 设备ID
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @param Bool onlytype 是否只返回设备类型
      * @return Array<String> 设备信息
      */
-    function getdeviceinfo($deviceid,$totpSecret,$onlytype=false) {
+    function getdeviceinfo($deviceid,$onlytype=false) {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["device"];
         $columnArr = ["type"];
         if (!$onlytype) array_push($columnArr,"os","device","osver");
         $whereDic = ["id" => $deviceid];
         $resultdev = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if (!isset($resultdev[2][0])) $nlcore->msg->stopmsg(2040212,$totpSecret);
+        if (!isset($resultdev[2][0])) $nlcore->msg->stopmsg(2040212);
         if ($onlytype) {
-            if (!isset($resultdev[2][0]["type"])) $nlcore->msg->stopmsg(2040213,$totpSecret);
+            if (!isset($resultdev[2][0]["type"])) $nlcore->msg->stopmsg(2040213);
             return $resultdev[2][0]["type"];
         }
         return $resultdev[2][0];
@@ -431,17 +419,16 @@ class nyafunc {
     /**
      * @description: 从用户[昵称#唯一码]获取用户哈希（自带安全检查）
      * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
-     * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return Array<String> [昵称,ID,用户哈希(没查到则没有)]
      */
-    function fullnickname2userhash($fullnickname,$totpSecret) {
+    function fullnickname2userhash($fullnickname) {
         global $nlcore;
         $namearr = is_array($fullnickname) ? $fullnickname : explode("#",$fullnickname);
-        if (count($namearr) != 2) $nlcore->msg->stopmsg(2050001,$totpSecret);
+        if (count($namearr) != 2) $nlcore->msg->stopmsg(2050001);
         $name = $namearr[0];
-        $nlcore->safe->safestr($name,true,true,$totpSecret);
+        $nlcore->safe->safestr($name,true,true);
         $nameid = intval($namearr[1]);
-        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2050001,$totpSecret);
+        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2050001);
         //通过安全性检查，查询数据库
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["userhash"];
@@ -450,20 +437,19 @@ class nyafunc {
         if ($result[0] == 1010001) {
             return [$name,$nameid];
         } else if ($result[0] != 1010000 || !isset($result[2][0]["userhash"])) {
-            $nlcore->msg->stopmsg(2050002,$totpSecret);
+            $nlcore->msg->stopmsg(2050002);
         }
         $users = $result[2];
-        if (count($users) > 1) $nlcore->msg->stopmsg(2040101,$totpSecret);
+        if (count($users) > 1) $nlcore->msg->stopmsg(2040101);
         $userHash = $users[0]["userhash"];
         return [$name,$nameid,$userHash];
     }
     /**
      * @description: 从用户哈希获取用户[昵称#唯一码]
      * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
-     * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return Null/String 用户哈希
      */
-    function userhash2fullnickname($userHash,$totpSecret="") {
+    function userhash2fullnickname($userHash="") {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["name","nameid"];
@@ -472,10 +458,10 @@ class nyafunc {
         if ($result[0] == 1010001) {
             return null;
         } else if ($result[0] != 1010000) {
-            $nlcore->msg->stopmsg(2040200,$totpSecret);
+            $nlcore->msg->stopmsg(2040200);
         }
         if (count($result[2][0]) != 2 || !isset($result[2][0]["name"]) || !isset($result[2][0]["nameid"])) {
-            $nlcore->msg->stopmsg(2050002,$totpSecret);
+            $nlcore->msg->stopmsg(2050002);
         }
         return implode("#",$result[2][0]);
     }

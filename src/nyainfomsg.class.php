@@ -384,7 +384,6 @@ class nyainfomsg {
     /**
      * @description: 返回信息，或抛出403错误，结束程序
      * @param Int code 错误代码
-     * @param String totpsecret 加密用secret（可选，不加则明文返回）
      * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */

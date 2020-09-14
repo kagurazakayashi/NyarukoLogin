@@ -14,5 +14,5 @@ $updated = $userinfoedit->sqlc();
 // 將執行結果 JSON 返回到客戶端
 $returnArray = $nlcore->msg->m(0,1000000);
 $returnArray["updated"] = implode(",", $updated);
-echo $nlcore->sess->encryptargv($returnArray, $totpSecret);
+echo $nlcore->sess->encryptargv($returnArray);
 ?>

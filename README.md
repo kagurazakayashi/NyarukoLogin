@@ -226,3 +226,6 @@
 ### 附加工具
 - [导入和导出关键词库](https://github.com/kagurazakayashi/NyarukoLogin/wiki/导入和导出关键词库)
   - [测试关键词](https://github.com/kagurazakayashi/NyarukoLogin/wiki/功能测试脚本#敏感词模块测试)
+
+### 二次开发
+- [二次开发](https://github.com/kagurazakayashi/NyarukoLogin/wiki/二次开发)

@@ -581,20 +581,19 @@ class nyasafe {
      * @param String str 源字符串
      * @param Bool errdie 如果出错则完全中断执行，返回错误信息JSON
      * @param Bool dhtml 是否将HTML代码也视为非法字符
-     * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return String 经过过滤的字符
      */
-    function safestr($str, $errdie = true, $dhtml = false, $totpSecret = null) {
+    function safestr($str, $errdie = true, $dhtml = false) {
         global $nlcore;
         $ovalue = $str;
         $str = stripslashes($str);
         if ($str != $ovalue && $errdie == true) {
-            $nlcore->msg->stopmsg(2020101, $totpSecret);
+            $nlcore->msg->stopmsg(2020101);
         }
         if ($dhtml) {
             $str = htmlspecialchars($str);
             if ($str != $ovalue && $errdie == true) {
-                $nlcore->msg->stopmsg(2020103, $totpSecret);
+                $nlcore->msg->stopmsg(2020103);
             }
         }
         return $str;
@@ -781,11 +780,10 @@ class nyasafe {
      * @description: 检查是否包含违禁词汇
      * @param String str 源字符串
      * @param Bool errdie 如果出错则完全中断执行，直接返回错误信息JSON给客户端
-     * @param String totpsecret 加密传输密钥（可选,留空不加密）
      * @return Array<Bool,String,String> [是否包含违禁词,河蟹后的字符串,触发的违禁词] ，如果不包含违禁词，返回 [false,原字符串]
      * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
      */
-    function wordfilter($str, $errdie = true, $totpSecret = null) {
+    function wordfilter($str, $errdie = true) {
         global $nlcore;
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordjson = ""; //词库
@@ -797,14 +795,14 @@ class nyasafe {
             }
             $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
         } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
-            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302, $totpSecret);
+            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302);
             $wordjson = fread($jfile, filesize($wordfilterpcfg["jsonfile"]));
             fclose($jfile);
         } else {
             return [false, $str];
         }
         //词汇资料库加载失败
-        if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303, $totpSecret);
+        if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303);
         //删除输入字符串特殊符号
         $punctuations = $this->mbStrSplit($wordfilterpcfg["punctuations"]);
         foreach ($punctuations as $punctuationword) {
@@ -824,7 +822,7 @@ class nyasafe {
             //同时满足多条件
             $nstr = preg_replace('/' . join(explode($wordfilterpcfg["wildcardchar"], $keyword), '.{1,' . $wordfilterpcfg["maxlength"] . '}') . '/', $replacechar, $nstr);
             if (strcmp($str, $nstr) != 0) {
-                if ($errdie) $nlcore->msg->stopmsg(2020300, $totpSecret);
+                if ($errdie) $nlcore->msg->stopmsg(2020300);
                 return [true, $nstr, $keyword];
             }
         }

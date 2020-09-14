@@ -5,7 +5,6 @@
 */
 class userInfoEdit {
     private $argReceived;
-    private $totpSecret;
     private $userHash;
     private $nlcore;
     private $tableStr;
@@ -19,7 +18,6 @@ class userInfoEdit {
      */
     function __construct(nyacore $nlcore, array $inputinformation, array $sessioninformation) {
         $this->argReceived = $inputinformation[0];
-        $this->totpSecret = $inputinformation[1];
         $this->userHash = $sessioninformation[2];
         $this->nlcore = $nlcore;
         $this->tableStr = $nlcore->cfg->db->tables["info"];
@@ -27,9 +25,9 @@ class userInfoEdit {
         if (isset($this->argReceived["userhash"]) && strcmp($this->userHash,$this->argReceived["userhash"]) != 0) {
             $subuser = $this->argReceived["userhash"];
             if (strcmp($this->userHash,$subuser) != 0) {
-                if (!$nlcore->safe->is_rhash64($subuser)) $nlcore->msg->stopmsg(2070003,$this->totpSecret,"S-".$subuser);
+                if (!$nlcore->safe->is_rhash64($subuser)) $nlcore->msg->stopmsg(2070003,"S-".$subuser);
                 $issub = $nlcore->func->issubaccount($this->userHash,$subuser)[0];
-                if ($issub == false) $nlcore->msg->stopmsg(2070004,$this->totpSecret,"S-".$subuser);
+                if ($issub == false) $nlcore->msg->stopmsg(2070004,"S-".$subuser);
                 $this->userHash = $subuser;
             }
         }
@@ -62,12 +60,12 @@ class userInfoEdit {
     function verifyString(string $str, string $func) {
         if (mb_strlen($str,"utf-8") > $this->nlcore->cfg->app->maxLen[$func]) {
             // 太長
-            $this->nlcore->msg->stopmsg(2040105,$this->totpSecret,$str);
+            $this->nlcore->msg->stopmsg(2040105,$str);
         }
         // 檢查異常符號
-        $this->nlcore->safe->safestr($str,true,false,$this->totpSecret);
+        $this->nlcore->safe->safestr($str,true,false);
         // 檢查敏感詞
-        $this->nlcore->safe->wordfilter($str,true,$this->totpSecret);
+        $this->nlcore->safe->wordfilter($str,true);
         $this->updateDic[$func] = $str;
     }
     /**
@@ -79,7 +77,7 @@ class userInfoEdit {
         $filesarr = explode(",",$paths);
         foreach ($filesarr as $nowfile) {
             if (!$this->nlcore->safe->ismediafilename($nowfile)) {
-                $this->nlcore->msg->stopmsg(2050107,$this->totpSecret,$nowfile);
+                $this->nlcore->msg->stopmsg(2050107,$nowfile);
             }
         }
         $this->updateDic[$func] = $paths;
@@ -91,7 +89,7 @@ class userInfoEdit {
     function sqlc() {
         $ukeys = array_keys($this->updateDic);
         $result = $this->nlcore->db->update($this->updateDic,$this->tableStr,$this->whereDic);
-        if ($result[0] >= 2000000) $this->nlcore->msg->stopmsg(2040604,$this->totpSecret,implode(",", $ukeys));
+        if ($result[0] >= 2000000) $this->nlcore->msg->stopmsg(2040604,implode(",", $ukeys));
         return $ukeys;
     }
     /**
@@ -106,7 +104,7 @@ class userInfoEdit {
      * @param String name 新的暱稱
      */
     function verifyNameId(string $name) {
-        $nameid = $this->nlcore->func->genuserid($name,$this->userHash,$this->totpSecret);
+        $nameid = $this->nlcore->func->genuserid($name,$this->userHash);
         $this->updateDic["nameid"] = $nameid;
     }
     /**
@@ -114,7 +112,7 @@ class userInfoEdit {
      * @param String pronoun 新的人稱代詞
      */
     function verifyPronoun(int $pronoun) {
-        if ($pronoun < 0 || $pronoun > 2) $this->nlcore->msg->stopmsg(2040601,$this->totpSecret,$pronoun);
+        if ($pronoun < 0 || $pronoun > 2) $this->nlcore->msg->stopmsg(2040601,$pronoun);
         $this->updateDic["pronoun"] = $pronoun;
     }
     /**
@@ -123,9 +121,9 @@ class userInfoEdit {
      * @param Bool autoPronoun 自動檢查人稱代詞
      */
     function verifyGender(int $gender, bool $autoPronoun=true) {
-        $genders = $this->nlcore->func->getgender($this->totpSecret,$gender);
+        $genders = $this->nlcore->func->getgender($gender);
         if (count($genders) == 0) {
-            $this->nlcore->msg->stopmsg(2040600,$this->totpSecret,strval($gender));
+            $this->nlcore->msg->stopmsg(2040600,strval($gender));
         }
         $this->updateDic["gender"] = $gender;
         if ($autoPronoun) $this->verifyPronoun($genders[0]["person"]);

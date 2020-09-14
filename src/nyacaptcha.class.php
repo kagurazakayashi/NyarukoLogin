@@ -21,7 +21,6 @@ class nyacaptcha {
         global $nlcore;
         $inputInformation = $nlcore->sess->decryptargv("captcha");
         $argReceived = $inputInformation[0];
-        $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
         $captchaconf = $nlcore->cfg->verify->captcha;
         $c_time = $nlcore->safe->getdatetime();
@@ -71,7 +70,7 @@ class nyacaptcha {
             // if (!$extnow) $retuenarr["file"] = $imgpath;
         // }
         if ($extnow) {
-            echo $nlcore->sess->encryptargv($retuenarr,$totpSecret);
+            echo $nlcore->sess->encryptargv($retuenarr);
         } else {
             return $retuenarr;
         }
@@ -83,15 +82,14 @@ class nyacaptcha {
     /**
      * @description: 验证码验证失败后用此函数重新创建一个
      * @param String code 错误代码
-     * @param String totpsecret totp加密码
      * @return Array<String> 验证码相关信息（其中code、msg会不同）
      */
-    function verifyfailgetnew($code,$totpSecret) {
+    function verifyfailgetnew($code) {
         global $nlcore;
         $retuenarr = $this->getcaptcha(false);
         $retuenarr["code"] = $code;
         $retuenarr["msg"] = $nlcore->msg->imsg[$code];
-        echo $nlcore->sess->encryptargv($retuenarr,$totpSecret);
+        echo $nlcore->sess->encryptargv($retuenarr);
         return $retuenarr;
     }
 
@@ -101,7 +99,7 @@ class nyacaptcha {
      * @param String totpsecret totp加密码
      * @return Bool 是否可以通行
      */
-    function verifycaptcha($totpToken,$totpSecret,$captchacode) {
+    function verifycaptcha($totpToken,$captchacode) {
         global $nlcore;
         $columnArr = ["id","c_code","c_time"];
         $tableStr = $nlcore->cfg->db->tables["encryption"];
@@ -110,17 +108,17 @@ class nyacaptcha {
         ];
         $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($dbreturn[0] != 1010000) {
-            die($nlcore->msg->m($totpSecret,2020501));
+            die($nlcore->msg->m(2020501));
         }
         $cinfo = $dbreturn[2][0];
         $c_time = strtotime($cinfo["c_time"]);
         $endtime = $c_time+$nlcore->cfg->verify->timeout["captcha"];
         if (time() > $endtime) {
-            $this->verifyfailgetnew(2020502,$totpSecret);
+            $this->verifyfailgetnew(2020502);
             return false;
         }
         if (strtolower($captchacode) != strtolower($cinfo["c_code"])) {
-            $this->verifyfailgetnew(2020503,$totpSecret);
+            $this->verifyfailgetnew(2020503);
             return false;
         }
         //删除已经验证通过的信息

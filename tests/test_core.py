@@ -1,13 +1,9 @@
 # -*- coding:utf-8 -*-
 import sys
-import onetimepass as otp  # pip3 install onetimepass
 from urllib import parse, request, error
-import demjson  # pip3 install demjson
-import xxtea  # pip3 install xxtea-py cffi
 import base64
 import re
 import datetime
-import hashlib
 import os
 import json
 from M2Crypto import BIO, RSA  # dnf install python3-m2crypto.x86_64 -y
@@ -20,7 +16,7 @@ def getjsonfiledata(encrypt: "检查是否已经获取密钥对" = True):
     f = open("testconfig.json", 'r')
     lines = f.read()
     f.close()
-    jsonfiledata = demjson.decode(lines)
+    jsonfiledata = json.loads(lines)
     if jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
         terr("错误： 'testconfig.json' 配置不完全。")
         exit()
@@ -90,7 +86,7 @@ def postarray_p(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据�
     jsonDataArr["apiver"] = apiverAppidSecret[0]
     postMod = parse.urlencode(jsonDataArr).encode(encoding='utf-8')
     if (showAllInfo):
-        tlog(demjson.encode(jsonDataArr))
+        tlog(json.dumps(jsonDataArr))
         tlog("↑ 发送请求:")
         tlog(postMod.decode())
     postReq = request.Request(url=postUrl, data=postMod)
@@ -116,7 +112,7 @@ def postarray_p(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据�
         tlog(postRes)
         tlog("JSON 解析 ...")
     try:
-        dataarr = demjson.decode(postRes)
+        dataarr = json.loads(postRes)
     except:
         terr("错误：解密失败。")
         tlog("原始内容：")
@@ -173,6 +169,9 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     postRes = postRes.decode(encoding='utf-8')
     if (showAllInfo):
         tlog(postRes)
+    if postRes[0:3] == '<br':
+        terr("收到异常信息")
+        quit()
     if re.match("^[A-Za-z0-9_-]*$", postRes) == False:
         terr("返回了非预期数据")
         quit()

@@ -12,5 +12,5 @@ $returnArray = $nyasignup->adduser($nlcore, $inputInformation);
 //     $nyasignup->passwordhashtest($_GET["p"],$_GET["t"]);
 // }
 // 將執行結果 JSON 返回到客戶端
-echo $nlcore->sess->encryptargv($returnArray, $totpSecret);
+echo $nlcore->sess->encryptargv($returnArray);
 ?>

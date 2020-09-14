@@ -8,11 +8,10 @@ class nyauploadfile {
         global $nlcore;
         $inputInformation = $nlcore->sess->decryptargv("session");
         $argReceived = $inputInformation[0];
-        $totpSecret = $inputInformation[1];
         $totpToken = $inputInformation[2];
         $ipid = $inputInformation[3];
         $appid = $inputInformation[4];
-        if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104,$totpSecret);
+        if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104);
         $uploadconf = $nlcore->cfg->app->upload;
         $uploadconf["type"] = $nlcore->cfg->app->uploadtype;
         //整理文件详细信息数组
@@ -35,7 +34,7 @@ class nyauploadfile {
             $info = [];
             $tmpfile = $nowfile["tmp_name"];
             if (is_numeric($mediatype)) {
-                $nlcore->msg->stopmsg($mediatype,$totpSecret);
+                $nlcore->msg->stopmsg($mediatype);
             } else {
                 $info["type"] = $mediatype;
                 $info["code"] = $code;
@@ -74,7 +73,7 @@ class nyauploadfile {
                 if (isset($nlcore->cfg->app->imageresize[$useto])) {
                     $imageresize = $nlcore->cfg->app->imageresize[$useto];
                 } else {
-                    $nlcore->msg->stopmsg(2050106,$totpSecret);
+                    $nlcore->msg->stopmsg(2050106);
                 }
                 // 创建json计划文件
                 $sizesavepath = [];
@@ -114,7 +113,7 @@ class nyauploadfile {
                 if (isset($nlcore->cfg->app->videoresize[$useto])) {
                     $videoresize = $nlcore->cfg->app->videoresize[$useto];
                 } else {
-                    $nlcore->msg->stopmsg(2050106,$totpSecret);
+                    $nlcore->msg->stopmsg(2050106);
                 }
                 $mediainfojson = $this->getvideomediainfo($tmpfile,["width","height","duration","bit_rate"]);
                 $mediainfojson["width"] = intval($mediainfojson["width"]);
@@ -189,7 +188,7 @@ class nyauploadfile {
                             fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] [!ERROR!] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
                             fclose($logfile);
                         }
-                        $nlcore->msg->stopmsg(2060201,$totpSecret,strval($httpCode));
+                        $nlcore->msg->stopmsg(2060201,strval($httpCode));
                     } else if (strlen($logfilepath) > 0) {
                         fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
                     }
@@ -201,7 +200,7 @@ class nyauploadfile {
         $returnarr["filegroups"] = $returnfile;
         $returnarr["code"] = 1000000;
         $returnarr["filecount"] = count($files);
-        if ($echojson) echo $nlcore->sess->encryptargv($returnarr,$totpSecret);
+        if ($echojson) echo $nlcore->sess->encryptargv($returnarr);
         return $returnarr;
     }
 
