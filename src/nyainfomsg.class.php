@@ -393,7 +393,6 @@ class nyainfomsg {
             global $nlcore;
             $msgmode = (strlen($nlcore->sess->publicKey) > 0) ? 0 : 1;
             $json = $this->m($msgmode,$code,$str);
-            header('Content-Type:application/json;charset=utf-8');
             $nlcore->sess->returnToClient($json);
         } else {
             header('HTTP/1.1 403 Forbidden');

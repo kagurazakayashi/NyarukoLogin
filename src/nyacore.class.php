@@ -9,6 +9,7 @@ require_once $phpfiledir."nyaconnect.class.php";
 require_once $phpfiledir."nyafunc.class.php";
 require_once $phpfiledir."nyasession.class.php";
 require_once $phpfiledir."md6.class.php";
+// die(json_encode(count($_POST) > 0 ? $_POST : $_GET));
 class nyacore {
     public $cfg; //设置
     public $msg; //信息

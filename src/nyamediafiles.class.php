@@ -1,24 +1,27 @@
 <?php
+/**
+ * @description: 获取某个媒体文件路径
+ * @package NyarukoLogin
+*/
 class nyamediafiles {
-    function mediafiles() {
+    /**
+     * @description: 功能入口：子賬戶註冊
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function mediafiles($argReceived) {
         global $nlcore;
-        $inputInformation = $nlcore->sess->decryptargv("session");
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $appid = $inputInformation[4];
-
         if (!isset($argReceived["path"])) {
             $nlcore->msg->stopmsg(2050201);
         }
         $uploaddir = $nlcore->cfg->app->upload["uploaddir"];
-        $mediainfo = $nlcore->func->imageurl($argReceived["path"]);
-        if (count($mediainfo) > 0) {
-            $mediainfo["code"] = 1000000;
+        $returnClientData = $nlcore->func->imageurl($argReceived["path"]);
+        if (count($returnClientData) > 0) {
+            $returnClientData["code"] = 1000000;
         } else {
-            $mediainfo["code"] = 2050200;
+            $returnClientData["code"] = 2050200;
         }
-        echo $nlcore->sess->encryptargv($mediainfo);
+        return $returnClientData;
     }
 }
 ?>

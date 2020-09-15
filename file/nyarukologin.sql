@@ -22,8 +22,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `u1_app` (
   `id` int NOT NULL COMMENT 'ID',
   `name` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'APP唯一名称',
-  `secret` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'APP密钥',
-  `callback` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT 'APP回调密钥'
+  `appkey` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'APP密钥'
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='应用令牌表';
 
 -- --------------------------------------------------------
@@ -54,6 +53,28 @@ CREATE TABLE `u1_device` (
   `osver` tinytext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '系统版本',
   `info` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '其他设备信息'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='设备型号表';
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `u1_encryption`
+--
+
+CREATE TABLE `u1_encryption` (
+  `id` int NOT NULL COMMENT 'ID',
+  `private` text CHARACTER SET ascii COLLATE ascii_bin COMMENT '解密用私钥',
+  `public` text CHARACTER SET ascii COLLATE ascii_bin COMMENT '加密用公钥',
+  `length` smallint UNSIGNED NOT NULL DEFAULT '4096' COMMENT '密钥对长度',
+  `secret` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT '钥匙内容',
+  `apptoken` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '钥匙访问代码',
+  `ipid` int NOT NULL COMMENT 'IP地址ID',
+  `appid` int UNSIGNED NOT NULL COMMENT '已注册应用ID',
+  `devid` int UNSIGNED DEFAULT NULL COMMENT '设备表ID',
+  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '生成时间',
+  `c_code` char(6) CHARACTER SET armscii8 COLLATE armscii8_general_ci DEFAULT NULL COMMENT '验证码',
+  `c_time` datetime DEFAULT NULL COMMENT '验证码生成时间',
+  `c_img` text CHARACTER SET armscii8 COLLATE armscii8_bin COMMENT '验证码网址'
+) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='设备令牌表';
 
 -- --------------------------------------------------------
 
@@ -293,25 +314,6 @@ CREATE TABLE `u1_session` (
 -- --------------------------------------------------------
 
 --
--- 表的结构 `u1_totp`
---
-
-CREATE TABLE `u1_totp` (
-  `id` int NOT NULL COMMENT 'ID',
-  `secret` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '钥匙内容',
-  `apptoken` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '钥匙访问代码',
-  `ipid` int NOT NULL COMMENT 'IP地址ID',
-  `appid` int UNSIGNED NOT NULL COMMENT '已注册应用ID',
-  `devid` int UNSIGNED DEFAULT NULL COMMENT '设备表ID',
-  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '生成时间',
-  `c_code` char(6) CHARACTER SET armscii8 COLLATE armscii8_general_ci DEFAULT NULL COMMENT '验证码',
-  `c_time` datetime DEFAULT NULL COMMENT '验证码生成时间',
-  `c_img` text CHARACTER SET armscii8 COLLATE armscii8_bin COMMENT '验证码网址'
-) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='设备令牌表';
-
--- --------------------------------------------------------
-
---
 -- 表的结构 `u1_usergroup`
 --
 
@@ -365,6 +367,13 @@ ALTER TABLE `u1_business`
 --
 ALTER TABLE `u1_device`
   ADD PRIMARY KEY (`id`);
+
+--
+-- 表的索引 `u1_encryption`
+--
+ALTER TABLE `u1_encryption`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `apptoken` (`apptoken`);
 
 --
 -- 表的索引 `u1_gender`
@@ -426,14 +435,6 @@ ALTER TABLE `u1_session`
   ADD UNIQUE KEY `token` (`token`);
 
 --
--- 表的索引 `u1_totp`
---
-ALTER TABLE `u1_totp`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `secret` (`secret`),
-  ADD UNIQUE KEY `apptoken` (`apptoken`);
-
---
 -- 表的索引 `u1_usergroup`
 --
 ALTER TABLE `u1_usergroup`
@@ -469,6 +470,12 @@ ALTER TABLE `u1_business`
 --
 ALTER TABLE `u1_device`
   MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT '序号';
+
+--
+-- 使用表AUTO_INCREMENT `u1_encryption`
+--
+ALTER TABLE `u1_encryption`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID';
 
 --
 -- 使用表AUTO_INCREMENT `u1_gender`
@@ -516,12 +523,6 @@ ALTER TABLE `u1_protection`
 -- 使用表AUTO_INCREMENT `u1_session`
 --
 ALTER TABLE `u1_session`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID';
-
---
--- 使用表AUTO_INCREMENT `u1_totp`
---
-ALTER TABLE `u1_totp`
   MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID';
 
 --

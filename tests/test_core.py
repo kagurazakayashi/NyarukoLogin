@@ -7,7 +7,8 @@ import datetime
 import os
 import json
 from M2Crypto import BIO, RSA  # dnf install python3-m2crypto.x86_64 -y
-
+import hashlib
+import traceback
 
 def getjsonfiledata(encrypt: "检查是否已经获取密钥对" = True):
     """读入配置文件 testconfig.json ，请先配置它，并先执行 test_gettotptoken.py 。"""
@@ -20,7 +21,7 @@ def getjsonfiledata(encrypt: "检查是否已经获取密钥对" = True):
     if jsonfiledata["apiver"] == "" or jsonfiledata["url"] == "":
         terr("错误： 'testconfig.json' 配置不完全。")
         exit()
-    if encrypt and (jsonfiledata["publickey"] == "" or jsonfiledata["privateKey"] == ""):
+    if encrypt and (jsonfiledata["publickey"] == "" or jsonfiledata["privatekey"] == ""):
         terr("错误： 需要一个初始的密钥对。")
         exit()
     return jsonfiledata
@@ -48,6 +49,8 @@ def rsaEncrypt(public_key: "公钥", message: "要加密的信息", showAllInfo=
 
 def rsaDecrypt(private_key: "私钥", message: "要解密的信息", showAllInfo=True):
     """RSA 解密"""
+    if (isinstance(private_key,bytes) == False):
+        private_key = bytes(private_key, encoding = "utf8")
     bio = BIO.MemoryBuffer(private_key)
     rsa_pri = RSA.load_key_bio(bio)
     buffer = None
@@ -134,7 +137,7 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     if publicKey == None:
         publicKey = jsonfiledata["publickey"]
     if privateKey == None:
-        privateKey = jsonfiledata["privateKey"]
+        privateKey = jsonfiledata["privatekey"]
     if (showAllInfo):
         tlog("插入固定提交信息 ...")
     if appKeyMode == 2:
@@ -147,7 +150,12 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     if (showAllInfo):
         tlog(jsondata)
     if (showAllInfo):
-        tlog("正在加密数据 ...")
+        publicKeyStr = ""
+        if (isinstance(publicKey,str) == False):
+            publicKeyStr = str(publicKey, encoding = "utf-8")
+        else:
+            publicKeyStr = publicKey
+        tlog("正在使用公钥 "+md5(clearkey(publicKeyStr))+" 加密数据 ...")
     publicKey = str.encode(publicKey)
     if appKeyMode == 0:
         postKey = 'd'
@@ -184,12 +192,23 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     postRes = bytes(postRes, encoding="utf8")
     tlog(postRes.decode())
     if (showAllInfo):
-        tlog("解密数据 ...")
+        tlog("解析 BASE64 ...")
     try:
         postRes = base64.b64decode(postRes)
+    except:
+        terr("解析 BASE64 不成功。")
+        quit()
+    if (showAllInfo):
+        privateKeyStr = ""
+        if (isinstance(privateKey,str) == False):
+            privateKeyStr = str(privateKey, encoding = "utf-8")
+        else:
+            privateKeyStr = privateKey
+        tlog("正在使用私钥 "+md5(clearkey(privateKeyStr))+" 解密数据 ...")
+    try:
         postRes = rsaDecrypt(privateKey, postRes, showAllInfo)
     except:
-        terr("解密不成功。")
+        terr("解密数据不成功。")
         quit()
     if (showAllInfo):
         tlog("检查返回的数据 ...")
@@ -201,14 +220,29 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     try:
         resArr = json.loads(postRes)
     except:
-        terr("返回数据错误。")
+        terr("JSON 解析失败。")
         quit()
-    if resArr['code'] != 1000000 and resArr['code'] != 1000100:
+    if resArr['code'] >= 2000000:
         terr("返回状态码错误。")
         quit()
     tok("网络操作完成。")
+    tok(json.dumps(resArr, indent=2))
     return resArr
 
+def clearkey(keystr: "密钥内容"):
+    """只保留 key 的 base64 部分，删除首尾和回车"""
+    keylines = keystr.split('\n')
+    if keylines[-1][0:5] == '-----':
+        keylines.pop()
+    if keylines[0][0:5] == '-----':
+        del(keylines[0])
+    return ''.join(keylines)
+
+def md5(bstr: "输入byte字符串"):
+    """MD5 加密"""
+    md5=hashlib.md5()
+    md5.update(bstr.encode('utf-8'))
+    return md5.hexdigest()
 
 def tlog(loginfo: "信息内容", end='\n'):
     """输出前面带时间的信息"""
@@ -221,6 +255,10 @@ def tlog(loginfo: "信息内容", end='\n'):
 def terr(loginfo: "信息内容"):
     """输出错误"""
     tlog("\033[31m"+loginfo+"\033[0m")
+    errinfo = traceback.format_tb(sys.exc_info()[2])
+    if errinfo:
+        for err in errinfo:
+            tlog("\033[31m"+err+"\033[0m")
 
 
 def tok(loginfo: "信息内容"):

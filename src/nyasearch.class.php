@@ -1,51 +1,54 @@
 <?php
+/**
+ * @description: 模糊搜尋使用者
+ * @package NyarukoLogin
+*/
 class nyasearch {
-    function search() {
+    /**
+     * @description: 功能入口：輸入關鍵詞，模糊搜尋使用者
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function search(array $argReceived): array {
         global $nlcore;
-        //IP检查和解密客户端提交的信息
-        $inputInformation = $nlcore->sess->decryptargv("fastsearch");
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $returnJson = [];
-        //检查参数输入是否齐全
-        $argReceivedKeys = ["type","word"];
-        if ($nlcore->safe->keyinarray($argReceived,$argReceivedKeys) > 0) {
+        $returnClientData = [];
+        // 檢查引數輸入是否齊全
+        $argReceivedKeys = ["type", "word"];
+        if ($nlcore->safe->keyinarray($argReceived, $argReceivedKeys) > 0) {
             $nlcore->msg->stopmsg(2000101);
         }
-        //检查搜索模式
+        // 檢查搜尋模式
         $limit = [];
         if (isset($argReceived["limit"])) {
             $limits = explode("-", $argReceived["limit"]);
-            $limit = [intval($limits[0]),intval($limits[1])];
+            $limit = [intval($limits[0]), intval($limits[1])];
         }
         switch ($argReceived["type"]) {
             case "username":
                 if (!$limit) $limit = [10];
-                $result = $this->searchuser($argReceived["word"],["name","nameid"],$limit);
-                $returnJson["results"] = $result;
+                $result = $this->searchuser($argReceived["word"], ["name", "nameid"], $limit);
+                $returnClientData["results"] = $result;
                 break;
             default:
                 break;
         }
-        $returnJson["timestamp"] = time();
-        echo $nlcore->sess->encryptargv($returnJson);
+        return $returnClientData;
     }
     /**
-     * @description: 输入关键词，模糊搜索用户
-     * @param String word 关键词
-     * @param Array<String> columnArr 需要搜索的列
-     * @return:
+     * @description: 輸入關鍵詞，模糊搜尋使用者
+     * @param String word 關鍵詞
+     * @param Array columnArr 需要搜尋的列
+     * @param Array limit 限制結果數量
+     * @return 使用者暱稱和暱稱唯一碼
      */
-    function searchuser($word,$columnArr,$limit=null) {
+    function searchuser(string $word, array $columnArr, $limit = null): array {
         global $nlcore;
-        $columnArr = ["name","nameid"];
+        $columnArr = ["name", "nameid"];
         $whereDic = [
-            "name" => "%".$word."%"
+            "name" => "%" . $word . "%"
         ];
-        $whereMode = "LIKE";
         $tableStr = $nlcore->cfg->db->tables["info"];
-        $result = $nlcore->db->select($columnArr,$tableStr,$whereDic,"","AND",true,[],$limit);
+        $result = $nlcore->db->select($columnArr, $tableStr, $whereDic, "", "AND", true, [], $limit);
         if ($result[0] != 1010000 && $result[0] != 1010001) $nlcore->msg->stopmsg(2040500);
         if (isset($result[2])) {
             return $result[2];
@@ -54,4 +57,3 @@ class nyasearch {
         }
     }
 }
-?>

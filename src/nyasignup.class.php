@@ -1,13 +1,22 @@
 <?php
+/**
+ * @description: 賬戶註冊
+ * @package NyarukoLogin
+*/
 require_once "nyacaptcha.class.php";
 require_once "nyaverification.class.php";
 class nyasignup {
-    function adduser(nyacore $nlcore, array $inputInformation):array {
-        //IP检查和解密客户端提交的信息
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $returnJson = [];
+    /**
+     * @description: 功能入口：新增新使用者
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @param String appToken 客戶端令牌
+     * @param Int ipId IP地址ID
+     * @param Array userHash 使用者雜湊
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function adduser(array $argReceived, string $appToken,int  $ipId):array {
+        global $nlcore;
+        $returnClientData = [];
         //检查参数输入是否齐全
         $argReceivedKeys = ["captcha","password","user","nickname"];
         if ($nlcore->safe->keyinarray($argReceived,$argReceivedKeys) > 0) {
@@ -15,7 +24,7 @@ class nyasignup {
         }
         //检查验证码是否正确
         $nyacaptcha = new nyacaptcha();
-        if (!$nyacaptcha->verifycaptcha($totpToken,$argReceived["captcha"])) die();
+        if (!$nyacaptcha->verifycaptcha($appToken,$argReceived["captcha"])) die();
         //检查输入的是邮箱还是手机号
         $user = $argReceived["user"];
         $logintype = $nlcore->func->logintype($user); //0:邮箱 1:手机号
@@ -86,19 +95,19 @@ class nyasignup {
             "enabletime" => $timestr
         ];
         if (isset($argReceived["type"])) $insertDic["type"] = $argReceived["type"];
-        $returnJson["code"] = 1020000;
+        $returnClientData["code"] = 1020000;
         if ($logintype == 0) {
             $insertDic["mail"] = $user; //邮件注册流程
             // $nyaverification = new nyaverification();
             // $mailinfo = $nyaverification->sendmail(); //[$mailhtml,$vcode]
-            $returnJson["code"] = 1020001;
+            $returnClientData["code"] = 1020001;
         } else if ($logintype == 1) {
             //短信注册流程
             $nlcore->safe->telarea = $user;
             $insertDic["telarea"] = $user[0];
             $insertDic["tel"] = $user[1];
             //TODO: 短信注册流程
-            $returnJson["code"] = 1020002;
+            $returnClientData["code"] = 1020002;
         }
         $tableStr = $nlcore->cfg->db->tables["users"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
@@ -130,21 +139,21 @@ class nyasignup {
         // 記錄 history 表
         $insertDic = [
             "userhash" => $hash,
-            "apptoken" => $totpToken,
+            "apptoken" => $appToken,
             "operation" => "USER_SIGN_UP",
             "sender" => $user,
-            "ipid" => $ipid,
-            "result" => $returnJson["code"]
+            "ipid" => $ipId,
+            "result" => $returnClientData["code"]
         ];
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
         // 返回到客戶端
-        $returnJson["userhash"] = $hash;
-        $returnJson["msg"] = $nlcore->msg->imsg[$returnJson["code"]];
-        $returnJson["username"] = $nickname."#".$nameid;
-        $returnJson["timestamp"] = $timestamp;
-        return $returnJson;
+        $returnClientData["userhash"] = $hash;
+        $returnClientData["msg"] = $nlcore->msg->imsg[$returnClientData["code"]];
+        $returnClientData["username"] = $nickname."#".$nameid;
+        $returnClientData["timestamp"] = $timestamp;
+        return $returnClientData;
     }
     /**
      * @description: 仅做测试用，生成加密后密码
@@ -152,7 +161,7 @@ class nyasignup {
      * @param String timestr 密码到期时间的时间文本
      * @return 直接返回加密后的内容到客户端
      */
-    function passwordhashtest(string $password,string $timestr):string {
+    function passwordhashtest(string $password,string $timestr):void {
         global $nlcore;
         echo $nlcore->safe->passwordhash($password,$timestr);
     }

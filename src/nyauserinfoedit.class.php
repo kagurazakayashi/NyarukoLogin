@@ -6,7 +6,6 @@
 class userInfoEdit {
     private $argReceived;
     private $userHash;
-    private $nlcore;
     private $tableStr;
     private $updateDic = [];
     private $whereDic;
@@ -16,10 +15,10 @@ class userInfoEdit {
      * @param Array inputinformation 客戶端輸入的資訊（$nlcore->sess->decryptargv）
      * @param Array sessioninformation 使用者登入資訊（$nlcore->safe->userLogged）
      */
-    function __construct(nyacore $nlcore, array $inputinformation, array $sessioninformation) {
-        $this->argReceived = $inputinformation[0];
-        $this->userHash = $sessioninformation[2];
-        $this->nlcore = $nlcore;
+    function __construct(array $argReceived,string $userHash) {
+        global $nlcore;
+        $this->argReceived = $argReceived;
+        $this->userHash = $userHash;
         $this->tableStr = $nlcore->cfg->db->tables["info"];
         // 檢查使用哪個使用者操作
         if (isset($this->argReceived["userhash"]) && strcmp($this->userHash,$this->argReceived["userhash"]) != 0) {
@@ -58,14 +57,15 @@ class userInfoEdit {
      * @param String func 功能名稱
      */
     function verifyString(string $str, string $func) {
-        if (mb_strlen($str,"utf-8") > $this->nlcore->cfg->app->maxLen[$func]) {
+        global $nlcore;
+        if (mb_strlen($str,"utf-8") > $nlcore->cfg->app->maxLen[$func]) {
             // 太長
-            $this->nlcore->msg->stopmsg(2040105,$str);
+            $nlcore->msg->stopmsg(2040105,$str);
         }
         // 檢查異常符號
-        $this->nlcore->safe->safestr($str,true,false);
+        $nlcore->safe->safestr($str,true,false);
         // 檢查敏感詞
-        $this->nlcore->safe->wordfilter($str,true);
+        $nlcore->safe->wordfilter($str,true);
         $this->updateDic[$func] = $str;
     }
     /**
@@ -74,10 +74,11 @@ class userInfoEdit {
      * @param String func 功能名稱
      */
     function verifyFile(string $paths, string $func) {
+        global $nlcore;
         $filesarr = explode(",",$paths);
         foreach ($filesarr as $nowfile) {
-            if (!$this->nlcore->safe->ismediafilename($nowfile)) {
-                $this->nlcore->msg->stopmsg(2050107,$nowfile);
+            if (!$nlcore->safe->ismediafilename($nowfile)) {
+                $nlcore->msg->stopmsg(2050107,$nowfile);
             }
         }
         $this->updateDic[$func] = $paths;
@@ -87,9 +88,10 @@ class userInfoEdit {
      * @return Array 已更新的列名
      */
     function sqlc() {
+        global $nlcore;
         $ukeys = array_keys($this->updateDic);
-        $result = $this->nlcore->db->update($this->updateDic,$this->tableStr,$this->whereDic);
-        if ($result[0] >= 2000000) $this->nlcore->msg->stopmsg(2040604,implode(",", $ukeys));
+        $result = $nlcore->db->update($this->updateDic,$this->tableStr,$this->whereDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040604,implode(",", $ukeys));
         return $ukeys;
     }
     /**
@@ -104,7 +106,8 @@ class userInfoEdit {
      * @param String name 新的暱稱
      */
     function verifyNameId(string $name) {
-        $nameid = $this->nlcore->func->genuserid($name,$this->userHash);
+        global $nlcore;
+        $nameid = $nlcore->func->genuserid($name,$this->userHash);
         $this->updateDic["nameid"] = $nameid;
     }
     /**
@@ -112,7 +115,8 @@ class userInfoEdit {
      * @param String pronoun 新的人稱代詞
      */
     function verifyPronoun(int $pronoun) {
-        if ($pronoun < 0 || $pronoun > 2) $this->nlcore->msg->stopmsg(2040601,$pronoun);
+        global $nlcore;
+        if ($pronoun < 0 || $pronoun > 2) $nlcore->msg->stopmsg(2040601,$pronoun);
         $this->updateDic["pronoun"] = $pronoun;
     }
     /**
@@ -121,9 +125,10 @@ class userInfoEdit {
      * @param Bool autoPronoun 自動檢查人稱代詞
      */
     function verifyGender(int $gender, bool $autoPronoun=true) {
-        $genders = $this->nlcore->func->getgender($gender);
+        global $nlcore;
+        $genders = $nlcore->func->getgender($gender);
         if (count($genders) == 0) {
-            $this->nlcore->msg->stopmsg(2040600,strval($gender));
+            $nlcore->msg->stopmsg(2040600,strval($gender));
         }
         $this->updateDic["gender"] = $gender;
         if ($autoPronoun) $this->verifyPronoun($genders[0]["person"]);

@@ -4,13 +4,16 @@
  * @package NyarukoLogin
 */
 class stand {
-    function addstand(nyacore $nlcore, array $inputinformation, array $sessioninformation):array {
-        // IP檢查和解密客戶端提交的資訊
-        $argReceived = $inputinformation[0];
-        $totpToken = $inputinformation[2];
-        $ipid = $inputinformation[3];
-        // 檢查用戶是否登入
-        $userHash = $sessioninformation[2];
+    /**
+     * @description: 功能入口：子賬戶註冊
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @param String appToken 客戶端令牌
+     * @param Int ipId IP地址ID
+     * @param Array userHash 使用者雜湊
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function addstand($argReceived,$appToken,$ipId,$userHash):array {
+        global $nlcore;
         // 檢查必須提供的參數輸入是否齊全
         $argReceivedKeys = ["token","nickname"];
         if ($nlcore->safe->keyinarray($argReceived,$argReceivedKeys) > 0) $nlcore->msg->stopmsg(2000101);
@@ -85,23 +88,23 @@ class stand {
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111);
         // 記錄 history 表
-        $returnJson = $nlcore->msg->m(0,1020000);
+        $returnClientData = $nlcore->msg->m(0,1020000);
         $insertDic = [
             "userhash" => $hash,
-            "apptoken" => $totpToken,
+            "apptoken" => $appToken,
             "operation" => "USER_SUB_SIGN_UP",
             "sender" => $nickname,
-            "ipid" => $ipid,
-            "result" => $returnJson["code"]
+            "ipid" => $ipId,
+            "result" => $returnClientData["code"]
         ];
         // 返回到客戶端
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr,$insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
-        $returnJson["username"] = $nickname."#".$nameid;
-        $returnJson["userhash"] = $hash;
-        $returnJson["mainuser"] = $userHash;
-        return $returnJson;
+        $returnClientData["username"] = $nickname."#".$nameid;
+        $returnClientData["userhash"] = $hash;
+        $returnClientData["mainuser"] = $userHash;
+        return $returnClientData;
     }
 }
 ?>

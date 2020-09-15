@@ -19,9 +19,7 @@ class nyacaptcha {
      */
     function getcaptcha($extnow=true,$showcaptcha=false,$showimage=false) {
         global $nlcore;
-        $inputInformation = $nlcore->sess->decryptargv("captcha");
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
+        $appToken = $nlcore->sess->appToken;
         $captchaconf = $nlcore->cfg->verify->captcha;
         $c_time = $nlcore->safe->getdatetime();
         $timestamp = $c_time[0];
@@ -55,7 +53,7 @@ class nyacaptcha {
         }
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
-            "apptoken" => $totpToken
+            "apptoken" => $appToken
         ];
         $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
         $retuenarr = [
@@ -99,12 +97,12 @@ class nyacaptcha {
      * @param String totpsecret totp加密码
      * @return Bool 是否可以通行
      */
-    function verifycaptcha($totpToken,$captchacode) {
+    function verifycaptcha($appToken,$captchacode) {
         global $nlcore;
         $columnArr = ["id","c_code","c_time"];
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
-            "apptoken" => $totpToken
+            "apptoken" => $appToken
         ];
         $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($dbreturn[0] != 1010000) {

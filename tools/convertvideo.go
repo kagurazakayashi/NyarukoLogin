@@ -49,17 +49,17 @@ var arrkeys []string
 // 声明一个全局的redisdb变量
 var redisdb *redis.Client
 var redisaddress string = "127.0.0.1:6379"
-var redispassword string = "4XQa7P8kVN1EUgopyU1v43D7tZhYe8jc"
+var redispassword string = "Lloa9NVTmStI2JWcmqHKo9FJTmPJHBVt"
 var redisdbid int = 10
 
 func main() {
 	flag.BoolVar(&verbose, "v", false, "是否显示输出")
 	flag.StringVar(&redisaddress, "r", "127.0.0.1:6379", "redis地址（带端口）")
-	flag.StringVar(&redispassword, "rp", "RfryNXkEUG3OnyDI06zK1mqWA7oQslqvc8IEgHh78BpACCaUZIN44zrlUyDIq8xL3unaZJpWd592DrJifvymOdLHCAIN0ycg1TzvatE2tJiu40kr06Aub1vfjYGIWadevBm70UDTClutBxWTjInt3fsZomDXQvYjrRktguqJeGT0RgfJA95XgTDQGqp2Eo7D33EhIU8zSQpjy3e97Bbl5yFvoqERz3wUBvcFd7K95Eas4DZpld3NV7fuk1tdh7Xa", "redis密码")
+	flag.StringVar(&redispassword, "rp", "VLEbMLQiQsvajdtx9UcJkWv00NC5hbunAHd3Sc88kC2UEgHX7jo5aRlHWsOxUx0f9l7r7MYZFJMPRLTiHxaVCHZqp2N80uZ8v5iwQ7WbMVlv5G4sXAxScCHPl4dtV4nAttuWb7KkrSS1S3f6YUlGCvEhM1BrX1wRl6S291eYPf7g3HnElTRYuTGMjxG3eWE1e4ZKZNzrrNfMdLLJMOC7tW876baMIzLvu9KahRMzqvoI2rhHwwUmszO4bgF7x7Sj", "redis密码")
 	flag.IntVar(&redisdbid, "rid", 1, "redis数据库ID")
 	// flag.StringVar(&uploadtmp, "path", "/www/wwwroot/zyz/upload_tmp", "需要扫描的路径")
 	flag.StringVar(&watermarkimage, "wmimage", "/www/wwwroot/zyz/img/logo.png", "水印logo位置")
-	flag.StringVar(&nickname, "nick", "@择择#213", "指定删除多少行")
+	flag.StringVar(&nickname, "nick", "NyarukoLogin", "指定删除多少行")
 	flag.StringVar(&wmfont, "wmfont", "simhei.ttf", "水印字体")
 	flag.StringVar(&keypath, "kpath", "/www/wwwroot/zyz/user/tools/go/convertfile/file/encrypt.keyinfo", "视频加密key地址")
 	flag.StringVar(&ffmpegpath, "ffmpeg", "/usr/bin/ffmpeg", "FFmpeg执行文件路径")

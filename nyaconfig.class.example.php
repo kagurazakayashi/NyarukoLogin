@@ -42,7 +42,7 @@ class nyasetting_db {
         "gender" => "u1_gender", //性别表
         "usergroup" => "u1_usergroup", //用户组表
         "history" => "u1_history", //日志
-        "totp" => "u1_totp", //通信动态密码
+        "encryption" => "u1_encryption", //加密信息表
         "device" => "u1_device", //设备信息表
     ];
     //Redis数据库设定
@@ -72,19 +72,74 @@ class nyasetting_db {
     var $logfile_nl = "/mnt/wwwroot/zyz/log/nya.log";
 }
 
-// 通訊保護設定
+// 通訊保護設定，詳見文件「加密通信处理流程.md」
 class nyasetting_encrypt {
     var $enable = true;
     var $redisCacheTimeout = 3600; // Redis 快取時間（秒），0.禁用此功能 -1.不限制時間（通常不要這樣做）
     var $pkeyConfig = [
         "config" => "/www/server/php/73/src/ext/openssl/tests/openssl.cnf",
         "digest_alg" => "sha512",
-        "private_key_bits" => 2048, // 位元組
+        "private_key_bits" => 4096, // 位元組
         "private_key_type" => OPENSSL_KEYTYPE_RSA // 加密型別
     ];
-    var $privateKeyPassword = "4g66rOhqE6ldjxfagG0GcPMiMAWzzjvPzd1fcNXpTL9pdAJVc2gKJ8eLF3JerErgk67Bmc4YR9Dbdctft376zW8h3fsxoAC7OJsWVFr9RDNlYZPYKrP6lQVvBhMReahSQvM9AFTv5yEhuIAY4qii7ZntbQdnkD8j8yBpgFuWptjZqIuw5rENyH2cDF4wuenzrkoGnnSJnDPjCikurfjaPjJRVRYzDQQylnCK66ZPUDeiXMiAnGAqsQvC3KXG5u5Gpt63vX3mV8e3uz3orZbMrwsXMKkMQPBaSh54nrnAvKeUgPFR7nLyO2rxtdEn3moEnGX99OQwwBUqbT6spDidti6WZxao0Mj2ciSAKWa83UEr9NEETebnvDRC9A2JmDe9wPR4SyHqVGpGeyCS4xqHvT3oqhy0uNXKoENeooDNa736j1KESbVIGgWOaS3RsHDbRwnp169QRuHQEFeH3FMa6IqvyJAvzDzUxqegfchDa5NHuiu7tSu8mZOMxYagcTMP"; // null 则不加密
+    // 為私鑰設定密碼， 設定為 null 則不加密
+    var $privateKeyPassword = "qrCbuxCymh1BCMTDRGJvXt4I6AkOl9ozJVdAdMJ4y8wblCb0EhlXWumHauswoZYUYnNFpXLOcKP5O53EnKwuBW0YIH1u8RU88NADU0ljln5fbKaLD8Gh3EaAEG6Kbyo8gqEtSD7PbAlYsRGGsvTBKgwsS4pRI7NzmRmkj8P55UVNaEjPWaHhuZjSZmBNEUcHeuLlfIekDyZApNWmD3ohqpfTnBLg8IHDp9v1KEKHEXYxrkF2NBIVSwTEd2ZDSJesvW9gfdKiGuNSYPSfJtaZiTGufwkFkTnSY683mi6w9BMByh847cy9OscFS6L9rCOeEVWvjPlBfwKNguSHn5Q6YzzLqiYEA5Sx2BK0aDr8JZpfBei2tKqN5PdfraOXWT7hH8FWms5ixtC1A5zcLjCvKNa7c9RIynDV9o7oSiHggJ6F6f7uMpdCfYVAciPBl9gOk2RgfY1itPMPuPNqDZGV3ndlTZeyk0SaFfpqtqruE2cNPIwcYN9OMg3B0lojhVVw";
+    // 設定內建公鑰和私鑰，在本地應用還沒有和伺服器獲取金鑰對之前，使用此預共享金鑰對進行加密。與客戶端中的相對應，總計 2 個金鑰對，與伺服器分別持有對方的公鑰和私鑰。無需開頭結尾標記，無需修改 base64 內容。此處私鑰必須能夠被上邊的密碼所解密。可以為 null 。
+    var $defaultPrivateKey = <<<'EOD'
+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
+/hs=
+EOD;
 }
-
 // 應用相關設定
 class nyasetting_app {
     var $debug = 1; //是否输出所有PHP错误,1显示,0禁止,其他数字:按照php.ini中的设定
@@ -107,9 +162,12 @@ class nyasetting_app {
         "encrypttest" => [60,30,"ET"], //测试接口
         "encryption" => [60,300,"EN"], //限制密钥对生成接口的访问频率
         "signup" => [60,30,"SI"], //提交用户名密码进行注册
+        "login" => [60,30,"LI"], //用户登录
         "captcha" => [60,30,"CP"], //获取图形验证码
         "session" => [60,30,"SE"], //登录状态检查接口
         "fastsearch" => [60,300,"FS"], //快速模糊用户名搜索
+        "userinfo" => [60,300,"UI"], //用户信息
+        "upload" => [60,300,"UL"], //上传文件
     ];
     //多语言（应和template中的文件名对应），在第一位的为默认语言
     var $language = ["zh-cn"];
@@ -291,4 +349,3 @@ class nyasetting {
         $this->verify = null; unset($this->verify);
     }
 }
-?>

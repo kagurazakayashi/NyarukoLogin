@@ -1,14 +1,21 @@
 <?php
-require_once "nyacaptcha.class.php";
+/**
+ * @description: 使用者登入
+ * @package NyarukoLogin
+*/
 class nyalogin {
-    function login() {
+    /**
+     * @description: 功能入口：使用者登入
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @param String appToken 客戶端令牌
+     * @param Int ipId IP地址ID
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function login(array $argReceived,string $appToken,int $ipid):array {
         global $nlcore;
         //IP检查和解密客户端提交的信息
         $inputInformation = $nlcore->sess->decryptargv("signup");
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $returnJson = [];
+        $returnClientData = [];
         $process = "use=";
         //检查参数输入是否齐全
         $argReceivedKeys = ["password","user"];
@@ -58,7 +65,7 @@ class nyalogin {
             }
             //有验证码，检查验证码是否正确，不正确重新发放一个
             $nyacaptcha = new nyacaptcha();
-            if (!$nyacaptcha->verifycaptcha($totpToken,$argReceived["captcha"])) die();
+            if (!$nyacaptcha->verifycaptcha($appToken,$argReceived["captcha"])) die();
         } else {
             $nlcore->msg->stopmsg(2040203);
         }
@@ -70,7 +77,7 @@ class nyalogin {
         if ($password != $userinfoarr["pwd"]) {
             //密码错误。记录历史记录。
             $this->loginfailuretimes($userid,$userfail);
-            $nlcore->func->writehistory("USER_SIGN_IN",2040204,$userHash,$totpToken,$ipid,$user,$process);
+            $nlcore->func->writehistory("USER_SIGN_IN",2040204,$userHash,$appToken,$ipid,$user,$process);
             //预估下次是否会被要求验证码
             $needcaptcha = $nlcore->func->needcaptcha($loginfail + 1);
             if ($needcaptcha == "captcha") { //需要图形验证码
@@ -93,14 +100,14 @@ class nyalogin {
         if (strtotime($userinfoarr["enabletime"]) > $timestamp) {
             //发现封禁。记录历史记录。同时返回：封禁到日期和原因。
             $this->loginfailuretimes($userid,$userfail);
-            $nlcore->func->writehistory("USER_SIGN_IN",2040205,$userHash,$totpToken,$ipid,$user,$process);
-            $returnJson = $nlcore->msg->m(0,2040205,$alertinfo[1]);
-            $returnJson["enabletime"] = $userinfoarr["enabletime"];
-            echo $nlcore->sess->encryptargv($returnJson);
+            $nlcore->func->writehistory("USER_SIGN_IN",2040205,$userHash,$appToken,$ipid,$user,$process);
+            $returnClientData = $nlcore->msg->m(0,2040205,$alertinfo[1]);
+            $returnClientData["enabletime"] = $userinfoarr["enabletime"];
+            echo $nlcore->sess->encryptargv($returnClientData);
             die();
         }
         //检查登录是否封顶，如果封顶，同设备最早的登录踢下线，并推送邮件
-        $overflowsession = $this->chkoverflowsession($userHash,$totpToken);
+        $overflowsession = $this->chkoverflowsession($userHash,$appToken);
         if ($overflowsession) {
             $overprog = ",overflowsession=".json_encode($overflowsession);
             $process .= $overprog;
@@ -113,12 +120,12 @@ class nyalogin {
             $faarr = explode(",", $fa);
             if (!isset($argReceived["2famode"]) || !isset($argReceived["2fa"])) {
                 //没有提供两步验证信息则返回都开通了那些两步验证方式
-                $returnJson = $nlcore->msg->m(0,2040300);
-                $returnJson["supported2fa"] = $faarr;
+                $returnClientData = $nlcore->msg->m(0,2040300);
+                $returnClientData["supported2fa"] = $faarr;
                 if (in_array("qa", $faarr)) {
-                    $returnJson["question"] = $nlcore->func->getquestion($userHash);
+                    $returnClientData["question"] = $nlcore->func->getquestion($userHash);
                 }
-                echo $nlcore->sess->encryptargv($returnJson);
+                echo $nlcore->sess->encryptargv($returnClientData);
                 die();
             }
             if (!in_array($argReceived["2famode"], $faarr)) {
@@ -130,14 +137,14 @@ class nyalogin {
                 if (!is_numeric($faval) || strlen($faval) != 6) {
                     //TOTP代码错误。记录历史记录。
                     $this->loginfailuretimes($userid,$userfail);
-                    $nlcore->func->writehistory("USER_SIGN_IN",2040303,$userHash,$totpToken,$ipid,$user,$process);
+                    $nlcore->func->writehistory("USER_SIGN_IN",2040303,$userHash,$appToken,$ipid,$user,$process);
                     $nlcore->msg->stopmsg(2040303);
                 }
                 //TODO: 检查TOTP
             } else if ($argReceived["2famode"] == "qa") {
                 //密码提示问题
                 // $this->loginfailuretimes($userid,$userfail);
-                // $nlcore->func->writehistory("USER_SIGN_IN",2040304,$userHash,$totpToken,$ipid,$user,$process);
+                // $nlcore->func->writehistory("USER_SIGN_IN",2040304,$userHash,$appToken,$ipid,$user,$process);
                 // $nlcore->msg->stopmsg(2040304);
                 //TODO: 检查密码提示问题
             } else if ($argReceived["2famode"] == "rc") {
@@ -145,7 +152,7 @@ class nyalogin {
                 if (strlen($faval) != 25) {
                     //恢复代码错误。记录历史记录。
                     $this->loginfailuretimes($userid,$userfail);
-                    $nlcore->func->writehistory("USER_SIGN_IN",2040305,$userHash,$totpToken,$ipid,$user,$process);
+                    $nlcore->func->writehistory("USER_SIGN_IN",2040305,$userHash,$appToken,$ipid,$user,$process);
                     $nlcore->msg->stopmsg(2040305);
                 }
                 //TODO: 检查恢复代码，没问题则删除恢复代码
@@ -168,7 +175,7 @@ class nyalogin {
         }
         $tokentimeout += $timestamp;
         $tokentimeoutstr = $nlcore->safe->getdatetime(null,$tokentimeout)[1];
-        $deviceid = $nlcore->func->getdeviceid($totpToken);
+        $deviceid = $nlcore->func->getdeviceid($appToken);
         //获取 UA
         $ua = null;
         if (isset($argReceived["ua"]) && strlen($argReceived["ua"]) > 0) {
@@ -180,7 +187,7 @@ class nyalogin {
         $devicetype = $nlcore->func->getdeviceinfo($deviceid,true);
         $insertDic = [
             "token" => $token,
-            "apptoken" => $totpToken,
+            "apptoken" => $appToken,
             "userhash" => $userHash,
             "ipid" => $ipid,
             "devid" => $deviceid,
@@ -196,20 +203,20 @@ class nyalogin {
         $userexinfoarr = $nlcore->func->getuserinfo($userHash);
 
         //写入成功历史记录
-        $nlcore->func->writehistory("USER_SIGN_IN",1020100,$userHash,$totpToken,$ipid,$user,$process,$token);
+        $nlcore->func->writehistory("USER_SIGN_IN",1020100,$userHash,$appToken,$ipid,$user,$process,$token);
 
         //返回到客户端
-        $returnJson = [];
+        $returnClientData = [];
         if ($alertinfo[0] == 3000000) {
-            $returnJson = $nlcore->msg->m(0,1020102);
+            $returnClientData = $nlcore->msg->m(0,1020102);
         } else if ($alertinfo[0] != null) {
-            $returnJson = $nlcore->msg->m(0,1020101);
-            $returnJson["msg"] = $returnJson["msg"].$alertinfo[1];
+            $returnClientData = $nlcore->msg->m(0,1020101);
+            $returnClientData["msg"] = $returnClientData["msg"].$alertinfo[1];
         } else {
-            $returnJson = $nlcore->msg->m(0,1020100);
+            $returnClientData = $nlcore->msg->m(0,1020100);
         }
 
-        $returnJson = array_merge($returnJson,[
+        $returnClientData = array_merge($returnClientData,[
             "token" => $token,
             "timestamp" => $timestamp,
             "endtime" => $tokentimeout,
@@ -218,8 +225,8 @@ class nyalogin {
             "tel" => $userinfoarr["tel"],
             "userinfo" => $userexinfoarr
         ]);
-        if ($overflowsession) $returnJson["logout"] = $overflowsession;
-        echo $nlcore->sess->encryptargv($returnJson);
+        if ($overflowsession) $returnClientData["logout"] = $overflowsession;
+        return $returnClientData;
     }
     /**
      * @description: 修改当前用户的登录失败计数
@@ -242,10 +249,10 @@ class nyalogin {
         global $nlcore;
         $nyacaptcha = new nyacaptcha();
         $newcaptcha = $nyacaptcha->getcaptcha(false,false,false);
-        $returnJson = $nlcore->msg->m(0,$code);
-        $returnJson["img"] = $newcaptcha["img"];
-        $returnJson["timestamp"] = $newcaptcha["timestamp"];
-        echo $nlcore->sess->encryptargv($returnJson);
+        $returnClientData = $nlcore->msg->m(0,$code);
+        $returnClientData["img"] = $newcaptcha["img"];
+        $returnClientData["timestamp"] = $newcaptcha["timestamp"];
+        echo $nlcore->sess->encryptargv($returnClientData);
         die();
     }
     /**
@@ -253,12 +260,12 @@ class nyalogin {
      * @param String userhash 用户哈希
      * @return Array 被登出的设备的信息（手机型号等）
      */
-    function chkoverflowsession($userHash,$totpToken) {
+    function chkoverflowsession($userHash,$appToken) {
         global $nlcore;
         //在 totp 表取 devid 获得当前设备信息
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $columnArr = ["devid"];
-        $whereDic = ["apptoken" => $totpToken];
+        $whereDic = ["apptoken" => $appToken];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
         if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040213);
         $thisdevid = $result[2][0]["devid"];

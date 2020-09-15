@@ -23,3 +23,5 @@ bin/
 *.bak
 git_stats
 .idea
+*.7z
+*.xz

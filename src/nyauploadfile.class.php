@@ -1,16 +1,14 @@
 <?php
 // require_once 'vendor/autoload.php';
 class nyauploadfile {
-
     private $mediainfo = null;
-
-    function getuploadfile($echojson=true) {
+    /**
+     * @description: 功能入口：獲取上傳檔案的資訊
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @return 準備返回到客戶端的資訊陣列
+     */
+    function getuploadfile(array $argReceived) {
         global $nlcore;
-        $inputInformation = $nlcore->sess->decryptargv("session");
-        $argReceived = $inputInformation[0];
-        $totpToken = $inputInformation[2];
-        $ipid = $inputInformation[3];
-        $appid = $inputInformation[4];
         if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104);
         $uploadconf = $nlcore->cfg->app->upload;
         $uploadconf["type"] = $nlcore->cfg->app->uploadtype;
@@ -26,7 +24,7 @@ class nyauploadfile {
         $uploaddirstrcount = strlen($savedir);
         //遍历文件资讯
         $returnfile = [];
-        $returnarr = [];
+        $returnClientData = [];
         $returnfilepath = "";
         foreach ($files as $nowfile) {
             $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
@@ -197,11 +195,10 @@ class nyauploadfile {
             fclose($logfile);
             array_push($returnfile,$info);
         }
-        $returnarr["filegroups"] = $returnfile;
-        $returnarr["code"] = 1000000;
-        $returnarr["filecount"] = count($files);
-        if ($echojson) echo $nlcore->sess->encryptargv($returnarr);
-        return $returnarr;
+        $returnClientData["filegroups"] = $returnfile;
+        $returnClientData["code"] = 1000000;
+        $returnClientData["filecount"] = count($files);
+        return $returnClientData;
     }
 
     /**

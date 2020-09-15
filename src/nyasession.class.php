@@ -156,7 +156,7 @@ class nyasession {
         $stime = $stime[1];
         if ($result[0] != 0) $nlcore->msg->stopmsg($result[0]);
         $ipid = $result[1];
-        $this->ipId = $ipid;
+        $this->ipId = intval($ipid);
         $argReceived = null;
         $secret = null;
         if ($onlyCheckIP) return;
@@ -181,16 +181,12 @@ class nyasession {
             $isEncrypt = false;
         }
         if (!($isDefaultKey && strcmp($apptoken, "d") == 0) && !$nlcore->safe->is_rhash64($apptoken)) { // 檢查應用令牌格式
-            $nlcore->msg->stopmsg(2020417);
+            $nlcore->msg->stopmsg(2020417,$apptoken);
         }
         if ($isEncrypt) { // 已加密，需要解密
             // 進行解密，快取 publicKey 和 privateKey
             $argReceived = $this->decryptRsaMode($encryptedJson, $apptoken);
-            if ($argReceived) {
-                $nlcore->safe->log("DECODE", $argReceived);
-            } else {
-                $nlcore->safe->log("DECODE", ["[ERROR!]"]);
-            }
+            if ($argReceived) $nlcore->safe->log("DECODE", $argReceived);
         } else { // 未加密
             $argReceived = $argvs;
             unset($argReceived["apptoken"]);
@@ -261,6 +257,8 @@ class nyasession {
                 if (!isset($rdata["private"]) || !isset($rdata["public"])) {
                     $nlcore->msg->stopmsg(2020421, $apptoken);
                 }
+                $this->publicKey = $rdata["public"];
+                $this->privateKey = $rdata["private"];
                 // 再次校驗是否為私鑰和公鑰，這次還有問題則錯誤
                 $nlcore->safe->autoRsaAddTag();
                 if (!$nlcore->safe->autoCheck()) {
@@ -268,7 +266,7 @@ class nyasession {
                 }
                 if ($redisTimeout != 0) {
                     // 重新建立 Redis 快取
-                    $redisVal = $datadic["public"] . "|" . $datadic["private"];
+                    $redisVal = $this->publicKey . "|" . $this->privateKey;
                     if ($redisTimeout < 0) {
                         $nlcore->db->redis->set($redisKey, $redisVal);
                     } else {
@@ -305,7 +303,17 @@ class nyasession {
             }
             $decryptDataFull .= $decryptData;
         }
-        $decryptDataFull = json_decode($decryptDataFull, true);
+        // $decryptDataFullpreJD = strlen($decryptDataFull);
+        if ($decryptDataFull != null) {
+            $decryptDataFull = json_decode($decryptDataFull, true);
+            if ($decryptDataFull == null) {
+                $nlcore->msg->stopmsg(2020410); //errorcode : 请求不是json
+                $nlcore->safe->log("DECODE", ["[ERROR!]",2020410,json_encode($decryptDataFull)]);
+            }
+        }else{
+            $nlcore->msg->stopmsg(2020411);
+            $nlcore->safe->log("DECODE", ["[ERROR!]",2020411]);
+        }
         return $decryptDataFull;
     }
     /**
@@ -357,7 +365,6 @@ class nyasession {
             $failinfo = strval($timestamp) . '-' . strval(time()) . ',' . strval($tryi) . ',' . strval($numcode);
             $nlcore->msg->stopmsg(2020411, $failinfo);
         }
-        // die(json_encode($decrypt_data));
         $argReceived = json_decode($decrypt_data, true);
         return $argReceived;
     }
