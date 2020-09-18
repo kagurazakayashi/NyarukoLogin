@@ -50,21 +50,25 @@ class nyafunc {
     function genuserid(string $name, string $userhash) {
         global $nlcore;
         $currid = [];
+        // 檢查這個暱稱所對應的所有碼
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["nameid"];
-        $whereDic = ["userhash" => $userhash];
+        $whereDic = ["name" => $name];
         $result = $nlcore->db->select($columnArr,$tableStr,$whereDic);
-        if ($result[0] != 1010000) $nlcore->msg->stopmsg(2040114);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040114);
         $nameids = $result[2];
+        // 獲取所有已有暱稱碼
         foreach ($nameids as $nameid) {
             $nowid = intval($nameid["nameid"]);
             array_push($currid,$nowid);
         }
+        // 查詢所有可用碼
         $nameidbook = [];
         for ($i = 1000; $i < 9999; $i++) {
             if (in_array($i,$currid)) continue;
             array_push($nameidbook,$i);
         }
+        // 檢查還有沒有剩餘碼，在剩餘碼中隨機一個
         $nameidbookcount = count($nameidbook);
         if ($nameidbookcount == 0) $this->nlcore->msg->stopmsg(2040106,$name);
         $nameidi = rand(0, $nameidbookcount);

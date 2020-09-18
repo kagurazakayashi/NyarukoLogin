@@ -443,7 +443,7 @@ class nyasafe {
      * @description: 获得当前时间
      * @param String timezone PHP时区代码（可选，默认为配置文件中配置的时区）
      * @param Int settime 自定义时间戳（秒）
-     * @return Array[Datetime,String] 返回时间日期对象和时间日期字符串
+     * @return Array [Datetime,String] 返回时间日期对象和时间日期字符串
      */
     function getdatetime($timezone = null, $settime = null) {
         if ($timezone) {
@@ -454,6 +454,15 @@ class nyasafe {
         $timestr = date('Y-m-d H:i:s', $timestamp);
         if ($timezone) date_default_timezone_set($timezone_out);
         return [$timestamp, $timestr];
+    }
+    /**
+     * @description: 獲得當前時間（可直接用於SQL語句）
+     * @param Int settime 自定義時間戳（秒）
+     * @return String 時間日期字串
+     */
+    function getnowtimestr(int $settime=-1) {
+        $timestamp = ($settime > 0) ? $settime : time();
+        return date('Y-m-d H:i:s', $timestamp);
     }
     /**
      * @description: 获得毫秒级时间戳
@@ -907,7 +916,7 @@ class nyasafe {
     }
     /**
      * @description: 檢查當前IP是否到達介面訪問頻率限制
-     * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
+     * @param String module 功能名稱（$cfg->limittime），提供此項將覆蓋下面兩項
      * @param Int interval 在多少秒內
      * @param Int times 允許請求多少次
      * @param Array<String,String> module 自定義次數限制參數

@@ -77,8 +77,8 @@
                 }
                 return $newcon;
             } else {
-                $this->log("[ERROR] ".$sqlerrno);
-                die($nlcore->msg->m(1,2010103,$sqlerrno));
+                $this->log("[ERROR]");
+                die($nlcore->msg->m(1,2010103));
             }
             return null;
         }

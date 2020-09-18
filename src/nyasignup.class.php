@@ -63,8 +63,6 @@ class nyasignup {
         //检查邮箱或者手机号是否已经重复
         $isalreadyexists = $nlcore->func->isalreadyexists($logintype,$user);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102,$user);
-        //生成账户代码
-        $nameid = $this->nlcore->func->genuserid($nickname);
         //生成唯一哈希，遇到重复的重试100次
         $hash = null;
         for ($i=0; $i < 10; $i++) {
@@ -76,6 +74,8 @@ class nyasignup {
             else break;
         }
         if ($hash == null) $nlcore->msg->stopmsg(2040107);
+        //生成账户代码
+        $nameid = $nlcore->func->genuserid($nickname,$hash);
         //分配预设的用户组
         $usergroup = $newuserconf["group"];
         //生成密码到期时间

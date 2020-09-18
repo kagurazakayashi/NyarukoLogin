@@ -7,7 +7,7 @@ vendor
 tmp*
 __pycache__
 .vs*
-image
+img/captcha_*
 node_modules
 upload
 upload_tmp

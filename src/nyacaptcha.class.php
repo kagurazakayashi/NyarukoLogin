@@ -1,6 +1,13 @@
 <?php
+
+/**
+ * @description: 圖形驗證碼的建立和驗證
+ * @package NyarukoLogin
+ */
+
 use Gregwar\Captcha\CaptchaBuilder;
 use Gregwar\Captcha\PhraseBuilder;
+
 class nyacaptcha {
     function __construct() {
     }
@@ -17,64 +24,55 @@ class nyacaptcha {
      * file 验证码图片本地存储路径(extnow 时不输出)
      * url 验证码图片网址
      */
-    function getcaptcha($extnow=true,$showcaptcha=false,$showimage=false) {
+    function getcaptcha($extnow = true, $showcaptcha = false, $showimage = false) {
         global $nlcore;
+        $debug = $nlcore->cfg->verify->debug;
         $appToken = $nlcore->sess->appToken;
         $captchaconf = $nlcore->cfg->verify->captcha;
-        $c_time = $nlcore->safe->getdatetime();
-        $timestamp = $c_time[0];
-        $c_time = $c_time[1];
-        $c_img = $nlcore->safe->randhash();
-        $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
-        $imgfile = $captchaconf["imgname"].$c_img.".jpg";
-
+        $imgfname = $nlcore->safe->randhash();
+        $phpfiledir = pathinfo(__FILE__)["dirname"] . DIRECTORY_SEPARATOR;
+        $imgfile = $captchaconf["imgname"] . $imgfname . ".jpg";
+        $time = $nlcore->safe->getnowtimestr();
         //生成验证码
-        $phraseBuilder = new PhraseBuilder($captchaconf["codelen"],$captchaconf["charset"]);
+        $phraseBuilder = new PhraseBuilder($captchaconf["codelen"], $captchaconf["charset"]);
         $builder = new CaptchaBuilder(null, $phraseBuilder);
         if (!$showcaptcha) $builder->build();
         if ($showimage) {
             header('Content-type: image/jpeg');
-            die($builder->output());
+            exit($builder->output());
         }
         if (!$showcaptcha) {
-            $imgpath = $phpfiledir."..".DIRECTORY_SEPARATOR.$captchaconf["imgdir"].DIRECTORY_SEPARATOR.$imgfile;
-            $imgurl = $nlcore->cfg->app->appurl.$captchaconf["imgdir"].'/'.$imgfile;
+            $imgpath = $phpfiledir . ".." . DIRECTORY_SEPARATOR . $captchaconf["imgdir"] . DIRECTORY_SEPARATOR . $imgfile;
+            $imgurl = $nlcore->cfg->app->appurl . $captchaconf["imgdir"] . '/' . $imgfile;
             $builder->save($imgpath);
         }
-        $c_code = $builder->getPhrase();
-
+        $vc1code = $builder->getPhrase();
         //写入数据库
         $updateDic = [
-            "c_code" => $c_code,
-            "c_time" => $c_time
+            "vc1code" => $vc1code,
+            "vc2time" => $time
         ];
-        if (!$showcaptcha) {
-            $updateDic["c_img"] = $c_img;
-        }
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
             "apptoken" => $appToken
         ];
-        $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
+        $dbreturn = $nlcore->db->update($updateDic, $tableStr, $whereDic);
         $retuenarr = [
             "code" => 1000000,
-            "img" => $imgurl,
-            "timestamp" => $timestamp
+            "img" => $imgurl
         ];
         if ($showcaptcha) {
-            $retuenarr["captcha"] = $c_code;
+            $retuenarr["captcha"] = $vc1code;
         }
-        // else {
-            // if (!$extnow) $retuenarr["file"] = $imgpath;
-        // }
+        if ($debug) {
+            $retuenarr["debug"] = $debug;
+        }
         if ($extnow) {
             echo $nlcore->sess->encryptargv($retuenarr);
         } else {
             return $retuenarr;
         }
         return null;
-
-        // if($builder->testPhrase($userInput)) {}
     }
 
     /**
@@ -97,39 +95,37 @@ class nyacaptcha {
      * @param String totpsecret totp加密码
      * @return Bool 是否可以通行
      */
-    function verifycaptcha($appToken,$captchacode) {
+    function verifycaptcha($appToken, $captchacode) {
         global $nlcore;
-        $columnArr = ["id","c_code","c_time"];
+        $columnArr = ["id", "vc1code", "vc1time"];
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $whereDic = [
             "apptoken" => $appToken
         ];
-        $dbreturn = $nlcore->db->select($columnArr,$tableStr,$whereDic);
+        $dbreturn = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         if ($dbreturn[0] != 1010000) {
             die($nlcore->msg->m(2020501));
         }
         $cinfo = $dbreturn[2][0];
-        $c_time = strtotime($cinfo["c_time"]);
-        $endtime = $c_time+$nlcore->cfg->verify->timeout["captcha"];
+        $vc1time = strtotime($cinfo["vc1time"]);
+        $endtime = $vc1time + $nlcore->cfg->verify->timeout["captcha"];
         if (time() > $endtime) {
             $this->verifyfailgetnew(2020502);
             return false;
         }
-        if (strtolower($captchacode) != strtolower($cinfo["c_code"])) {
+        if (strtolower($captchacode) != strtolower($cinfo["vc1code"])) {
             $this->verifyfailgetnew(2020503);
             return false;
         }
         //删除已经验证通过的信息
         $updateDic = [
-            "c_code" => null,
-            "c_time" => null,
-            "c_img" => null
+            "vc1code" => null,
+            "vc1time" => null
         ];
         $whereDic = [
             "id" => $cinfo["id"]
         ];
-        $dbreturn = $nlcore->db->update($updateDic,$tableStr,$whereDic);
+        $dbreturn = $nlcore->db->update($updateDic, $tableStr, $whereDic);
         return true;
     }
 }
-?>
