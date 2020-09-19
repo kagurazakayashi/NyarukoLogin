@@ -48,7 +48,36 @@ class nyavcode {
         if ($nlcore->db->initRedis()) {
             // TODO
         } else {
-            // TODO
+            // 嘗試儲存到 MySQL
+            $tableStr = $nlcore->cfg->db->tables['encryption'];
+            $columnArr = ['vc2time'];
+            $whereDic = ['apptoken' => $nlcore->sess->appToken];
+            $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
+            if ($result[0] >= 2000000) {
+                $nlcore->msg->stopmsg(2020601);
+            } else if ($result[0] == 1010000) {
+                // 如果有舊的驗證碼，先檢查時間是否允許再重新獲取下一個驗證碼
+                $data = $result[2][0];
+                $starttime = $data['vc2time'];
+                $ctime = time() - strtotime($starttime);
+                if ($ctime < $cd) {
+                    $nlcore->msg->stopmsg(2020601, strval($ctime));
+                } else {
+                    // 移除舊的驗證碼
+                    $this->removeSqlvcode();
+                }
+            }
+            // 儲存驗證碼
+            $updateDic = [
+                'vc2code' => strval($this->code),
+                'vc2time' => $nlcore->safe->getdatetime(),
+                'vc2type' => $this->module,
+                'vc2try' => 0
+            ];
+            $result = $nlcore->db->update($updateDic, $tableStr, $whereDic);
+            if ($result[0] >= 2000000) {
+                $nlcore->msg->stopmsg(2020601);
+            }
         }
     }
     /**
@@ -60,7 +89,44 @@ class nyavcode {
         if ($nlcore->db->initRedis()) {
             // TODO
         } else {
-            // TODO
+            // 嘗試從 MySQL 載入
+            // 檢查是否有驗證碼資料
+            $tableStr = $nlcore->cfg->db->tables['encryption'];
+            $columnArr = ['vc2code', 'vc2time', 'vc2type', 'vc2try'];
+            $whereDic = ['apptoken' => $nlcore->sess->appToken];
+            $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
+            if ($result[0] == 1010000) {
+                $data = $result[2][0];
+                $saveCode = intval($data['vc2code']);
+                $saveTry = intval($data['vc2try']);
+                $saveType = $data['vc2type'];
+                $saveTime = strtotime($data['vc2time']);
+                // 檢查驗證碼是否匹配、是否超時
+                if (time() - $saveTime < $nlcore->cfg->verify->timeout[$this->module]) {
+                    // 超时，删除条目
+                    $this->removeSqlvcode();
+                    $nlcore->msg->stopmsg(2020604);
+                } else if (strcmp($saveType, $this->module) == 0 && $saveCode != $code) {
+                    // 不匹配，增加重試次數
+                    $saveTry++;
+                    if ($saveTry > $nlcore->cfg->verify->maxtry[$this->module]) {
+                        $this->removeSqlvcode();
+                        $nlcore->msg->stopmsg(2020602);
+                    } else {
+                        // 儲存新的重試次數
+                        $updateDic = [
+                            'vc2try' => strval($saveTry)
+                        ];
+                        $result = $nlcore->db->update($updateDic, $tableStr, $whereDic);
+                        if ($result[0] >= 2000000) {
+                            $nlcore->msg->stopmsg(2020602);
+                        }
+                        $nlcore->msg->stopmsg(2020600);
+                    }
+                }
+            } else {
+                $nlcore->msg->stopmsg(2020604);
+            }
         }
     }
     /**
