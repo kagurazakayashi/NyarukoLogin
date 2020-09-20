@@ -46,7 +46,22 @@ class nyavcode {
         $timeout = $nlcore->cfg->verify->timeout[$this->module];
         $cd = $nlcore->cfg->verify->cd[$this->module];
         if ($nlcore->db->initRedis()) {
-            // TODO
+            // 嘗試儲存到 Redis
+            $redis = $nlcore->db->redis;
+            $key = $this->redisKeyName($this->module);
+            if ($redis->exists($key)) {
+                // 如果有舊的驗證碼，先檢查時間是否允許再重新獲取下一個驗證碼
+                if ($redis->TTL($key) > ($timeout - $cd)) {
+                    $nlcore->msg->stopmsg(2020601, strval($timeout - $cd));
+                } else {
+                    // 移除舊的驗證碼
+                    $redis->del($key);
+                }
+            }
+            // 建立 val : 驗證碼,重試次數
+            $val = $this->code . ',0';
+            // 儲存驗證碼
+            $redis->setex($key, $timeout, $val);
         } else {
             // 嘗試儲存到 MySQL
             $tableStr = $nlcore->cfg->db->tables['encryption'];
@@ -87,7 +102,31 @@ class nyavcode {
     function check(int $code): void {
         global $nlcore;
         if ($nlcore->db->initRedis()) {
-            // TODO
+            // 嘗試從 Redis 載入
+            $redis = $nlcore->db->redis;
+            $key = $this->redisKeyName($this->module);
+            // 檢查是否有驗證碼資料
+            if ($redis->exists($key)) {
+                $vals = explode(',', $redis->get($key));
+                $saveCode = intval($vals[0]);
+                $saveTry = intval($vals[1]);
+                // 檢查驗證碼是否匹配
+                if ($saveCode != $code) {
+                    // 不匹配，增加重試次數
+                    $saveTry++;
+                    if ($saveTry > $nlcore->cfg->verify->maxtry[$this->module]) {
+                        $redis->del($key);
+                        $nlcore->msg->stopmsg(2020602);
+                    } else {
+                        // 儲存新的重試次數
+                        $val = $saveCode . ',' . $saveTry;
+                        $redis->setex($key, $redis->TTL($key), $val);
+                    }
+                    $nlcore->msg->stopmsg(2020600);
+                }
+            } else {
+                $nlcore->msg->stopmsg(2020604);
+            }
         } else {
             // 嘗試從 MySQL 載入
             // 檢查是否有驗證碼資料
