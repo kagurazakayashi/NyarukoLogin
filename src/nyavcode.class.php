@@ -1,34 +1,74 @@
 <?php
+require_once "nyaverification.class.php";
 
+use PHPMailer\PHPMailer\PHPMailer; // composer require phpmailer/phpmailer
 /**
  * @description: 簡訊和郵箱驗證碼的建立和認證
  * @package NyarukoLogin
  */
 class nyavcode {
-    public $module = "";
+    private $module = "";
     private $code = 000000;
     /**
      * @description: 建立簡訊驗證碼
+     * @param Array argReceived 客戶端提交資訊陣列
+     * @return Array 可返回客戶端的資訊
      */
-    function getvcode_sns(): void {
+    function getvcode($argReceived): array {
+        global $nlcore;
+        $modulei = 0; //1.sms,2.mail
+        // 檢查是否提供目標
+        $to = isset($argReceived["to"]) ? $argReceived["to"] : $nlcore->msg->stopmsg(2000101);
+        // 檢查是否提供目標型別
+        if (isset($argReceived["type"]) && (strcmp($argReceived["type"], "sms") != 0 || strcmp($argReceived["type"], "mail") != 0)) {
+            if ($argReceived["type"] == "sms") $modulei = 1;
+            else if ($argReceived["type"] == "mail") $modulei = 2;
+        } else {
+            // 如果沒有提供目標型別，自動判斷目標型別
+            if (is_numeric($to)) {
+                if ($nlcore->safe->isPhoneNumCN($to)) {
+                    $modulei = 1;
+                } else {
+                    $nlcore->msg->stopmsg(2000101); // 不支援的手機號碼格式
+                }
+            } else if ($nlcore->safe->isEmail($to)) {
+                $modulei = 2;
+            } else {
+                $nlcore->msg->stopmsg(2000102);
+            }
+        }
+        if ($modulei == 1) {
+            $this->module = 'sms';
+            return $this->getvcode_sms($to);
+        } else if ($modulei == 2) {
+            $this->module = 'mail';
+            return $this->getvcode_mail($to);
+        }
+    }
+    /**
+     * @description: 建立簡訊驗證碼
+     * @param String phoneNum 電話號碼
+     * @return Array 可返回客戶端的資訊
+     */
+    function getvcode_sms(string $phoneNum): array {
         global $nlcore;
         $debug = $nlcore->cfg->verify->debug;
         $this->code = rand(100000, 999999);
-        $this->module = "sns";
         $timeout = $nlcore->cfg->verify->timeout[$this->module];
         $txt = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_sns);
-    }
-    /**
-     * @description: 建立郵件驗證碼
-     */
-    function getvcode_mail(): void {
-        global $nlcore;
-        $debug = $nlcore->cfg->verify->debug;
-        // $code = $nlcore->safe->randhash("", false, false);
-        $code = rand(100000, 999999);
-        $this->module = "mail";
-        $timeout = $nlcore->cfg->verify->timeout[$this->module];
-        $txt = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail);
+        $this->save();
+        // 错误代码：渠道消息
+        // 連線到傳送簡訊介面
+        $statusCode = 2000002;
+        if (strval($nlcore->cfg->verify->debugmail) > 0) {
+            // 使用除錯郵箱模擬
+            $statusCode = $this->smtp($nlcore->cfg->verify->debugmail, $phoneNum, $txt, $phoneNum, $txt, 0) ? 1030301 : 2030201;
+            $this->saveHistory($phoneNum,$txt,strval($statusCode));
+        }
+        // TODO: 實際傳送簡訊
+        $returnClientData = $nlcore->msg->m(0, $statusCode);
+        if ($debug) $returnClientData['debug'] = $this->code;
+        return $returnClientData;
     }
     /**
      * @description: 建立 Redis 鍵名
@@ -98,9 +138,11 @@ class nyavcode {
     /**
      * @description: 檢查驗證碼是否正確
      * @param Int code 驗證碼
+     * @param String module 功能模块
      */
-    function check(int $code): void {
+    function check(int $code, string $module = ""): void {
         global $nlcore;
+        if (strlen($module) > 0) $this->module = $module;
         if ($nlcore->db->initRedis()) {
             // 嘗試從 Redis 載入
             $redis = $nlcore->db->redis;
@@ -127,6 +169,8 @@ class nyavcode {
             } else {
                 $nlcore->msg->stopmsg(2020604);
             }
+            // 刪除已經驗證透過的資訊
+            $redis->del($key);
         } else {
             // 嘗試從 MySQL 載入
             // 檢查是否有驗證碼資料
@@ -169,10 +213,24 @@ class nyavcode {
         }
     }
     /**
-     * @description: 保存信息发送历史记录
+     * @description: 儲存資訊傳送歷史記錄
+     * @param String sender 郵箱或手機號
+     * @param String txt 傳送文字
+     * @param String resultinfo 傳送結果
      */
-    function saveHistory() {
-        // TODO
+    function saveHistory(string $sender, string $txt, string $resultinfo) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables['encryption'];
+        $insertDic = [
+            'userhash' => $nlcore->sess->appToken,
+            'apptoken' => $nlcore->sess->userHash,
+            'ipid' => strval($nlcore->sess->ipId),
+            'operation' => 'USER_SEND_' . strtoupper($this->module),
+            'sender' => $sender,
+            'process' => $txt,
+            'result' => $resultinfo
+        ];
+        $nlcore->db->insert($tableStr, $insertDic);
     }
     /**
      * @description: 移除 SQL 中的舊驗證碼
@@ -200,7 +258,6 @@ class nyavcode {
      * @return String 替換後的文字
      */
     function msgAddInfo(string $appname, int $timeout, string $template): string {
-        global $nlcore;
         $time = strval($timeout / 60);
         $txt = str_replace(['{code}', '{time}', '{appname}'], [strval($this->code), $time, $appname], $template);
         return $txt;

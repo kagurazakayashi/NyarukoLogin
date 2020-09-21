@@ -181,7 +181,7 @@ class nyasession {
             $isEncrypt = false;
         }
         if (!($isDefaultKey && strcmp($apptoken, "d") == 0) && !$nlcore->safe->is_rhash64($apptoken)) { // 檢查應用令牌格式
-            $nlcore->msg->stopmsg(2020417,$apptoken);
+            $nlcore->msg->stopmsg(2020417, $apptoken);
         }
         if ($isEncrypt) { // 已加密，需要解密
             // 進行解密，快取 publicKey 和 privateKey
@@ -193,7 +193,7 @@ class nyasession {
         }
         if (!$argReceived || count($argReceived) == 0) $nlcore->msg->stopmsg(2020400);
         // 檢查 API 版本是否一致
-        if (!isset($argReceived["apiver"]) || intval($argReceived["apiver"]) != 2) $nlcore->msg->stopmsg(2020412,$argReceived["apiver"] ?? "");
+        if (!isset($argReceived["apiver"]) || intval($argReceived["apiver"]) != 2) $nlcore->msg->stopmsg(2020412, $argReceived["apiver"] ?? "");
         // 如果提供了 appkey ，則檢查 APP 是否有效，並查詢 appid
         $appid = null;
         if (isset($argReceived["appkey"])) {
@@ -209,6 +209,28 @@ class nyasession {
         $this->appSecret = $secret;
         $this->appToken = $apptoken;
         $this->appId = $appid;
+    }
+    /**
+     * @description: 仅获取應用令牌
+     * @return String 應用令牌
+     */
+    function getAppToken(): string {
+        global $nlcore;
+        $apptoken = '';
+        $argvs = count($_POST) > 0 ? $_POST : $_GET;
+        $argks = array_keys($argvs);
+        if (count($argks) == 1 && (strlen($argks[0]) == 64)) {
+            // 客戶端提交了加密資料
+            $apptoken = $argks[0];
+        } else {
+            // 客戶端沒有加密
+            $apptoken = $argvs["apptoken"] ?? '';
+        }
+        if ($nlcore->safe->is_rhash64($apptoken)) {
+            return $apptoken;
+        } else {
+            $nlcore->msg->stopmsg(2020417, $apptoken);
+        }
     }
     /**
      * @description: 使用 RSA 方式進行解密
@@ -247,7 +269,7 @@ class nyasession {
                 // 不能從 Redis 中載入，從 MySQL 中載入
                 $datadic = ["apptoken" => $apptoken];
                 $tableStr = $nlcore->cfg->db->tables["encryption"];
-                $columnArr = ["public","private"];
+                $columnArr = ["public", "private"];
                 $result = $nlcore->db->select($columnArr, $tableStr, $datadic);
                 // 空或查詢失敗都視為不正確
                 if (!$result || $result[0] != 1010000 || !isset($result[2][0])) {
@@ -308,11 +330,11 @@ class nyasession {
             $decryptDataFull = json_decode($decryptDataFull, true);
             if ($decryptDataFull == null) {
                 $nlcore->msg->stopmsg(2020410); //errorcode : 请求不是json
-                $nlcore->safe->log("DECODE", ["[ERROR!]",2020410,json_encode($decryptDataFull)]);
+                $nlcore->safe->log("DECODE", ["[ERROR!]", 2020410, json_encode($decryptDataFull)]);
             }
-        }else{
+        } else {
             $nlcore->msg->stopmsg(2020411);
-            $nlcore->safe->log("DECODE", ["[ERROR!]",2020411]);
+            $nlcore->safe->log("DECODE", ["[ERROR!]", 2020411]);
         }
         return $decryptDataFull;
     }
