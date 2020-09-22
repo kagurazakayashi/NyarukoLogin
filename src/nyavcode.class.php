@@ -71,6 +71,95 @@ class nyavcode {
         return $returnClientData;
     }
     /**
+     * @description: 建立郵件驗證碼
+     * @param String mailAddr 收件人電子郵件地址
+     * @param String mailName 收件人名字
+     * @return Array 可返回客戶端的資訊
+     */
+    function getvcode_mail(string $mailAddr, string $mailName = ""): array {
+        global $nlcore;
+        $debug = $nlcore->cfg->verify->debug;
+        if (strlen($mailName) == 0) $mailName = $mailAddr;
+        // $code = $nlcore->safe->randhash("", false, false);
+        $this->code = rand(100000, 999999);
+        $timeout = $nlcore->cfg->verify->timeout[$this->module];
+        $subject = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['Subject']);
+        $body = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['Body']);
+        $altBody = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['AltBody']);
+        $this->save();
+        // 错误代码：渠道消息
+        // 連線到傳送郵件介面
+        if (strval($nlcore->cfg->verify->debugmail) > 0) {
+            // 使用除錯郵箱模擬
+            $mailAddr = $nlcore->cfg->verify->debugmail;
+        }
+        $statusCode = $this->smtp($mailAddr, $subject, $body, $mailName, $altBody) ? 1030300 : 2030200;
+        $this->saveHistory($mailAddr,$altBody,strval($statusCode));
+        $returnClientData = $nlcore->msg->m(0, $statusCode, $mailAddr);
+        if ($debug) $returnClientData['debug'] = $this->code;
+        return $returnClientData;
+    }
+    /**
+     * @description: 傳送郵件
+     * @param String mailAddr 收件人電子郵件地址
+     * @param String subject 郵件標題
+     * @param String body 郵件內容
+     * @param String mailName 收件人名字
+     * @param String altBody 客戶端不支援 HTM L則顯示此內容
+     * @param Int isHTML 是否以 HTML 文档格式发送（替代配置文件） 0 / 1
+     * @return Bool 郵件傳送是否成功
+     */
+    function smtp(string $mailAddr, string $subject, string $body, string $mailName = "", string $altBody = "", int $isHTML = -1): bool {
+        global $nlcore;
+        $smtp = $nlcore->cfg->verify->smtp;
+        $mail = new PHPMailer(true);
+        $mail->CharSet = $smtp['CharSet'];
+        $mail->SMTPDebug = $smtp['SMTPDebug'];
+        $mail->isSMTP();
+        $mail->Host = $smtp['Host'];
+        $mail->Port = $smtp['Port'];
+        $mail->SMTPAuth = $smtp['SMTPAuth'];
+        $mail->Username = $smtp['Username'];
+        $mail->Password = $smtp['Password'];
+        $mail->SMTPSecure = $smtp['SMTPSecure'];
+        if ($isHTML >= 0) {
+            $mail->isHTML = ($isHTML == 1) ? true : false;
+        } else {
+            $mail->isHTML = $smtp['isHTML'];
+        }
+        $mail->setFrom($smtp['FromAddr'], $smtp['FromName']);
+        $mail->addReplyTo($smtp['ReplyToAddr'], $smtp['ReplyToName']);
+        $mail->addAddress($mailAddr, $mailName);
+        $mail->Subject = $subject;
+        $mail->Body = $body;
+        $mail->AltBody = $altBody;
+        return $mail->send();
+    }
+    /**
+     * @description: 傳送一封測試郵件到 $nlcore->cfg->verify->debugmail
+     * @return Array 可返回客戶端的資訊
+     */
+    function sendtestmailhtm(): array {
+        global $nlcore;
+        $time = date('Y-m-d H:i:s', time());
+        $body = '<!doctype html><html xmlns=http://www.w3.org/1999/xhtml><head><meta content="text/html; charset=utf-8"http-equiv=Content-Type><title>TEST MAIL</title></head><body><h1>TEST MAIL<h1><hr/><h3>' . $time . '</h3></body></html>';
+        $alt = '[ TEST MAIL ] ' . $time;
+        $statusCode = ($this->smtp($nlcore->cfg->verify->debugmail, "TEST MAIL", $body, "", $alt)) ? 1030300 : 2030200;
+        $returnClientData = $nlcore->msg->m(0, $statusCode, $nlcore->cfg->verify->debugmail);
+        return $returnClientData;
+    }
+    /**
+     * @description: 傳送一封自定義純文字內容測試郵件
+     * @return Array 可返回客戶端的資訊
+     */
+    function sendtestmailtxt($body): array {
+        global $nlcore;
+        $time = date('Y-m-d H:i:s', time());
+        $statusCode = ($this->smtp($nlcore->cfg->verify->debugmail, "TEST MAIL " . $time, $body, "", $body, 0)) ? 1030300 : 2030200;
+        $returnClientData = $nlcore->msg->m(0, $statusCode, $nlcore->cfg->verify->debugmail);
+        return $returnClientData;
+    }
+    /**
      * @description: 建立 Redis 鍵名
      * @return String 鍵名
      */

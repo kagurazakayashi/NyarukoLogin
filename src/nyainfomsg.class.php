@@ -49,6 +49,11 @@ class nyainfomsg {
         //// A=1\BB=03\CC=03 : 用户资料
         ///// A=1\BB=03\CC=03\DD=00 :
         1030300 => '用户信息',
+        //// A=1\BB=03\CC=03 : 渠道消息
+        ///// A=1\BB=03\CC=03\DD=00 :
+        1030300 => '验证邮件已发送',
+        ///// A=1\BB=03\CC=03\DD=01 :
+        1030301 => '验证短信已发送',
         // A=2 : 错误
         /// A=2\BB=00 : 通用
         //// A=2\BB=00\CC=00 : 未知问题
@@ -56,6 +61,8 @@ class nyainfomsg {
         2000000 => '内部错误：出现未知错误。',
         ///// A=2\BB=00\CC=00\DD=01 :
         2000001 => '内部错误：找不到接口保护设置值。',
+        ///// A=2\BB=00\CC=00\DD=01 :
+        2000002 => '内部错误：当前功能尚未实现。',
         //// A=2\BB=00\CC=01 : 参数相关
         ///// A=2\BB=00\CC=01\DD=00 :
         2000100 => '内部错误：没有参数。',
@@ -183,6 +190,8 @@ class nyainfomsg {
         2020503 => '错误：图形验证码不匹配，再试一次',
         ///// A=2\BB=02\CC=06\DD=04 :
         2020504 => '内部错误：图形验证码生成失败',
+        ///// A=2\BB=02\CC=05\DD=05 :
+        2020505 => '错误：图形验证码不匹配或超时，再试一次',
         //// A=2\BB=02\CC=06 : 扩展验证码
         ///// A=2\BB=02\CC=06\DD=00 :
         2020600 => '错误：验证码不正确',
@@ -202,11 +211,13 @@ class nyainfomsg {
         2030101 => '错误：密码不够复杂',
         ///// A=2\BB=03\CC=01\DD=02 :
         2030102 => '错误：密码长度不符合要求',
-        //// A=2\BB=03\CC=02 : 电子邮件
+        //// A=2\BB=03\CC=02 : 渠道消息
         ///// A=2\BB=03\CC=02\DD=00 :
-        2030200 => '内部错误：邮件发送失败',
+        2030200 => '内部错误：验证邮件发送失败',
         ///// A=2\BB=03\CC=02\DD=01 :
-        2030201 => '内部错误：邮件发送历史记录存储失败',
+        2030201 => '内部错误：验证短信发送失败',
+        ///// A=2\BB=03\CC=02\DD=02 :
+        2030202 => '内部错误：只支持中国大陆手机号',
         /// A=2\BB=04 : 用户账户操作
         //// A=2\BB=04\CC=01 : 用户注册
         ///// A=2\BB=04\CC=01\DD=00 :
@@ -376,7 +387,7 @@ class nyainfomsg {
      * @param String/Array info 附加错误信息
      * @return String 返回由 msgmode 设置的 null / json / 加密 json
      */
-    function m($msgmode = 0,$code = 2000000,$info = null) {
+    function m($msgmode = 0, $code = 2000000, $info = null) {
         $returnarr = array(
             "code" => $code,
             "msg" => $this->imsg[$code]
@@ -389,7 +400,7 @@ class nyainfomsg {
             return json_encode($returnarr);
         } else {
             global $nlcore;
-            return $nlcore->sess->encryptargv($returnarr,$msgmode);
+            return $nlcore->sess->encryptargv($returnarr, $msgmode);
         }
     }
     /**
@@ -398,12 +409,12 @@ class nyainfomsg {
      * @param String str 附加错误信息
      * @param Bool showmsg 是否显示错误信息（否则直接403）
      */
-    function stopmsg(int $code=-1, $str="",$showmsg=true) {
-        $showmsg=true;
+    function stopmsg(int $code = -1, $str = "", $showmsg = true) {
+        $showmsg = true;
         if ($code > 0 && $showmsg) {
             global $nlcore;
             $msgmode = (strlen($nlcore->sess->publicKey) > 0) ? 0 : 1;
-            $json = $this->m($msgmode,$code,$str);
+            $json = $this->m($msgmode, $code, $str);
             $nlcore->sess->returnToClient($json);
         } else {
             header('HTTP/1.1 403 Forbidden');
