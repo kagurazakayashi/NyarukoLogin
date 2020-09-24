@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 import test_core
-import webbrowser
+import sys
 import demjson
-test_core.title("获得验证码测试")
+test_core.title("获取邮件验证码")
 f = open("testconfig.json", 'r')
 lines = f.read()
 f.close()
@@ -10,8 +10,8 @@ jsonfiledata = demjson.decode(lines)
 if jsonfiledata["url"] == "":
     test_core.terr("错误： 'testconfig.json' 配置不完全。")
     exit()
-uurl = jsonfiledata["url"]+"nyacaptcha.php"
+uurl = jsonfiledata["url"]+"nyavcode.php"
 udataarr = {
+    "to": "cxchope@163.com"
 }
-img = test_core.postarray(uurl,udataarr,True)["img"]
-webbrowser.open(img)
+test_core.postarray(uurl, udataarr, True)

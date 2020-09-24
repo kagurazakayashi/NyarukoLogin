@@ -177,6 +177,9 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     postRes = postRes.decode(encoding='utf-8')
     if (showAllInfo):
         tlog(postRes)
+    if postRes[0:1] == b'[' or postRes[0:1] == b'{' :
+        terr("收到了非预期的明文数据")
+        quit()
     if postRes[0:3] == '<br':
         terr("收到异常信息")
         quit()
