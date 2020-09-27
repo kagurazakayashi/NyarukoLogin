@@ -5,6 +5,7 @@
         "phpmailer/phpmailer": "^6.1",
         "phpgangsta/googleauthenticator": "@dev",
         "php-ffmpeg/php-ffmpeg": "^0.14.0",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "alibabacloud/client": "^1.5"
     }
 }

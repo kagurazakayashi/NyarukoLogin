@@ -56,16 +56,25 @@ class nyavcode {
         $this->code = rand(100000, 999999);
         $timeout = $nlcore->cfg->verify->timeout[$this->module];
         $txt = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_sns);
-        $this->save();
         // 错误代码：渠道消息
         // 連線到傳送簡訊介面
         $statusCode = 2000002;
-        if (strval($nlcore->cfg->verify->debugmail) > 0) {
+        if (strlen($nlcore->cfg->verify->debugmail) > 0) {
             // 使用除錯郵箱模擬
             $statusCode = $this->smtp($nlcore->cfg->verify->debugmail, $phoneNum, $txt, $phoneNum, $txt, 0) ? 1030301 : 2030201;
-            $this->saveHistory($phoneNum,$txt,strval($statusCode));
+        } else {
+            // 實際傳送簡訊
+            $engine = $nlcore->cfg->verify->engine['sms'];
+            if ($engine == 1) {
+                $ali = new nyaaliyun();
+                $statusCode = $ali->sendSms($phoneNum, $this->code) ? 1030301 : 2030201;
+                $resultMessage = '-' . json_encode($ali->resultMessage);
+            } else {
+                $nlcore->msg->stopmsg(2040203, $engine);
+            }
         }
-        // TODO: 實際傳送簡訊
+        if ($statusCode < 2000000) $this->save(); // 儲存驗證碼
+        $this->saveHistory($phoneNum, $txt, strval($statusCode . $resultMessage));
         $returnClientData = $nlcore->msg->m(0, $statusCode);
         if ($debug) $returnClientData['debug'] = $this->code;
         return $returnClientData;
@@ -86,16 +95,30 @@ class nyavcode {
         $subject = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['Subject']);
         $body = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['Body']);
         $altBody = $this->msgAddInfo($nlcore->cfg->app->appname, $timeout, $nlcore->cfg->verify->vcodetext_mail['AltBody']);
-        $this->save();
         // 错误代码：渠道消息
         // 連線到傳送郵件介面
-        if (strval($nlcore->cfg->verify->debugmail) > 0) {
+        $resultMessage = '';
+        $statusCode = -1;
+        if (strlen($nlcore->cfg->verify->debugmail) > 0) {
             // 使用除錯郵箱模擬
             $mailAddr = $nlcore->cfg->verify->debugmail;
+            $statusCode = $this->smtp($mailAddr, $subject, $body, $mailName, $altBody) ? 1030300 : 2030200;
+        } else {
+            // 實際傳送郵件
+            $engine = $nlcore->cfg->verify->engine['mail'];
+            if ($engine == 0) {
+                $statusCode = $this->smtp($mailAddr, $subject, $body, $mailName, $altBody) ? 1030300 : 2030200;
+            } else if ($engine == 1) {
+                $ali = new nyaaliyun();
+                $statusCode = $ali->singleSendMail($mailAddr, $subject, $body, $altBody, $mailName) ? 1030300 : 2030200;
+                $resultMessage = '-' . json_encode($ali->resultMessage);
+            } else {
+                $nlcore->msg->stopmsg(2040203, $engine);
+            }
         }
-        $statusCode = $this->smtp($mailAddr, $subject, $body, $mailName, $altBody) ? 1030300 : 2030200;
-        $this->saveHistory($mailAddr,$altBody,strval($statusCode));
-        $returnClientData = $nlcore->msg->m(0, $statusCode, $mailAddr);
+        if ($statusCode < 2000000) $this->save(); // 儲存驗證碼
+        $this->saveHistory($mailAddr, $altBody, strval($statusCode . $resultMessage));
+        $returnClientData = $nlcore->msg->m(0, $statusCode, $mailAddr . $resultMessage);
         if ($debug) $returnClientData['debug'] = $this->code;
         return $returnClientData;
     }
@@ -109,30 +132,30 @@ class nyavcode {
      * @param Int isHTML 是否以 HTML 文档格式发送（替代配置文件） 0 / 1
      * @return Bool 郵件傳送是否成功
      */
-    function smtp(string $mailAddr, string $subject, string $body, string $mailName = "", string $altBody = "", int $isHTML = -1): bool {
+    function smtp(string $mailAddr, string $subject, string $body = "", string $mailName = "", string $altBody = "", int $isHTML = -1): bool {
         global $nlcore;
         $smtp = $nlcore->cfg->verify->smtp;
         $mail = new PHPMailer(true);
-        $mail->CharSet = $smtp['CharSet'];
-        $mail->SMTPDebug = $smtp['SMTPDebug'];
+        if (strlen($smtp['CharSet']) > 0) $mail->CharSet = $smtp['CharSet'];
+        if (strlen($smtp['SMTPDebug']) > 0) $mail->SMTPDebug = $smtp['SMTPDebug'];
         $mail->isSMTP();
         $mail->Host = $smtp['Host'];
         $mail->Port = $smtp['Port'];
-        $mail->SMTPAuth = $smtp['SMTPAuth'];
+        if (strlen($smtp['SMTPAuth']) > 0) $mail->SMTPAuth = $smtp['SMTPAuth'];
         $mail->Username = $smtp['Username'];
-        $mail->Password = $smtp['Password'];
-        $mail->SMTPSecure = $smtp['SMTPSecure'];
+        if (strlen($smtp['Password']) > 0) $mail->Password = $smtp['Password'];
+        if (strlen($smtp['SMTPSecure']) > 0) $mail->SMTPSecure = $smtp['SMTPSecure'];
         if ($isHTML >= 0) {
             $mail->isHTML = ($isHTML == 1) ? true : false;
         } else {
             $mail->isHTML = $smtp['isHTML'];
         }
-        $mail->setFrom($smtp['FromAddr'], $smtp['FromName']);
-        $mail->addReplyTo($smtp['ReplyToAddr'], $smtp['ReplyToName']);
-        $mail->addAddress($mailAddr, $mailName);
-        $mail->Subject = $subject;
-        $mail->Body = $body;
-        $mail->AltBody = $altBody;
+        if (strlen($smtp['FromAddr']) > 0 && strlen($smtp['FromName']) > 0) $mail->setFrom($smtp['FromAddr'], $smtp['FromName']);
+        if (strlen($smtp['ReplyToAddr']) > 0 && strlen($smtp['ReplyToName']) > 0) $mail->addReplyTo($smtp['ReplyToAddr'], $smtp['ReplyToName']);
+        if (strlen($mailAddr) > 0 && strlen($mailName) > 0) $mail->addAddress($mailAddr, $mailName);
+        if (strlen($subject) > 0) $mail->Subject = $subject;
+        if (strlen($body) > 0) $mail->Body = $body;
+        if (strlen($altBody) > 0) $mail->AltBody = $altBody;
         return $mail->send();
     }
     /**
@@ -231,6 +254,7 @@ class nyavcode {
      */
     function check(int $code, string $module = ""): void {
         global $nlcore;
+        if ($code < 100000 || $code > 999999) $nlcore->msg->stopmsg(2020600);
         if (strlen($module) > 0) $this->module = $module;
         if ($nlcore->db->initRedis()) {
             // 嘗試從 Redis 載入
@@ -309,7 +333,7 @@ class nyavcode {
      */
     function saveHistory(string $sender, string $txt, string $resultinfo) {
         global $nlcore;
-        $tableStr = $nlcore->cfg->db->tables['encryption'];
+        $tableStr = $nlcore->cfg->db->tables['history'];
         $insertDic = [
             'userhash' => $nlcore->sess->appToken,
             'apptoken' => $nlcore->sess->userHash,

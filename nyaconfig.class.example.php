@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @description: 系統配置檔案
  * @package NyarukoLogin
@@ -15,7 +16,7 @@ class nyasetting_db {
             "db_port" => "3306",
             "db_name" => "nyarukologin",
             "db_user" => "nyarukologin_r",
-            "db_password" => "kVN68LfRN6Y0QMF7Zww8e9ydVZm1UUraD5pzKd34Odnp4FsHh3nZWOwEYx5LzmHc8dY4iDHWytdVnppq6wYjKfVbrTJXgX9MCKIesOmmEw0Ut74IXdM86ayAo745m1BgdSrfercnlh9Fhqo8mFputMt4kbm88SL13aNcSpBtIXjUevPtI6rygjN1m5JA6ltj8GegR4xZxmAYyUmOBCoeVe0I5PWhcZxLv6qzHyVUvIkXaEcaHL0mlDpkjcA15uNM"
+            "db_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         ]
     ];
     //写入库，可指定多个数据库。所需权限：INSERT,UPDATE,DELETE
@@ -25,7 +26,7 @@ class nyasetting_db {
             "db_port" => "3306",
             "db_name" => "nyarukologin",
             "db_user" => "nyarukologin_w",
-            "db_password" => "pgfeaKtAYChjegoXlNq1r2sKrN4ucgrMFE8cypB6p4cgwdBYHYDLn2KTT3MAOuxIRq5wLjiM1pqgutqQIhBZIZZy85DXjQKB8ss5bpSQ0Em2bDSZs5xqfW8bMkNqwNcryJNsJpeXZrDihmJH1xOb4DZQo4kH0rI84O1jtajDUX2BX2jHp7DZp0aTfDpihXkcAZQYn9sGPsopO6CahX1UhP568GuqteRQSKa8B8KtrPKpUSotFuQGNujQRnjj1rFz"
+            "db_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         ]
     ];
     //数据库表设置
@@ -50,7 +51,7 @@ class nyasetting_db {
         "rdb_enable" => true,
         "rdb_host" => "127.0.0.1",
         "rdb_port" => 6379,
-        "rdb_password" => "RfryNXkEUG3OnyDI06zK1mqWA7oQslqvc8IEgHh78BpACCaUZIN44zrlUyDIq8xL3unaZJpWd592DrJifvymOdLHCAIN0ycg1TzvatE2tJiu40kr06Aub1vfjYGIWadevBm70UDTClutBxWTjInt3fsZomDXQvYjrRktguqJeGT0RgfJA95XgTDQGqp2Eo7D33EhIU8zSQpjy3e97Bbl5yFvoqERz3wUBvcFd7K95Eas4DZpld3NV7fuk1tdh7Xa",
+        "rdb_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "rdb_id" => 1
     ];
     //Redis数据库表设置
@@ -60,7 +61,9 @@ class nyasetting_db {
         "session" => "s_", //登录状态
         "convertimage" => "i_", //转换图片，需要和go代码同时修改
         "convertvideo" => "v_", //转换视频，需要和go代码同时修改
-        "rsa" => "r_" //RSA密钥缓存
+        "rsa" => "r_", //RSA密钥缓存
+        "vcode1" => "c1_", //图形验证码
+        "vcode2" => "c2_" //短信或邮件验证码
     ];
     //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
     var $logfile_db = "/mnt/wwwroot/zyz/log/db.log";
@@ -83,68 +86,19 @@ class nyasetting_encrypt {
         "private_key_type" => OPENSSL_KEYTYPE_RSA // 加密型別
     ];
     // 為私鑰設定密碼， 設定為 null 則不加密
-    var $privateKeyPassword = "qrCbuxCymh1BCMTDRGJvXt4I6AkOl9ozJVdAdMJ4y8wblCb0EhlXWumHauswoZYUYnNFpXLOcKP5O53EnKwuBW0YIH1u8RU88NADU0ljln5fbKaLD8Gh3EaAEG6Kbyo8gqEtSD7PbAlYsRGGsvTBKgwsS4pRI7NzmRmkj8P55UVNaEjPWaHhuZjSZmBNEUcHeuLlfIekDyZApNWmD3ohqpfTnBLg8IHDp9v1KEKHEXYxrkF2NBIVSwTEd2ZDSJesvW9gfdKiGuNSYPSfJtaZiTGufwkFkTnSY683mi6w9BMByh847cy9OscFS6L9rCOeEVWvjPlBfwKNguSHn5Q6YzzLqiYEA5Sx2BK0aDr8JZpfBei2tKqN5PdfraOXWT7hH8FWms5ixtC1A5zcLjCvKNa7c9RIynDV9o7oSiHggJ6F6f7uMpdCfYVAciPBl9gOk2RgfY1itPMPuPNqDZGV3ndlTZeyk0SaFfpqtqruE2cNPIwcYN9OMg3B0lojhVVw";
+    var $privateKeyPassword = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     // 設定內建公鑰和私鑰，在本地應用還沒有和伺服器獲取金鑰對之前，使用此預共享金鑰對進行加密。與客戶端中的相對應，總計 2 個金鑰對，與伺服器分別持有對方的公鑰和私鑰。無需開頭結尾標記，無需修改 base64 內容。此處私鑰必須能夠被上邊的密碼所解密。可以為 null 。
     var $defaultPrivateKey = <<<'EOD'
-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
-/hs=
+xxxxxxx
+xxxxxxx
+xxxxxxx
 EOD;
 }
 // 應用相關設定
 class nyasetting_app {
     var $debug = 1; //是否输出所有PHP错误,1显示,0禁止,其他数字:按照php.ini中的设定
     var $app = "nyalogin_dev"; //应用名称（纯字母）（预留未实装）
-    var $appname = "测试应用1"; //应用描述
+    var $appname = "择与择"; //应用描述
     var $appurl = "http://dev.zeyuze.com/user/"; //访问网址（/结尾）
     var $maxlen_get = 2000; //使用 get 方式提交时允许长度（字节）
     var $maxlen_post = 1000000; //使用 post 方式提交时允许长度（字节）
@@ -158,23 +112,26 @@ class nyasetting_app {
     var $frequency = false; //启动接口访问频率限制
     //各功能时长设定（每个IP地址）：[多少秒内,最多允许访问多少次,简写]
     var $limittime = [
-        "default" => [60,30,"DF"], //默认值
-        "encrypttest" => [60,30,"ET"], //测试接口
-        "encryption" => [60,300,"EN"], //限制密钥对生成接口的访问频率
-        "signup" => [60,30,"SI"], //提交用户名密码进行注册
-        "login" => [60,30,"LI"], //用户登录
-        "captcha" => [60,30,"CP"], //获取图形验证码
-        "session" => [60,30,"SE"], //登录状态检查接口
-        "fastsearch" => [60,300,"FS"], //快速模糊用户名搜索
-        "userinfo" => [60,300,"UI"], //用户信息
-        "upload" => [60,300,"UL"], //上传文件
+        "default" => [60, 30, "DF"], //默认值
+        "encrypttest" => [60, 30, "ET"], //测试接口
+        "encryption" => [60, 300, "EN"], //限制密钥对生成接口的访问频率
+        "signup" => [60, 30, "SI"], //提交用户名密码进行注册
+        "login" => [60, 30, "LI"], //用户登录
+        "captcha" => [60, 30, "CP"], //获取图形验证码
+        "vcode" => [60, 30, "VC"], //获取短信或邮件验证码
+        "session" => [60, 30, "SE"], //登录状态检查接口
+        "fastsearch" => [60, 300, "FS"], //快速模糊用户名搜索
+        "userinfo" => [60, 300, "UI"], //用户信息
+        "upload" => [60, 300, "UL"], //上传文件
     ];
     //多语言（应和template中的文件名对应），在第一位的为默认语言
     var $language = ["zh-cn"];
-    // 允許使用哪種方式註冊，至少開其中一種[郵箱,手機號,子賬號]
-    var $registertype = [true,true,true];
-    //TODO: 允許使用哪種方式登入，至少開其中一種[郵箱,手機號,子賬號]
-    var $logintype = [true,true,true];
+    // 允許使用哪種方式登入，至少開其中一種[郵箱,手機號,密碼]
+    var $logintype = [true, true, true];
+    // 註冊時允許用哪種驗證碼進行驗證，至少開其中一種[郵箱,手機號,验证码]
+    var $logincaptcha = [true, true, false];
+    // 註冊時必須提供密碼
+    var $needpassword = true;
     // 預設新使用者的：
     var $newuser = [
         "group" => 1, // 使用者組 (group_list 表中的 ID)
@@ -216,7 +173,7 @@ class nyasetting_app {
         "maxlength" => 5, //最大分析长度，指定多个条件时，两个条件词之间间隔超过此长度则不判为违规
         "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
     ];
-    var $passwordsalt = "6yJv1R2TxyBVKOToumDbfBmqlDWr3PMK"; //密码盐
+    var $passwordsalt = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; //密码盐
     var $upload = [
         "tmpdir" => "../upload_tmp", //异步二压临时文件夹（先建立好文件夹设好权限）
         "uploaddir" => "../upload", //媒体上传文件夹（先建立好文件夹设好权限）
@@ -233,14 +190,14 @@ class nyasetting_app {
     var $mserver = "http://127.0.0.1:1081/"; //"http://127.0.0.1:1081/"; //指定后台服务地址,""的话不会主动调取转码服务
     var $uploadtype = [ //允许上传的文件类型 和 MIME/扩展名 对应关系
         "image" => [
-            ["image/jpeg","jpg"],
-            ["image/png","png"],
-            ["image/gif","gif"],
-            ["image/webp","webp"]
+            ["image/jpeg", "jpg"],
+            ["image/png", "png"],
+            ["image/gif", "gif"],
+            ["image/webp", "webp"]
         ],
         "video" => [
-            ["video/mp4","mp4"],
-            ["video/quicktime","mov"]
+            ["video/mp4", "mp4"],
+            ["video/quicktime", "mov"]
         ]
     ];
     //标识名=>图片压缩尺寸（宽高）和图片压缩清晰度百分比，会作为文件名.后缀
@@ -248,36 +205,36 @@ class nyasetting_app {
     //设置中宽需要大于高，如果媒体比例宽高翻转（高大于宽），计算宽高也翻转。
     var $imageresize = [
         "def" => [ //普通图片，默认值，自带设置不要删
-            "R" => [0,0,0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
-            "S" => [640,360,80],
-            "M" => [1280,720,80],
-            "L" => [1920,1080,80]
+            "R" => [0, 0, 0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
+            "S" => [640, 360, 80],
+            "M" => [1280, 720, 80],
+            "L" => [1920, 1080, 80]
         ],
         "pfbg" => [ //个人资料背景，自带设置不要删
-            "R" => [0,0,0],
-            "S" => [640,360,80],
-            "M" => [1280,720,80],
-            "L" => [1920,1080,80]
+            "R" => [0, 0, 0],
+            "S" => [640, 360, 80],
+            "M" => [1280, 720, 80],
+            "L" => [1920, 1080, 80]
         ],
         "pfimg" => [ //头像，自带设置不要删
-            "R" => [0,0,0],
-            "S" => [64,64,80],
-            "M" => [128,128,80],
-            "L" => [512,512,80]
+            "R" => [0, 0, 0],
+            "S" => [64, 64, 80],
+            "M" => [128, 128, 80],
+            "L" => [512, 512, 80]
         ]
     ];
     var $videoresize = [
         "def" => [ //普通图片，默认值，自带设置不要删
-            "R" => [0,0,0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
-            "S" => [640,360,500],
-            "M" => [1280,720,1000],
-            "L" => [1920,1080,2000]
+            "R" => [0, 0, 0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
+            "S" => [640, 360, 500],
+            "M" => [1280, 720, 1000],
+            "L" => [1920, 1080, 2000]
         ]
     ];
     // 向前端按顺序推荐尺寸
-    var $recommendsize = ["L","M","S","R"];
+    var $recommendsize = ["L", "M", "S", "R"];
     // 向前端按顺序推荐扩展名
-    var $recommendext = ["gif","webp","jpg","png","mp4","mov"];
+    var $recommendext = ["gif", "webp", "jpg", "png", "mp4", "mov"];
     // 路径要求：① php.ini 的 open_basedir 中允许该路径，或拷贝执行文件到网站目录。 ② 不要出现空格和非英文。 ③ 尽量用绝对路径。
     //ffmpeg 和 ffprobe 执行文件路径。
     var $ffconf = [
@@ -295,6 +252,10 @@ class nyasetting_app {
 
 // 驗證碼設定
 class nyasetting_verify {
+    // DEBUG 验证码调试模式：请勿在生产环境开启：
+    var $debug = true;
+    // DEBUG 如果填写邮件地址，会强制将短信和邮件发送到此测试邮箱
+    var $debugmail = "";
     //哪种验证码在登录失败几次后开始被需要
     var $needcaptcha = [
         "captcha" => 3
@@ -304,13 +265,24 @@ class nyasetting_verify {
         "captcha" => true, //进行验证码验证
         "charset" => "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890", //可抽选字符
         "codelen" => 4, //验证码长度
-        "imgdir" => "image", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
+        "imgdir" => "img", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
         "imgname" => "captcha_" //验证码图片前缀
     ];
-    //各种验证码的超时时间
+    //各种验证码的超时时间（秒）
     var $timeout = [
-        "captcha" => 20, //图形验证码
-        "mail" => 86400
+        "captcha" => 600, //图形验证码
+        "mail" => 300,
+        "sms" => 300
+    ];
+    // 最大尝试次数，超过该次数需要重新生成
+    var $maxtry = [ // captcha 强制为 1
+        "mail" => 3,
+        "sms" => 3
+    ];
+    // 多久可以再获取下一个验证码（秒）
+    var $cd = [ // captcha 强制为 0
+        "mail" => 60,
+        "sms" => 60
     ];
     //密码强度设置，设置的密码必须要有 key 至少 val 个：
     var $strongpassword = [
@@ -322,11 +294,54 @@ class nyasetting_verify {
     //密码只能包括以下符号
     var $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";
     //密码长度要求，[最少,最多]多少位
-    var $passwordlength = [6,1024];
+    var $passwordlength = [6, 1024];
     //默认 token 有效时间(秒)
     var $tokentimeout = 15552000;
     var $needlogin = [
         "userinfo" => false
+    ];
+    // 短信和邮件模板，可用插入变量 {appname} {code} {time}
+    var $vcodetext_sns = "【{appname}】验证码：{code}（{time}分钟内有效）。您正在操作{appname}通行证，请勿将验证码告诉他人，如果不是本人进行的操作请无视。";
+    var $vcodetext_mail = [
+        'Subject' => '{appname} 账户验证邮件',
+        'Body' => '<!doctype html><html xmlns=http://www.w3.org/1999/xhtml><head><meta content="text/html; charset=utf-8"http-equiv=Content-Type><title>verification code</title><meta content="width=device-width,initial-scale=1"name=viewport></head><body style=text-align:center><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td width=20%><td align=left><h1>{appname}</h1><span>&emsp;&emsp;&emsp;&emsp;您好，您正在操作 {appname} 通行证。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;如果不是您本人操作，请忽略此邮件。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;您的邮件验证码为：</span><br><h2>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{code}</h2><span>&emsp;&emsp;&emsp;&emsp;验证码 {time} 分钟内有效，</span><br><br><span>&emsp;&emsp;&emsp;&emsp;请勿将验证码告诉他人。</span><td width=20%></table></body></html>',
+        'AltBody' => '您好，您正在操作 {appname} 通行证。如果不是您本人操作，请忽略此邮件。您的邮件验证码为： {code} 。验证码 {time} 分钟内有效，请勿将验证码告诉他人。'
+    ];
+    var $engine = [ // 選擇傳送引擎
+        'mail' => 1, // 0.PHPMailer, 1.阿里云邮件推送, 其他.关闭此验证
+        'sms' => 1 // 1.阿里云短信服务, 其他.关闭此验证
+    ];
+    var $smtp = [
+        'CharSet' => 'UTF-8',
+        'SMTPDebug' => 0,
+        'Host' => '192.168.2.115',
+        'Port' => 25, //465
+        'SMTPAuth' => true,
+        'Username' => 'noreply@mail.zeyuze.com',
+        'Password' => 'server',
+        'SMTPSecure' => '', //ssl
+        'FromAddr' => 'server@dev.uuu.moe',
+        'FromName' => '应用',
+        'ReplyToAddr' => '',
+        'ReplyToName' => '',
+        'isHTML' => true
+    ];
+    var $aliyun = [ // 阿里雲配置
+        'mail' => [
+            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'], // ['<accessKeyId>', '<accessSecret>']
+            'RegionId' => 'cn-hangzhou',
+            'AddressType' => '1', // *地址型別。取值： 0：為隨機賬號 1：為發信地址
+            'ClickTrace' => '0', // 1：為開啟資料跟蹤功能 0（預設）：為關閉資料跟蹤功能。
+            // 剩余配置从 $smtp 中读取： 'Username','ReplyToAddr','ReplyToAddr'，'ReplyToName'
+        ],
+        'sms' => [
+            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'], // ['<accessKeyId>', '<accessSecret>']
+            'RegionId' => 'cn-hangzhou',
+            'SignName' => '择与择', // *簡訊簽名名稱。請在控制檯簽名管理頁面簽名名稱一列檢視。必須是已新增、並透過稽核的簡訊簽名。
+            'TemplateCode' => 'SMS_203675038', // *簡訊模板ID。請在控制檯 模板管理 頁面 模板CODE 一列檢視。必須是已新增、並透過稽核的簡訊簽名；且傳送國際/港澳臺訊息時，請使用國際/港澳臺簡訊模版。
+            'SmsUpExtendCode' => '', // 上行簡訊擴充套件碼，無特殊需要此欄位的使用者請忽略此欄位。
+            'OutId' => '' // 外部流水擴充套件欄位
+        ],
     ];
 }
 
@@ -343,9 +358,13 @@ class nyasetting {
         $this->verify = new nyasetting_verify();
     }
     function __destruct() {
-        $this->db = null; unset($this->db);
-        $this->enc = null; unset($this->enc);
-        $this->app = null; unset($this->app);
-        $this->verify = null; unset($this->verify);
+        $this->db = null;
+        unset($this->db);
+        $this->enc = null;
+        unset($this->enc);
+        $this->app = null;
+        unset($this->app);
+        $this->verify = null;
+        unset($this->verify);
     }
 }
