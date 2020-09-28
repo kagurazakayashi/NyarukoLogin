@@ -1,6 +1,8 @@
 <?php
 // 賬戶註冊
 require_once "src/nyacore.class.php";
+require_once "src/nyacaptcha.class.php";
+require_once "nyaverification.class.php";
 require_once "src/nyasignup.class.php";
 // IP檢查和解密客戶端提交的資訊
 $inputInformation = $nlcore->sess->decryptargv("signup");
@@ -13,4 +15,3 @@ $returnClientData = $nyasignup->adduser($nlcore->sess->argReceived,$nlcore->sess
 // }
 // 將資訊返回給客戶端
 exit($nlcore->sess->encryptargv($returnClientData));
-?>
