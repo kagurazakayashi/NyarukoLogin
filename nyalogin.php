@@ -3,6 +3,7 @@
 require_once "src/nyacore.class.php";
 require_once "src/nyalogin.class.php";
 require_once "src/nyacaptcha.class.php";
+require_once "src/nyavcode.class.php";
 // IP 檢查和解密客戶端提交的資訊
 $nlcore->sess->decryptargv("login");
 // 實現功能
