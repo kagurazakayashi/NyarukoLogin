@@ -197,7 +197,7 @@ class nyafunc {
      * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
      * @return Array<Array> 當前使用者資訊
      */
-    function getuserinfo(string $userHash, array $dbresult = null, $getfileinfo = true): array {
+    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true): array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
@@ -208,7 +208,9 @@ class nyafunc {
             $whereDic = ["userhash" => $userHash];
             $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         }
-        if ($result[0] != 1010000 || !isset($result[2][0])) $nlcore->msg->stopmsg(2040206);
+        if ($result[0] != 1010000 || !isset($result[2][0])) {
+            $nlcore->msg->stopmsg(2040206,$userHash);
+        }
         $nowuserinfo = $result[2][0];
         if ($getfileinfo) {
             $filenone = ["path" => ""];

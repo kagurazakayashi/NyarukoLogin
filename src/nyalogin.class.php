@@ -68,13 +68,14 @@ class nyalogin {
                 $process .= ",usecaptcha=no";
             } else if ($needcaptcha == "captcha" && $enableLoginType[2]) { // 需要圖形驗證碼
                 $process .= ",usecaptcha=yes";
-                // 沒有驗證碼
-                if (!isset($userinfoarr["captcha"])) {
+                if (isset($argReceived["captcha"])) {
+                    // 有驗證碼，檢查驗證碼是否正確，不正確重新發放一個
+                    $nyacaptcha = new nyacaptcha();
+                    if (!$nyacaptcha->verifycaptcha($appToken, $argReceived["captcha"])) die();
+                } else {
+                    // 沒有驗證碼
                     $this->getcaptcha(2040202); // 發放一個新的驗證碼
                 }
-                // 有驗證碼，檢查驗證碼是否正確，不正確重新發放一個
-                $nyacaptcha = new nyacaptcha();
-                if (!$nyacaptcha->verifycaptcha($appToken, $argReceived["captcha"])) die();
             } else {
                 $nlcore->msg->stopmsg(2040203);
             }
@@ -179,7 +180,6 @@ class nyalogin {
         } else {
             $process .= ",2fa=no";
         }
-
         // 分配 token
         $token = $nlcore->safe->rhash64($userHash . $timestamp);
         $tokentimeout = 0;
@@ -213,13 +213,12 @@ class nyalogin {
         $tableStr = $nlcore->cfg->db->tables["session"];
         $result = $nlcore->db->insert($tableStr, $insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040113);
-
         // 查詢使用者具體資料
         $userexinfoarr = $nlcore->func->getuserinfo($userHash);
-
+        // 清除連續登入失敗次數
+        if ($userfail > 0) $this->loginfailuretimes($userid);
         // 寫入成功歷史記錄
         $nlcore->func->writehistory("USER_SIGN_IN", 1020100, $userHash, $appToken, $ipid, $user, $process, $token);
-
         // 返回到客戶端
         $returnClientData = [];
         if ($alertinfo[0] == 3000000) {
@@ -265,7 +264,6 @@ class nyalogin {
         $newcaptcha = $nyacaptcha->getcaptcha(false, false, false);
         $returnClientData = $nlcore->msg->m(0, $code);
         $returnClientData["img"] = $newcaptcha["img"];
-        $returnClientData["timestamp"] = $newcaptcha["timestamp"];
         echo $nlcore->sess->encryptargv($returnClientData);
         die();
     }
