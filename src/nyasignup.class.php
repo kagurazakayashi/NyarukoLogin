@@ -138,6 +138,11 @@ class nyasignup {
             "name" => $nickname,
             "nameid" => $nameid
         ];
+        // 檢查可選欄位
+        $userInfoEdit = new userInfoEdit($nlcore->sess->argReceived);
+        $infoEditDic = $userInfoEdit->batchUpdate();
+        if ($infoEditDic && count($infoEditDic) > 0) $insertDic = array_merge($insertDic, $infoEditDic);
+        // 更新 info 表
         $tableStr = $nlcore->cfg->db->tables["info"];
         $result = $nlcore->db->insert($tableStr, $insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040111);
