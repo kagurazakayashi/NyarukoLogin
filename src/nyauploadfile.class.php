@@ -18,7 +18,7 @@ class nyauploadfile {
         $savedirarr = $nlcore->func->savepath("uploaddir");
         $relativepaths = $savedirarr[2]; //相对路径
         $savedir = $savedirarr[0]; //目标存储文件夹
-        $stmpdirs = $nlcore->func->savepath("tmpdir",false,"",0)[0].DIRECTORY_SEPARATOR;
+        $stmpdirs = $nlcore->func->savepath("tmpdir", false, "", 0)[0] . DIRECTORY_SEPARATOR;
         $stmpdir = $stmpdirs[0]; //二压临时文件夹
 
         $uploaddirstrcount = strlen($savedir);
@@ -27,21 +27,21 @@ class nyauploadfile {
         $returnClientData = [];
         $returnfilepath = "";
         foreach ($files as $nowfile) {
-            $mediatype = $this->chkfile($nowfile,$uploadconf); //检查文件
+            $mediatype = $this->chkfile($nowfile, $uploadconf); //检查文件
             $code = 1000000;
             $info = [];
             $tmpfile = $nowfile["tmp_name"];
-            if (is_numeric($mediatype)) {
-                $nlcore->msg->stopmsg($mediatype);
+            if ($mediatype["code"] != 0) {
+                $nlcore->msg->stopmsg($mediatype["code"], $mediatype["info"]);
             } else {
                 $info["type"] = $mediatype;
                 $info["code"] = $code;
             }
-            $newfilename = $nlcore->safe->millisecondtimestamp()."_".$nlcore->safe->randhash("",false,false); //创建临时文件名
+            $newfilename = $nlcore->safe->millisecondtimestamp() . "_" . $nlcore->safe->randhash("", false, false); //创建临时文件名
             // $newfilename = md5_file($tmpfile); //文件哈希值创建文件名
             // $savefile = $savedir.$newfilename; //最终存储文件完整路径
             $extension = $mediatype["extension"]; //扩展名
-            $savetmpfile = substr($stmpdirs, 0, -1).$newfilename.'.'.$extension; //临时文件
+            $savetmpfile = substr($stmpdirs, 0, -1) . $newfilename . '.' . $extension; //临时文件
             $rediskey = "";
             // $savetmpfileconf = $stmpdir.$newfilename.'.json'; //临时文件计划
             $info["files"] = [];
@@ -58,7 +58,7 @@ class nyauploadfile {
                 "toname" => $newfilename,
                 "info" => $mediainfojson
             ];
-            $returnfilepath = $nlcore->safe->urlsep($relativepaths.$newfilename);
+            $returnfilepath = $nlcore->safe->urlsep($relativepaths . $newfilename);
             $useto = isset($argReceived["usefor"]) ? $argReceived["usefor"] : "def";
             //是视频还是图片？
             if ($mediatype["media"] == "image") {
@@ -66,7 +66,7 @@ class nyauploadfile {
                 if ($extension == "gif") {
                     $nowextres = ["gif"];
                 } else {
-                    $nowextres = ["jpg","webp"];
+                    $nowextres = ["jpg", "webp"];
                 }
                 if (isset($nlcore->cfg->app->imageresize[$useto])) {
                     $imageresize = $nlcore->cfg->app->imageresize[$useto];
@@ -77,14 +77,14 @@ class nyauploadfile {
                 $sizesavepath = [];
                 foreach ($imageresize as $key => $sizes) {
                     // 检查是否能提供该尺寸
-                    if (in_array(0,$sizes) || $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
+                    if (in_array(0, $sizes) || $this->getresize($mediainfojson["width"], $mediainfojson["height"], $sizes[0], $sizes[1])[2]) {
                         foreach ($nowextres as $convextension) {
                             $newsizes = $sizes;
-                            $nowsizefile = $key.'.'.$convextension;
-                            array_unshift($newsizes,$nowsizefile);
-                            array_push($sizesavepath,$newsizes);
+                            $nowsizefile = $key . '.' . $convextension;
+                            array_unshift($newsizes, $nowsizefile);
+                            array_push($sizesavepath, $newsizes);
                         }
-                        array_push($sizearr,$key);
+                        array_push($sizearr, $key);
                     }
                 }
                 $filejsonarr["to"] = $sizesavepath;
@@ -113,7 +113,7 @@ class nyauploadfile {
                 } else {
                     $nlcore->msg->stopmsg(2050106);
                 }
-                $mediainfojson = $this->getvideomediainfo($tmpfile,["width","height","duration","bit_rate"]);
+                $mediainfojson = $this->getvideomediainfo($tmpfile, ["width", "height", "duration", "bit_rate"]);
                 $mediainfojson["width"] = intval($mediainfojson["width"]);
                 $mediainfojson["height"] = intval($mediainfojson["height"]);
                 $mediainfojson["duration"] = floatval($mediainfojson["duration"]);
@@ -124,20 +124,20 @@ class nyauploadfile {
                 $sizesavepath = [];
                 foreach ($videoresize as $key => $sizes) {
                     // 检查是否能提供该尺寸
-                    if (!in_array(0,$sizes) && $this->getresize($mediainfojson["width"],$mediainfojson["height"],$sizes[0],$sizes[1])[2]) {
+                    if (!in_array(0, $sizes) && $this->getresize($mediainfojson["width"], $mediainfojson["height"], $sizes[0], $sizes[1])[2]) {
                         $newsizes = $sizes;
                         if ($videowidth < $videoheight) {
-                            $newsizes = [$sizes[1],$sizes[0],$sizes[2]];
+                            $newsizes = [$sizes[1], $sizes[0], $sizes[2]];
                         }
                         $newwidth = intval($newsizes[0]);
                         $newheight = intval($newsizes[1]);
                         if ($newwidth > $videowidth || $newheight > $videoheight) {
                             continue;
                         }
-                        $nowsizefile = $key.'.mp4';
-                        array_unshift($newsizes,$nowsizefile);
-                        array_push($sizesavepath,$newsizes);
-                        array_push($sizearr,$key);
+                        $nowsizefile = $key . '.mp4';
+                        array_unshift($newsizes, $nowsizefile);
+                        array_push($sizesavepath, $newsizes);
+                        array_push($sizearr, $key);
                     }
                 }
                 $filejsonarr["to"] = $sizesavepath;
@@ -153,47 +153,47 @@ class nyauploadfile {
                 "ext" => $nowextres,
                 "info" => $mediainfojson
             ];
-            array_push($info["files"],$nowfileres);
+            array_push($info["files"], $nowfileres);
             // $tmpfile -> $savetmpfile
-            move_uploaded_file($nowfile["tmp_name"],$savetmpfile);
+            move_uploaded_file($nowfile["tmp_name"], $savetmpfile);
             $configfiledata = json_encode($filejsonarr);
             // 将转换计划写入 Redis
             // if (!$nlcore->db->initRedis()) die();
             $redis = $nlcore->db->redis;
-            $rediskey .= $nlcore->safe->millisecondtimestamp().$newfilename;
-            $redis->set($rediskey,$configfiledata);
+            $rediskey .= $nlcore->safe->millisecondtimestamp() . $newfilename;
+            $redis->set($rediskey, $configfiledata);
             $mserver = $nlcore->cfg->app->mserver;
             // 記錄日誌
             $logfilepath = $nlcore->cfg->db->logfile_sh;
             $logfile = null;
             if (strlen($logfilepath) > 0) {
                 $logfile = fopen($logfilepath, "a");
-                fwrite($logfile, "===== ".date('Y-m-d H:i:s')." =====\n[REDIS KEY] ".$rediskey."\n[REDIS VAL] ".$configfiledata."\n");
+                fwrite($logfile, "===== " . date('Y-m-d H:i:s') . " =====\n[REDIS KEY] " . $rediskey . "\n[REDIS VAL] " . $configfiledata . "\n");
             }
             // 調用GO程序，開始進行後台二壓
             if ($mserver != "") {
                 $execlog = "/dev/null";
-                if(($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
+                if (($mediatype["media"] == "image" && !$redis->exists("ic")) || $mediatype["media"] == "video" && !$redis->exists("vc")) {
                     $curl = curl_init();
-                    $url = $mserver.$mediatype["media"];
-                    curl_setopt($curl,CURLOPT_URL,$url);
-                    curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
+                    $url = $mserver . $mediatype["media"];
+                    curl_setopt($curl, CURLOPT_URL, $url);
+                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                     $httpresponse = curl_exec($curl);
-                    $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);
+                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
                     curl_close($curl);
                     if ($httpCode != "200") {
                         if (strlen($logfilepath) > 0) {
-                            fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] [!ERROR!] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
+                            fwrite($logfile, "[CURL URL] " . $url . "\n[CURL CODE] [!ERROR!] " . $httpCode . "\n[CURL RES] " . $httpresponse . "\n");
                             fclose($logfile);
                         }
-                        $nlcore->msg->stopmsg(2060201,strval($httpCode));
+                        $nlcore->msg->stopmsg(2060201, strval($httpCode));
                     } else if (strlen($logfilepath) > 0) {
-                        fwrite($logfile, "[CURL URL] ".$url."\n[CURL CODE] ".$httpCode."\n[CURL RES] ".$httpresponse."\n");
+                        fwrite($logfile, "[CURL URL] " . $url . "\n[CURL CODE] " . $httpCode . "\n[CURL RES] " . $httpresponse . "\n");
                     }
                 }
             }
             fclose($logfile);
-            array_push($returnfile,$info);
+            array_push($returnfile, $info);
         }
         $returnClientData["filegroups"] = $returnfile;
         $returnClientData["code"] = 1000000;
@@ -209,7 +209,7 @@ class nyauploadfile {
      * @param Float maxHeight 目标尺寸高度
      * @return Array<Float,Float,Bool> 新的宽高,以及是否需要调整
      */
-    function getresize($imageWidth,$imageHeight,$maxWidth,$maxHeight) {
+    function getresize($imageWidth, $imageHeight, $maxWidth, $maxHeight) {
         $newWidth = $imageWidth;
         $newHeight = $imageHeight;
         $imageScale = $imageWidth / $imageHeight;
@@ -222,9 +222,9 @@ class nyauploadfile {
             $newWidth = $maxHeight * $imageScale;
         }
         if ($newWidth > $imageWidth && $newHeight > $imageHeight) {
-            return [$imageWidth,$imageHeight,false];
+            return [$imageWidth, $imageHeight, false];
         } else {
-            return [$newWidth,$newHeight,true];
+            return [$newWidth, $newHeight, true];
         }
     }
     /**
@@ -236,7 +236,7 @@ class nyauploadfile {
      * @param Array sizequality 最大尺寸和清晰度 [宽,高,在 jpg+webp 模式时的压缩比]
      * @return Array [[文件完整路径],是否找到重复文件]
      */
-    function resizeto($imagefile,$savefile,$key,$type,$sizequality) {
+    function resizeto($imagefile, $savefile, $key, $type, $sizequality) {
         $imagick = new Imagick($imagefile);
         $imagick->stripImage(); //去除图片信息
         $isresize = ($sizequality[0] <= 0 || $sizequality[1] <= 0) ? false : true;
@@ -248,13 +248,13 @@ class nyauploadfile {
                 $imageWidth = imagesx($srcImg);
                 $imageHeight = imagesy($srcImg);
             }
-            $newsize = $this->getresize($imageWidth,$imageHeight,$sizequality[0],$sizequality[1]);
+            $newsize = $this->getresize($imageWidth, $imageHeight, $sizequality[0], $sizequality[1]);
         }
         $isexists = false;
         if ($type == "gif") {
             $transparent = new ImagickPixel("transparent");
             $newimagick = new Imagick();
-            foreach($imagick as $img){
+            foreach ($imagick as $img) {
                 $page = $img->getImagePage();
                 $tmp = new Imagick();
                 $tmp->newImage($page['width'], $page['height'], $transparent, 'gif');
@@ -269,29 +269,29 @@ class nyauploadfile {
                 $tmp->destroy();
             }
             $newimagick->setFormat("gif");
-            $savefilename = $savefile.".".$key.".gif";
+            $savefilename = $savefile . "." . $key . ".gif";
             if (file_exists($savefilename)) $isexists = true;
-            $newimagick->writeImages($savefilename,true);
+            $newimagick->writeImages($savefilename, true);
             $newimagick->destroy();
-            return [[$savefilename],$isexists];
+            return [[$savefilename], $isexists];
         } else {
             if ($isresize) $imagick->adaptiveResizeImage($newsize[0], $newsize[1]);
             if ($isrequality) $imagick->setImageCompressionQuality($sizequality[2]); //图片质量
             $webp = $imagick;
             $webp->setFormat("webp");
-            $savefilename1 = $savefile.".".$key.".webp";
+            $savefilename1 = $savefile . "." . $key . ".webp";
             $dechextime = strval(dechex(time()));
             if (file_exists($savefilename1)) $isexists = true;
             $webp->writeImage($savefilename1);
             $jpeg = $imagick;
             $jpeg->setFormat("jpeg");
-            $savefilename2 = $savefile.".".$key.".jpg";
+            $savefilename2 = $savefile . "." . $key . ".jpg";
             if (file_exists($savefilename2)) $isexists = true;
             $jpeg->writeImage($savefilename2);
             $webp->destroy();
             $jpeg->destroy();
             $imagick->destroy();
-            return [[$savefilename1,$savefilename2],$isexists];
+            return [[$savefilename1, $savefilename2], $isexists];
         }
     }
     /**
@@ -299,17 +299,17 @@ class nyauploadfile {
      * @param String nowfile 当前文件完整路径
      * @param Array uploadconf 上传配置数组
      * @param Array enable 允许上传的媒体类别，默认["image","video"]都可以
-     * @return Array [MIME类型,扩展名,image还是video]
+     * @return Array [错误代码(0正常),MIME类型,扩展名,image还是video]
      */
-    function chkfile($nowfile,$uploadconf,$enable=["image","video"]) {
+    function chkfile($nowfile, $uploadconf, $enable = ["image", "video"]) {
         //检查错误代码
         if ($nowfile["error"] != 0) {
-            return 2050100;
+            return ["code" => 2050100, "info" => $nowfile["error"]];
         }
         //检查文件大小是否超过限制
         $maxsize = $uploadconf["maxsize"];
         if ($nowfile["size"] > $maxsize["all"]) {
-            return 2050101;
+            return ["code" => 2050101, "info" => $nowfile["size"]];
         }
         //检查文件类型是否符合
         $fi = new finfo(FILEINFO_MIME_TYPE); //FILEINFO_MIME_TYPE FILEINFO_EXTENSION
@@ -328,27 +328,28 @@ class nyauploadfile {
                 }
             }
         }
-        if (!$mediatype || !in_array($mediatype["media"],$enable)) {
-            return 2050102;
+        if (!$mediatype || !in_array($mediatype["media"], $enable)) {
+            return ["code" => 2050102, "info" => $mime_type.($mediatype["media"] ?? "")]; //$mediatype["media"]; //
         }
         if ($mediatype["media"] == "video") { //如果是视频
             //当前类型的限制大小
             if ($nowfile["size"] > $maxsize["video"]) {
-                return 2050101;
+                return ["code" => 2050101, "info" => strval($nowfile["size"])];
             }
             //检查视频时长是否太长
-            $videoduration = $this->getvideomediainfo($nowfile["tmp_name"],"duration");
+            $videoduration = $this->getvideomediainfo($nowfile["tmp_name"], "duration");
             if ($videoduration > $uploadconf["videoduration"]) {
-                return 2050103;
+                return ["code" => 2050103, "info" => strval($videoduration)];
             }
         } else if ($mediatype["media"] == "image") { //如果是图片
             //当前类型的限制大小
             if ($mediatype["extension"] == "gif" && $nowfile["size"] > $maxsize["gif"]) {
-                return 2050101;
+                return ["code" => 2050101, "info" => $nowfile["size"]];
             } else if ($nowfile["size"] > $maxsize["image"]) {
-                return 2050101;
+                return ["code" => 2050101, "info" => $nowfile["size"]];
             }
         }
+        $mediatype["code"] = 0;
         return $mediatype;
     }
     /**
@@ -358,7 +359,7 @@ class nyauploadfile {
      * @param String key 要获取的属性
      * @return Array/String 取得的视频信息
      */
-    function getvideomediainfo($file,$key) {
+    function getvideomediainfo($file, $key) {
         if ($this->mediainfo == null) {
             global $nlcore;
             $logger = null;
@@ -385,13 +386,12 @@ class nyauploadfile {
      * @param String filename 文件完整路径
      * @return String 文件扩展名
      */
-    function getImagetype($filename)
-    {
+    function getImagetype($filename) {
         $file = fopen($filename, 'rb');
         $bin = fread($file, 2); //只读2字节
         fclose($file);
         $strInfo = @unpack('C2chars', $bin);
-        $typeCode = intval($strInfo['chars1'].$strInfo['chars2']);
+        $typeCode = intval($strInfo['chars1'] . $strInfo['chars2']);
         $fileType = '';
         switch ($typeCode) {
             case 255216:
@@ -435,21 +435,20 @@ class nyauploadfile {
                 $firstadd = true;
                 foreach ($filesvalue as $fkey => $fvalue) {
                     if ($firstadd) {
-                        for ($i=0; $i < count($fvalue); $i++) {
-                            array_push($filearr["form"],$fileskey);
+                        for ($i = 0; $i < count($fvalue); $i++) {
+                            array_push($filearr["form"], $fileskey);
                         }
                         $firstadd = false;
                     }
-                    $filearr[$fkey] = array_merge($filearr[$fkey],$fvalue);
+                    $filearr[$fkey] = array_merge($filearr[$fkey], $fvalue);
                 }
             } else {
                 foreach ($filesvalue as $fkey => $fvalue) {
-                    array_push($filearr[$fkey],$fvalue);
+                    array_push($filearr[$fkey], $fvalue);
                 }
-                array_push($filearr["form"],$fileskey);
+                array_push($filearr["form"], $fileskey);
             }
         }
         return $filearr;
     }
 }
-?>

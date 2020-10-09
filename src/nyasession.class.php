@@ -144,6 +144,10 @@ class nyasession {
         } else {
             $nlcore->safe->log($_SERVER['REQUEST_METHOD'], ["[NULL!]" . count($argvs)]);
         }
+        // 如果有檔案上載，也進行記錄
+        if (count($_FILES) > 0) {
+            $nlcore->safe->log("FILE", $_FILES);
+        }
         // 檢查資料是否超過指定長度
         $jsonlen = ($_SERVER['REQUEST_METHOD'] == "GET") ? $nlcore->cfg->app->maxlen_get : $nlcore->cfg->app->maxlen_post;
         $arglen = strlen(implode("", $argvs));

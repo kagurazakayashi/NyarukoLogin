@@ -6,15 +6,15 @@
  */
 class userInfoEdit {
     private $argReceived;
-    private $userHash;
+    public $userHash;
     private $tableStr;
-    private $updateDic = [];
+    public $updateDic = [];
     private $whereDic;
     /**
      * @description: 構造：載入從客戶端輸入的資訊，取出所需資訊
      * @param nyacore NyarukoLogin 核心
      * @param Array argReceived 客戶端輸入的資訊（$nlcore->sess->decryptargv）
-     * @param Array userHash 使用者雜湊（$nlcore->safe->userHash）
+     * @param Sting userHash 使用者雜湊（$nlcore->safe->userHash）
      *   如果不提供使用者雜湊，則只進行有限的檢查，並且不能進行資料庫更新。
      */
     function __construct(array $argReceived, string $userHash = "") {
@@ -92,7 +92,7 @@ class userInfoEdit {
      * @return Array 已更新的列名
      */
     function sqlc(): array {
-        if (strlen($this->userHash) == 0 || !$this->whereDic || strlen($this->whereDic) == 0) return [];
+        if (strlen($this->userHash) == 0 || !$this->whereDic || count($this->whereDic) == 0 || count($this->updateDic) == 0) return [];
         global $nlcore;
         $ukeys = array_keys($this->updateDic);
         $result = $nlcore->db->update($this->updateDic, $this->tableStr, $this->whereDic);
