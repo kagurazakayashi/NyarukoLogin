@@ -2,6 +2,7 @@
 // 子賬戶註冊
 require_once "src/nyacore.class.php";
 require_once "src/nyastand.class.php";
+require_once "src/nyauserinfoedit.class.php";
 // IP檢查和解密客戶端提交的資訊
 $nlcore->sess->decryptargv("signup");
 // 檢查用戶是否登入

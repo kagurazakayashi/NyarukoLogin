@@ -4,6 +4,7 @@ require_once "src/nyacore.class.php";
 require_once "src/nyacaptcha.class.php";
 require_once "nyaverification.class.php";
 require_once "src/nyasignup.class.php";
+require_once "src/nyauserinfoedit.class.php";
 // IP檢查和解密客戶端提交的資訊
 $inputInformation = $nlcore->sess->decryptargv("signup");
 // 實現功能

@@ -429,17 +429,18 @@ class nyafunc {
     }
     /**
      * @description: 从用户[昵称#唯一码]获取用户哈希（自带安全检查）
-     * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
+     * @param String/Array<String> fullnickname （已弃用）完整昵称或已经分好的[名称,ID]数组
+     * @param Array<String> namearr 已经分好的[名称,ID]数组
      * @return Array<String> [昵称,ID,用户哈希(没查到则没有)]
      */
-    function fullnickname2userhash($fullnickname) {
+    function fullnickname2userhash(array $namearr) {
         global $nlcore;
-        $namearr = is_array($fullnickname) ? $fullnickname : explode("#", $fullnickname);
-        if (count($namearr) != 2) $nlcore->msg->stopmsg(2050001);
+        // $namearr = is_array($fullnickname) ? $fullnickname : explode("#", $fullnickname);
+        if (count($namearr) != 2) $nlcore->msg->stopmsg(2070005,implode(',', $namearr));
         $name = $namearr[0];
         $nlcore->safe->safestr($name, true, true);
         $nameid = intval($namearr[1]);
-        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2050001);
+        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2070005,strval($nameid));
         //通过安全性检查，查询数据库
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["userhash"];
