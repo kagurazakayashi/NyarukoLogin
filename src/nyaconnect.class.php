@@ -363,9 +363,11 @@ class nyadbconnect {
     function searchWordSafe(array $words, bool $noSpace = true): array {
         for ($i = 0; $i < count($words); $i++) {
             $word = $words[$i];
-            $newWord = str_replace(['+', '-', '~', '"', "'"], '', substr($word, 0, 1)) . substr($word, 1);
-            if ($noSpace) $newWord = str_replace(' ', '', $newWord);
-            $words[$i] = $newWord;
+            if (strlen($word) > 0) {
+                $newWord = str_replace(['+', '-', '~', '"', "'"], '', substr($word, 0, 1)) . substr($word, 1);
+                if ($noSpace) $newWord = str_replace(' ', '', $newWord);
+                $words[$i] = $newWord;
+            }
         }
         return $words;
     }

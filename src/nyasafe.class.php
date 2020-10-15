@@ -334,36 +334,41 @@ class nyasafe {
         return $uncompressed;
     }
     /**
-     * @description: 是否为MD5
-     * @param String 需要判断的字符串
-     * @return Int 是否匹配 > 0 || != false
+     * @description: 是否為MD5
+     * @param String str 需要判斷的字串
+     * @return Int 是否匹配： > 0 或 != false
      */
-    function is_md5($str) {
+    function is_md5(string $str) {
         return preg_match("/^[a-z0-9]{32}$/", $str);
     }
     /**
-     * @description: 是否为MD6
-     * @param String 需要判断的字符串
-     * @return Int 是否匹配 > 0 || != false
+     * @description: 是否為MD6
+     * @param String str 需要判斷的字串
+     * @param String length 預期的字串長度
+     * @return Int 是否匹配： > 0 或 != false
      */
-    function is_md6($str) {
-        return preg_match("/^[a-z0-9]{64}$/", $str);
+    function is_md6(string $str, int $length = 64) {
+        return preg_match("/^[a-z0-9]{" . $length . "}$/", $str);
     }
     /**
-     * @description: 取MD6哈希值
-     * @param String 要进行哈希的字符串
-     * @return String 64位MD6哈希值
+     * @description: 取MD6雜湊值
+     * @param String data 要進行雜湊的字串
+     * @param Int size 長度
+     * @param String key 金鑰
+     * @param Int levels 級別
+     * @return String MD6雜湊值
      */
-    function md6($str) {
+    function md6(string $data, int $size = 256, string $key = '', int $levels = 64): string {
         $md6 = new md6hash();
-        return $md6->hex($str);
+        if (strlen($data) == 0) return '';
+        return $md6->hex($data, $size, $key, $levels);
     }
     /**
-     * @description: 随机将字符串中的每个字转换为大写或小写
-     * @param String 要进行随机大小写转换的字符串
-     * @return String 转换后的字符串
+     * @description: 隨機將字串中的每個字轉換為大寫或小寫
+     * @param String str 要進行隨機大小寫轉換的字串
+     * @return String 轉換後的字串
      */
-    function randstrto($str) {
+    function randstrto(string $str): string {
         $strarr = str_split($str);
         for ($i = 0; $i < count($strarr); $i++) {
             if (rand(0, 1) == 1) {
@@ -375,35 +380,39 @@ class nyasafe {
         return implode("", $strarr);
     }
     /**
-     * @description: 进行MD6后进行随机大小写转换
-     * @param String 明文
-     * @return String 转换后的字符串
+     * @description: 進行MD6後進行隨機大小寫轉換
+     * @param String data 要進行雜湊的字串
+     * @param Int size 長度
+     * @param String key 金鑰
+     * @param Int levels 級別
+     * @return String 隨機大小寫MD6雜湊值
      */
-    function rhash64($str) {
-        return $this->randstrto($this->md6($str));
+    function rhash64(string $data, int $size = 256, string $key = '', int $levels = 64): string {
+        return $this->randstrto($this->md6($data, $size, $key, $levels));
     }
     /**
-     * @description: 验证是否为包含大小写的MD6变体字符串
-     * @param String MD6变体字符串
-     * @return Int 是否匹配 > 0 || != false
+     * @description: 驗證是否為包含大小寫的MD6變體字串
+     * @param String str MD6變體字串
+     * @param String length 預期的字串長度
+     * @return Int 是否匹配： > 0 或 != false
      */
-    function is_rhash64($str) {
-        return preg_match("/^[A-Za-z0-9]{64}$/", $str);
+    function is_rhash64(string $str, int $length = 64) {
+        return preg_match("/^[A-Za-z0-9]{" . $length . "}$/", $str);
     }
     /**
-     * @description: 进行MD6后进行随机大小写转换
-     * @param String 明文
-     * @return String 转换后的字符串
+     * @description: 進行MD5後進行隨機大小寫轉換
+     * @param String str 明文
+     * @return String 轉換後的字串
      */
-    function rhash32($str) {
+    function rhash32(string $str): string {
         return $this->randstrto(md5($str));
     }
     /**
-     * @description: 验证是否为包含大小写的MD6变体字符串
-     * @param String MD6变体字符串
+     * @description: 驗證是否為包含大小寫的MD5變體字串
+     * @param String str MD5變體字串
      * @return Int 是否匹配 > 0 || != false
      */
-    function is_rhash32($str) {
+    function is_rhash32(string $str) {
         return preg_match("/^[A-Za-z0-9]{32}$/", $str);
     }
     /**
@@ -460,7 +469,7 @@ class nyasafe {
      * @param Int settime 自定義時間戳（秒）
      * @return String 時間日期字串
      */
-    function getnowtimestr(int $settime=-1) {
+    function getnowtimestr(int $settime = -1) {
         $timestamp = ($settime > 0) ? $settime : time();
         return date('Y-m-d H:i:s', $timestamp);
     }

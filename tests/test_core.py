@@ -10,6 +10,7 @@ from M2Crypto import BIO, RSA  # dnf install python3-m2crypto.x86_64 -y
 import hashlib
 import traceback
 
+
 def getjsonfiledata(encrypt: "检查是否已经获取密钥对" = True):
     """读入配置文件 testconfig.json ，请先配置它，并先执行 test_gettotptoken.py 。"""
 
@@ -49,8 +50,8 @@ def rsaEncrypt(public_key: "公钥", message: "要加密的信息", showAllInfo=
 
 def rsaDecrypt(private_key: "私钥", message: "要解密的信息", showAllInfo=True):
     """RSA 解密"""
-    if (isinstance(private_key,bytes) == False):
-        private_key = bytes(private_key, encoding = "utf8")
+    if (isinstance(private_key, bytes) == False):
+        private_key = bytes(private_key, encoding="utf8")
     bio = BIO.MemoryBuffer(private_key)
     rsa_pri = RSA.load_key_bio(bio)
     buffer = None
@@ -126,6 +127,8 @@ def postarray_p(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据�
     return dataarr
 
 # appKeyMode:  0.使用'd'  1.apptoken作为key  2.apptoken加入json
+
+
 def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数组", showAllInfo=True, publicKey: "服务器公钥" = None, privateKey: "客户端私钥" = None, appKeyMode=1):
     """[加密传输]向服务器提交内容并显示返回内容，自动处理加密解密"""
     jsonfiledata = getjsonfiledata(True)
@@ -151,8 +154,8 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         tlog(jsondata)
     if (showAllInfo):
         publicKeyStr = ""
-        if (isinstance(publicKey,str) == False):
-            publicKeyStr = str(publicKey, encoding = "utf-8")
+        if (isinstance(publicKey, str) == False):
+            publicKeyStr = str(publicKey, encoding="utf-8")
         else:
             publicKeyStr = publicKey
         tlog("正在使用公钥 "+md5(clearkey(publicKeyStr))+" 加密数据 ...")
@@ -178,7 +181,7 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     postRes = postRes0
     if (showAllInfo):
         tlog(postRes)
-    if postRes[0:1] == b'[' or postRes[0:1] == b'{' :
+    if postRes[0:1] == b'[' or postRes[0:1] == b'{':
         terr("收到了非预期的明文数据")
         quit()
     if postRes[0:3] == '<br':
@@ -212,8 +215,8 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         quit()
     if (showAllInfo):
         privateKeyStr = ""
-        if (isinstance(privateKey,str) == False):
-            privateKeyStr = str(privateKey, encoding = "utf-8")
+        if (isinstance(privateKey, str) == False):
+            privateKeyStr = str(privateKey, encoding="utf-8")
         else:
             privateKeyStr = privateKey
         tlog("正在使用私钥 "+md5(clearkey(privateKeyStr))+" 解密数据 ...")
@@ -232,7 +235,7 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         quit()
     if (showAllInfo):
         tlog("检查返回的数据 ...")
-    if postRes[0:1] != b'[' and postRes[0:1] != b'{' :
+    if postRes[0:1] != b'[' and postRes[0:1] != b'{':
         terr("返回数据错误。")
         quit()
     if (showAllInfo):
@@ -251,6 +254,7 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
     tok(resArr['msg'])
     return resArr
 
+
 def clearkey(keystr: "密钥内容"):
     """只保留 key 的 base64 部分，删除首尾和回车"""
     keylines = keystr.split('\n')
@@ -260,11 +264,13 @@ def clearkey(keystr: "密钥内容"):
         del(keylines[0])
     return ''.join(keylines)
 
+
 def md5(bstr: "输入byte字符串"):
     """MD5 加密"""
-    md5=hashlib.md5()
+    md5 = hashlib.md5()
     md5.update(bstr.encode('utf-8'))
     return md5.hexdigest()
+
 
 def tlog(loginfo: "信息内容", end='\n'):
     """输出前面带时间的信息"""
