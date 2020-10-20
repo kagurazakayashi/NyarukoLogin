@@ -469,7 +469,7 @@ class nyasafe {
      * @param Int settime 自定義時間戳（秒）
      * @return String 時間日期字串
      */
-    function getnowtimestr(int $settime = -1) {
+    function getnowtimestr(int $settime = -1): string {
         $timestamp = ($settime > 0) ? $settime : time();
         return date('Y-m-d H:i:s', $timestamp);
     }
@@ -496,6 +496,42 @@ class nyasafe {
         if ($timestampabs > $nlcore->cfg->app->timestamplimit) {
             $nlcore->msg->stopmsg(2020413, null, $timestamp1 . "-" . $timestamp2);
         }
+    }
+    /**
+     * @description: 將多個字串變數轉換為整數並增加數值
+     * @param Int add 要進行加法的數字
+     * @param String *numString... 要進行轉換並運算的多個字串指標
+     */
+    function intStringAdd(int $add = 1, string &...$numString): void {
+        foreach ($numString as &$nowVal) {
+            $nowVal = intval($nowVal) + $add;
+        }
+    }
+    /**
+     * @description: 將多個整數轉換為字串並確保最小值
+     * @param Int min 最小值
+     * @param Int *nums... 要進行轉換並運算的多個整數指標
+     */
+    function stringGreaterThanNum(int $min = 0, int &...$nums): void {
+        $minstr = strval($min);
+        foreach ($nums as &$num) {
+            $num = $num > $min ? strval($num) : $minstr;
+        }
+    }
+    /**
+     * @description: 從字典中抽出指定的 Key ，並生成一個新的字典。
+     * @param Array add 原始字典陣列
+     * @param String keys... 要取出的所有 Key
+     * @return Array 新建立的字典
+     */
+    function dicExtract(array $dicArr, string ...$keys) {
+        $newDic = [];
+        foreach ($keys as $key) {
+            if (isset($dicArr[$key])) {
+                $newDic[$key] = $dicArr[$key];
+            }
+        }
+        return $newDic;
     }
     /**
      * @description: 替换字符串中某个字符的多个连续字符，转换成一个

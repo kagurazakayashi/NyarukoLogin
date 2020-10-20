@@ -179,10 +179,10 @@ class nyasetting_app {
         "uploaddir" => "../upload", //媒体上传文件夹（先建立好文件夹设好权限）
         "datedir" => true, //按日期创建子文件夹
         "chmod" => 0770, //新建文件的权限
-        "maxsize" => [ //每种媒体类型的最大文件大小限制
+        "maxsize" => [ //每种媒体类型的最大文件大小限制(B)
             "all" => 314572800, //300M
             "image" => 10485760, //10M
-            "gif" => 5242880, //5M
+            "gif" => 31457280, //30M
             "video" => 314572800 //300M
         ],
         "videoduration" => 600, //视频最大时长限制（秒）
@@ -197,6 +197,7 @@ class nyasetting_app {
         ],
         "video" => [
             ["video/mp4", "mp4"],
+            ["video/3gpp", "3gp"],
             ["video/quicktime", "mov"]
         ]
     ];
@@ -234,7 +235,7 @@ class nyasetting_app {
     // 向前端按顺序推荐尺寸
     var $recommendsize = ["L", "M", "S", "R"];
     // 向前端按顺序推荐扩展名
-    var $recommendext = ["gif", "webp", "jpg", "png", "mp4", "mov"];
+    var $recommendext = ["gif", "webp", "jpg", "png", "mp4", "mov", "3gp"];
     // 路径要求：① php.ini 的 open_basedir 中允许该路径，或拷贝执行文件到网站目录。 ② 不要出现空格和非英文。 ③ 尽量用绝对路径。
     //ffmpeg 和 ffprobe 执行文件路径。
     var $ffconf = [
