@@ -830,57 +830,88 @@ class nyasafe {
         }
         return true;
     }
-    /**
-     * @description: 检查是否包含违禁词汇
-     * @param String str 源字符串
-     * @param Bool errdie 如果出错则完全中断执行，直接返回错误信息JSON给客户端
-     * @return Array<Bool,String,String> [是否包含违禁词,河蟹后的字符串,触发的违禁词] ，如果不包含违禁词，返回 [false,原字符串]
-     * 违禁词列表为 JSON 一维数组，每个字符串中可以加 $wordfilterpcfg["wildcardchar"] 分隔以同时满足多个条件词。
-     */
-    function wordfilter($str, $errdie = true) {
+
+    function wordfilterDbLoad(): array {
         global $nlcore;
+        $columnArr = ["sw0", "sw1", "sw2", "sw3", "chrint"];
+        $tableStr = $nlcore->cfg->db->tables["stopword"];
+        $dbreturn = $nlcore->db->select($columnArr, $tableStr, []);
+        $words = $dbreturn[2];
+        for ($i = 0; $i < count($words); $i++) {
+            $wordDic = $words[$i];
+            $nowWordArr = [intval($wordDic["chrint"]), $wordDic["sw0"]];
+            if (strlen($wordDic["sw1"]) > 0) array_push($nowWordArr, $wordDic["sw1"]);
+            if (strlen($wordDic["sw2"]) > 0) array_push($nowWordArr, $wordDic["sw2"]);
+            if (strlen($wordDic["sw3"]) > 0) array_push($nowWordArr, $wordDic["sw3"]);
+            $words[$i] = $nowWordArr;
+        }
+        if ($dbreturn[0] >= 2000000) {
+            die($nlcore->msg->m(2020303));
+        }
+        return $words;
+    }
+    /**
+     * @description: 檢查是否包含違禁詞彙
+     * @param String str 源字串
+     * @param Bool errdie 如果出錯則完全中斷執行，直接返回錯誤資訊JSON給客戶端
+     * @param Bool reloadSqlToRedis 強制從 SQL 中重新整理資料到 Redis 快取
+     * @return Bool 是否為違禁詞
+     */
+    function wordfilter($str, $errdie = true, $reloadSqlToRedis = false): bool {
+        global $nlcore;
+        $timeout = 86400;
         $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
-        $wordjson = ""; //词库
-        if ($wordfilterpcfg["enable"] == 1) { //从 Redis 读入
-            if (!$nlcore->db->initRedis()) {
-                // 没有启用 Redis ，跳过敏感词检查
-                // $nlcore->msg->stopmsg(2020301);
-                return false;
+        $wordsArr = [];
+        $isRedisData = false;
+        $rediskey = $wordfilterpcfg["rediskey"];
+        if ($nlcore->db->initRedis()) {
+            if (!$reloadSqlToRedis) {
+                if ($nlcore->db->redis->exists($rediskey)) {
+                    $words = $nlcore->db->redis->get($rediskey);
+                    if (strlen($words) > 0) {
+                        $wordsArr = json_decode($words);
+                        $isRedisData = true;
+                    } else {
+                        $wordsArr = $this->wordfilterDbLoad();
+                    }
+                } else {
+                    $wordsArr = $this->wordfilterDbLoad();
+                }
+            } else {
+                $wordsArr = $this->wordfilterDbLoad();
             }
-            $wordjson = $nlcore->db->redis->get($wordfilterpcfg["rediskey"]);
-        } else if ($wordfilterpcfg["enable"] == 2) { //从 file 读入
-            $jfile = fopen($wordfilterpcfg["jsonfile"], "r") or $nlcore->msg->stopmsg(2020302);
-            $wordjson = fread($jfile, filesize($wordfilterpcfg["jsonfile"]));
-            fclose($jfile);
+            if (!$isRedisData) {
+                $nlcore->db->redis->setex($rediskey, $timeout, json_encode($wordsArr));
+            }
         } else {
-            return [false, $str];
+            $wordsArr = $this->wordfilterDbLoad();
         }
-        //词汇资料库加载失败
-        if (!$wordjson || $wordjson == [] || $wordjson == "") $nlcore->msg->stopmsg(2020303);
-        //删除输入字符串特殊符号
-        $punctuations = $this->mbStrSplit($wordfilterpcfg["punctuations"]);
-        foreach ($punctuations as $punctuationword) {
-            $str = str_replace($punctuationword, "", $str);
-        }
-        //把所有字符中的大写字母转换成小写字母
-        $str = strtolower($str);
-        //转为数组
-        $wordjson = json_decode($wordjson);
-        //搜索关键词
-        $nstr = $str;
-        foreach ($wordjson as $keyword) {
-            $replacechar = $wordfilterpcfg["replacechar"];
-            for ($i = 1; $i < mb_strlen($keyword, "utf-8"); $i++) {
-                $replacechar .= $wordfilterpcfg["replacechar"];
+        for ($groupi = 0; $groupi < count($wordsArr); $groupi++) {
+            $nowWordArr = $wordsArr[$groupi];
+            $charSize = intval($nowWordArr[0]);
+            $tmpStr = $str;
+            $findi = 0;
+            $nowWordArrCount = count($nowWordArr);
+            for ($wordi = 1; $wordi < $nowWordArrCount; $wordi++) {
+                $nowWord = $nowWordArr[$wordi];
+                $pos = mb_strpos($tmpStr, $nowWord);
+                if ($pos >= $charSize) {
+                    $findi = 0;
+                }
+                if ($pos !== false && $pos >= 0) {
+                    $tmpStr = mb_substr($tmpStr, $pos);
+                    $findi++;
+                }
+                if ($findi == $nowWordArrCount - 1) {
+                    if ($errdie) {
+                        $nlcore->msg->stopmsg(2020300);
+                    } else {
+                        return true;
+                    }
+                }
             }
-            //同时满足多条件
-            $nstr = preg_replace('/' . join(explode($wordfilterpcfg["wildcardchar"], $keyword), '.{1,' . $wordfilterpcfg["maxlength"] . '}') . '/', $replacechar, $nstr);
-            if (strcmp($str, $nstr) != 0) {
-                if ($errdie) $nlcore->msg->stopmsg(2020300);
-                return [true, $nstr, $keyword];
-            }
         }
-        return [false, $str];
+        return false;
     }
     /**
      * @description: 字符串转字符数组，可以处理中文

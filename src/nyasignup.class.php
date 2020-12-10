@@ -71,7 +71,7 @@ class nyasignup {
         // 檢查異常符號
         $nlcore->safe->safestr($nickname, true, false);
         // 檢查敏感詞
-        $nlcore->safe->wordfilter($nickname, true);
+        $nlcore->safe->wordfilter($nickname);
         // 檢查郵箱或者手機號是否已經重複
         $isalreadyexists = $nlcore->func->isalreadyexists($logintype, $user);
         if ($isalreadyexists == 1) $nlcore->msg->stopmsg(2040102, $user);

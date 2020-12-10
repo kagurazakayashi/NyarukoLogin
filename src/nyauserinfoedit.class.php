@@ -69,7 +69,7 @@ class userInfoEdit {
         // 檢查異常符號
         $nlcore->safe->safestr($str, true, false);
         // 檢查敏感詞
-        $nlcore->safe->wordfilter($str, true);
+        $nlcore->safe->wordfilter($str);
         $this->updateDic[$func] = $str;
     }
     /**

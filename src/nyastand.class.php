@@ -28,7 +28,7 @@ class stand {
         // 檢查異常符號
         $nlcore->safe->safestr($nickname, true, false);
         // 檢查敏感詞
-        $nlcore->safe->wordfilter($nickname, true);
+        $nlcore->safe->wordfilter($nickname);
         // 生成賬戶碼，遇到重複的重試 100 次
         for ($i = 0; $i < 100; $i++) {
             $nameid = rand(1000, 9999);

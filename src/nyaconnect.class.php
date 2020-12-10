@@ -160,7 +160,9 @@ class nyadbconnect {
         if (strpos(strtoupper($tableStr), "JOIN") == false) {
             $tableStr = "`" . $tableStr . "`";
         }
-        $sqlcmd = "SELECT " . $columnStr . " FROM " . $tableStr . " WHERE " . $whereStr . $customWhere . $orderstr . ";";
+        $where = $whereStr . $customWhere . $orderstr;
+        if (strlen($where) > 0) $where = " WHERE " . $where;
+        $sqlcmd = "SELECT " . $columnStr . " FROM " . $tableStr . $where . ";";
         return $this->sqlc($sqlcmd);
     }
 
