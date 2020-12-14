@@ -305,38 +305,45 @@ class nyadbconnect {
     /**
      * @description: 全文搜尋
      * @param String tableStr 錶名
-     * @param Array<String/Array/Null> columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
-     * @param Array<String> searchColumn 要查询的列名列表
+     * @param Array columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
+     * @param Array searchColumn 要在哪些列中進行全文搜尋
      * @param Int mode 搜尋模式選項，決定下一項引數要輸入什麼內容。
      * 代码 功能描述      search参数的示例
      * 0  傳統搜尋模式  ["yashi"]
-     * 1  萬用字元模式    ["yashi*"]
-     * 2  或者模式      ["miyabi","yashi"]
-     * 3  自定義模式    [[1,"miyabi"],[-1,"yashi"]]
+     * 1  模糊搜尋模式    ["yashi"]
+     * 2  萬用字元模式    ["yashi*"]
+     * 3  或者模式      ["miyabi","yashi"]
+     * 4  自定義模式    [[1,"miyabi"],[-1,"yashi"]]
      *                  -1  不可以包含該關鍵詞
      *                   0  如果包含該關鍵詞則降低相關性
      *                   1  必須包含該關鍵詞
      *                   2  自定義表示式
-     * 4  自然語言模式  ["yashi"]
+     * 5  自然語言模式  ["yashi"]
      *    （如「啟動 計算機」可搜尋到「……然而當計算機啟動之後，……」）
-     * @param Array<String> search 要搜尋的內容（參考上面的示例）
+     * @param Array search 要搜尋的內容（參考上面的示例）
+     * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]，[]為不使用
+     * @param Array [int] / [int,int] limit 區間， [前N條] 或 [從多少,取多少]，[]為不使用
      */
-    function searchWord(string $tableStr, array $columnArr = [], array $searchColumn, int $mode, array $search): array {
+    function searchWord(string $tableStr, array $columnArr = [], array $searchColumn, int $mode, array $search, array $order = [], array $limit = []): array {
         $this->initReadDbs();
         $columnStr = $this->gColumnStr($columnArr);
         $searchColumnStr = '`' . implode('`,`', $searchColumn) . '`';
-        $nbMode = ($mode == 4) ? "NATURAL LANGUAGE" : "BOOLEAN";
+        $nbMode = ($mode == 5) ? "NATURAL LANGUAGE" : "BOOLEAN";
         $searchStr = '';
         switch ($mode) {
             case 0:
                 $search = $this->searchWordSafe($this->safe($search));
                 $searchStr = '"' . $search[0] . '"';
                 break;
-            case 2:
+            case 1:
+                $search = $this->searchWordSafe($this->safe($search));
+                $searchStr = '*' . $search[0] . '*';
+                break;
+            case 3:
                 $search = $this->searchWordSafe($this->safe($search));
                 $searchStr = implode(' ', $search);
                 break;
-            case 3:
+            case 4:
                 $search2 = [];
                 for ($i = 0; $i < count($search); $i++) {
                     $nowSearchArr = $search[$i];
@@ -352,7 +359,20 @@ class nyadbconnect {
                 $searchStr = $search[0];
                 break;
         }
-        $sqlcmd = "SELECT " . $columnStr . " FROM `" . $tableStr . "` WHERE MATCH (" . $searchColumnStr . ") AGAINST ('" . $searchStr . "' IN " . $nbMode . " MODE);";
+        $orderstr = "";
+        if (count($order) > 0) {
+            $orderstr = " ORDER BY `" . $order[0] . "`";
+            if ($order[1] === true) $orderstr .= " DESC";
+        }
+        if (count($limit) > 0) {
+            $orderstr .= " limit ";
+            if (count($limit) > 1) {
+                $orderstr .= strval($limit[0]) . "," . strval($limit[1]);
+            } else {
+                $orderstr .= strval($limit[0]);
+            }
+        }
+        $sqlcmd = "SELECT " . $columnStr . " FROM `" . $tableStr . "` WHERE MATCH (" . $searchColumnStr . ") AGAINST ('" . $searchStr . "' IN " . $nbMode . " MODE) ".$orderstr.";";
         return $this->sqlc($sqlcmd);
     }
 
