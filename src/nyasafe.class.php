@@ -854,16 +854,16 @@ class nyasafe {
      * @description: 檢查是否包含違禁詞彙
      * @param String str 源字串
      * @param Bool errdie 如果出錯則完全中斷執行，直接返回錯誤資訊JSON給客戶端
-     * @param Bool reloadSqlToRedis 強制從 SQL 中重新整理資料到 Redis 快取
      * @return Bool 是否為違禁詞
      */
-    function wordfilter($str, $errdie = true, $reloadSqlToRedis = false): bool {
+    function wordfilter($str, $errdie = true): bool {
         global $nlcore;
+        if (strlen($str) == 0) return false;
         $timeout = 86400;
-        $wordfilterpcfg = $nlcore->cfg->app->wordfilter;
         $wordsArr = [];
         $isRedisData = false;
-        $rediskey = $wordfilterpcfg["rediskey"];
+        $rediskey = $nlcore->cfg->app->wordfilterRedisKey;
+        $reloadSqlToRedis = $nlcore->cfg->app->wordfilterSQLtoRedis;
         if ($nlcore->db->initRedis()) {
             if (!$reloadSqlToRedis) {
                 if ($nlcore->db->redis->exists($rediskey)) {
@@ -891,6 +891,7 @@ class nyasafe {
             $charSize = intval($nowWordArr[0]);
             $tmpStr = $str;
             $findi = 0;
+            $wordlog = "";
             $nowWordArrCount = count($nowWordArr);
             for ($wordi = 1; $wordi < $nowWordArrCount; $wordi++) {
                 $nowWord = $nowWordArr[$wordi];
@@ -900,10 +901,12 @@ class nyasafe {
                 }
                 if ($pos !== false && $pos >= 0) {
                     $tmpStr = mb_substr($tmpStr, $pos);
+                    $wordlog .= "|" . $tmpStr . "->" . $nowWord;
                     $findi++;
                 }
                 if ($findi == $nowWordArrCount - 1) {
                     if ($errdie) {
+                        $nlcore->func->log("W/StopWord", "触发敏感词: " . $wordlog);
                         $nlcore->msg->stopmsg(2020300);
                     } else {
                         return true;
@@ -1256,6 +1259,115 @@ class nyasafe {
      */
     function ismediafilename($filename) {
         return preg_match("/[\w\/]*[\d]{11}_[\w]{32}/", $filename);
+    }
+    /**
+     * @description: 将一个整数中的每一位数字转换为数组
+     * 例如输入: 12345, 输出: [5,4,3,2,1]
+     * @param Int num 一个整数
+     * @param Bool inverted 倒序输出 [1,2,3,4,5]
+     * @return Array 单个数字数组
+     */
+    function intExtract(int $num, bool $inverted = false): array {
+        $numI = 0;
+        $numArr = [];
+        while ($num > 0) {
+            $numI = $num % 10;
+            if ($inverted) {
+                array_unshift($numArr, $numI);
+            } else {
+                array_push($numArr, $numI);
+            }
+            $num = intval($num / 10);
+        }
+        return $numArr;
+    }
+    /**
+     * @description: 检查颜色格式，并转换为 ARGB 数字字符串。
+     * @param String inColor 输入一个 ARGB/RGB 颜色，支持以下 6 种格式字符串：
+     * - 16 进制: '0xFFFFFFFF', 'FFFFFFFF', 'FFFFFF', 'FFF'
+     * - 10 进制: '255,255,255,255', '255,255,255'
+     * @param Int returnMode 返回信息模式
+     * @param Bool useHEX 是否使用 16 进制，例如
+     * - T: 十六进制字符串
+     *     - 例如 'FFFFFFFF' : A=FF R=FF G=FF B=FF
+     * - F: 数字字符串（单色不足位补0）
+     *     - 例如 '255255255255' : A=255 R=255 G=255 B=255
+     * @param Bool alpha 是否保留 Alpha 值
+     * - T: RGB 固定 12 位 数字字符串 或 固定 8 位 十六进制字符串
+     * - F: RGB 固定  9 位 数字字符串 或 固定 6 位 十六进制字符串
+     * @return String 按以上设置返回字符串
+     */
+    function eColor(string $inColor = "000", bool $useHEX = false, bool $alpha = false): string {
+        global $nlcore;
+        $color = [0, 0, 0, 0]; // ARGB
+        if (strstr($inColor, ',') !== false) {
+            $colorArr = explode(',', $inColor);
+            $colorArrCount = count($colorArr);
+            if ($colorArrCount >= 3 && $colorArrCount <= 4) {
+                $modeARGB = $colorArrCount - 3;
+                $color[0] = $modeARGB == 0 ? 255 : intval($colorArr[0]);
+                $color[1] = intval($colorArr[0 + $modeARGB]);
+                $color[2] = intval($colorArr[1 + $modeARGB]);
+                $color[3] = intval($colorArr[2 + $modeARGB]);
+            } else {
+                $nlcore->msg->stopmsg(2020208, $inColor);
+            }
+        } else {
+            if (strlen($inColor) == 3) {
+                $colorArr = str_split($inColor);
+                for ($i = 0; $i < count($colorArr); $i++) {
+                    $nowColor = $colorArr[$i];
+                    $colorArr[$i] = $nowColor . $nowColor;
+                }
+                $inColor = implode('', $colorArr);
+            }
+            $colorArr = str_split($inColor, 2);
+            $colorArrCount = count($colorArr);
+            if ($colorArrCount >= 3 && $colorArrCount <= 5) {
+                if (strcmp($colorArr[0], "0x") == 0) {
+                    array_shift($colorArr);
+                    $colorArrCount--;
+                }
+                $modeARGB = $colorArrCount - 3;
+                $color[0] = $modeARGB == 0 ? 255 : hexdec($colorArr[0]);
+                $color[1] = hexdec($colorArr[0 + $modeARGB]);
+                $color[2] = hexdec($colorArr[1 + $modeARGB]);
+                $color[3] = hexdec($colorArr[2 + $modeARGB]);
+            } else {
+                $nlcore->msg->stopmsg(2020208, $inColor);
+            }
+        }
+        $saveStr = ""; // 12
+        $rmAlpha = $alpha ? 0 : 1;
+        for ($i = $rmAlpha; $i < count($color); $i++) {
+            $nowColor = $color[$i];
+            if ($nowColor < 0 || $nowColor > 255) {
+                $nlcore->msg->stopmsg(2020208, strval($nowColor));
+            } else {
+                if ($useHEX) {
+                    $saveStr .= strtoupper(dechex($nowColor));
+                } else {
+                    $saveStr .= str_pad(strval($nowColor), 3, '0', STR_PAD_LEFT);
+                }
+            }
+        }
+        return $saveStr;
+    }
+    /**
+     * @description: 將以整數儲存的顏色轉換會16進位制
+     * @param Int inColor 整數顏色程式碼（上面的函式按預設值返回的結果樣式）
+     * @param Bool alpha 是否包含 alpha 值
+     * @return String 16進位制顏色
+     */
+    function dColor(int $inColor, bool $alpha = false) {
+        $fullLength = $alpha ? 12 : 9;
+        $colorStr = str_pad(strval($inColor), $fullLength, '0', STR_PAD_LEFT);
+        $colorArr = str_split($colorStr, 3);
+        for ($i = 0; $i < count($colorArr); $i++) {
+            $color = intval($colorArr[$i]);
+            $colorArr[$i] = dechex($color);
+        }
+        return strtoupper(implode('', $colorArr));
     }
     /**
      * @description: 析構，關閉日誌檔案
