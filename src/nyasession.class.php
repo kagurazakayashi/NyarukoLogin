@@ -325,15 +325,17 @@ class nyasession {
             // 開始解密
             $decryptData = $nlcore->safe->rsaDecryptChunk($encryptedData);
             if ($decryptData === FALSE) {
-                $nlcore->msg->stopmsg(2020410);
+                $nlcore->msg->stopmsg(2020410, "3");
             }
             $decryptDataFull .= $decryptData;
         }
         // $decryptDataFullpreJD = strlen($decryptDataFull);
         if ($decryptDataFull != null) {
+            // die($decryptDataFull);
+            $decryptDataFull = str_replace("\n", "\\n", $decryptDataFull);
             $decryptDataFull = json_decode($decryptDataFull, true);
             if ($decryptDataFull == null) {
-                $nlcore->msg->stopmsg(2020410); //errorcode : 请求不是json
+                $nlcore->msg->stopmsg(2020410, "4"); //errorcode : 请求不是json
                 $nlcore->safe->log("DECODE", ["[ERROR!]", 2020410, json_encode($decryptDataFull)]);
             }
         } else {

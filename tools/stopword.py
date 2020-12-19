@@ -62,6 +62,14 @@ def importLine(line: "分析的行内容"):
     wordstr = wordstr.replace('　', ' ')
     # 分割同行词汇
     wordarr = wordstr.split(' ')
+    # 过滤空白词汇
+    tword = []
+    for word in wordarr:
+        if len(word) > 0:
+            tword.append(word)
+    if len(tword) == 0:
+        return
+    wordarr = tword
     sha = hashlib.sha256()
     sha.update(wordstr.encode('utf-8'))
     chrint = sys.argv[3]

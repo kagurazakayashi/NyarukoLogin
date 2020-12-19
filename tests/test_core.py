@@ -251,7 +251,10 @@ def postarray(postUrl: "提交到指定的URL", jsonDataArr: "提交的数据数
         quit()
     tok("网络操作完成。")
     tok(json.dumps(resArr, indent=2))
-    tok(resArr['msg'])
+    if 'msg' in resArr:
+        tok(resArr['msg'])
+    else:
+        tlog("服务器没有返回可读性状态信息。")
     return resArr
 
 

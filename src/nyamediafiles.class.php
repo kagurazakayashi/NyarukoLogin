@@ -1,11 +1,11 @@
 <?php
 /**
- * @description: 获取某个媒体文件路径
+ * @description: 獲取某個媒體檔案路徑
  * @package NyarukoLogin
 */
 class nyamediafiles {
     /**
-     * @description: 功能入口：子賬戶註冊
+     * @description: 獲取某個媒體檔案路徑
      * @param Array argReceived 客戶端提交資訊陣列
      * @return 準備返回到客戶端的資訊陣列
      */

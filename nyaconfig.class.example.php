@@ -45,6 +45,7 @@ class nyasetting_db {
         "history" => "u1_history", //日志
         "encryption" => "u1_encryption", //加密信息表
         "device" => "u1_device", //设备信息表
+        "stopword" => "u1_stopword" //敏感词表
     ];
     //Redis数据库设定
     var $redis = [

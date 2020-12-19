@@ -195,27 +195,35 @@ class nyafunc {
      * @description: 取得使用者個性化資訊
      * @param String userhash 使用者雜湊
      * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
+     * @param Array columnArr 要查询的项目
      * @return Array<Array> 當前使用者資訊
      */
-    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true): array {
+    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true, $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "address", "profile", "description", "image", "background"]): array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
             $result = $dbresult;
         } else {
             $tableStr = $nlcore->cfg->db->tables["info"];
-            $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "address", "profile", "description", "image", "background"];
             $whereDic = ["userhash" => $userHash];
             $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         }
         if ($result[0] != 1010000 || !isset($result[2][0])) {
-            $nlcore->msg->stopmsg(2040206,$userHash);
+            $nlcore->msg->stopmsg(2040206, $userHash);
         }
         $nowuserinfo = $result[2][0];
         if ($getfileinfo) {
             $filenone = ["path" => ""];
-            $nowuserinfo["image"] = strlen($nowuserinfo["image"]) > 1 ? $this->imagesurl($nowuserinfo["image"], $filenone) : [$filenone];
-            $nowuserinfo["background"] = strlen($nowuserinfo["background"]) > 1 ? $this->imagesurl($nowuserinfo["background"], $filenone) : [$filenone];
+            if (isset($nowuserinfo["image"])) {
+                $nowuserinfo["image"] = strlen($nowuserinfo["image"]) > 1 ? $this->imagesurl($nowuserinfo["image"], $filenone) : [$filenone];
+            } else {
+                $nowuserinfo["image"] = [$filenone];
+            }
+            if (isset($nowuserinfo["background"])) {
+                $nowuserinfo["background"] = strlen($nowuserinfo["background"]) > 1 ? $this->imagesurl($nowuserinfo["background"], $filenone) : [$filenone];
+            } else {
+                $nowuserinfo["image"] = [$filenone];
+            }
         }
         return $nowuserinfo;
         // 棄用：使用者資訊陣列（一個使用者可以關聯多條資訊，但唯一的主資訊一直在陣列第一位）
@@ -436,11 +444,11 @@ class nyafunc {
     function fullnickname2userhash(array $namearr) {
         global $nlcore;
         // $namearr = is_array($fullnickname) ? $fullnickname : explode("#", $fullnickname);
-        if (count($namearr) != 2) $nlcore->msg->stopmsg(2070005,implode(',', $namearr));
+        if (count($namearr) != 2) $nlcore->msg->stopmsg(2070005, implode(',', $namearr));
         $name = $namearr[0];
         $nlcore->safe->safestr($name, true, true);
         $nameid = intval($namearr[1]);
-        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2070005,strval($nameid));
+        if ($nameid < 1000 || $nameid > 9999) $nlcore->msg->stopmsg(2070005, strval($nameid));
         //通过安全性检查，查询数据库
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["userhash"];
