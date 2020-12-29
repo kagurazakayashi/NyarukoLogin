@@ -45,7 +45,8 @@ class nyasetting_db {
         "history" => "u1_history", //日志
         "encryption" => "u1_encryption", //加密信息表
         "device" => "u1_device", //设备信息表
-        "stopword" => "u1_stopword" //敏感词表
+        "stopword" => "u1_stopword", //敏感词表
+        "messages" => "u1_messages" //站內信
     ];
     //Redis数据库设定
     var $redis = [
@@ -249,6 +250,20 @@ class nyasetting_app {
     var $convertconf = [
         "image" => "/mnt/wwwroot/zyz/user/bin/convertimage",
         "video" => "/mnt/wwwroot/zyz/user/bin/convertvideo"
+    ];
+    // 資訊模板
+    // 資訊中內容:  %0=接收者  %1=傳送者1  %2=傳送者2  %3=還有更多傳送者數量
+    var $messageNum = ["%1", "%1 和 %2", "%1 和 %2 等 %3 位用户"];
+    // 資訊型別和對應的提示語，三個字母。为空值时视为不合成任何文字
+    var $messageTmp = [
+        "PAT" => "在贴文中提及了你",
+        "CAT" => "在评论中提及了你",
+        "CIP" => "对你的贴文发表了评论",
+        "CIC" => "对你评论过的贴文发表了评论",
+        "PLI" => "为你的贴文点赞",
+        "CLI" => "为你的评论点赞",
+        "FOL" => "关注了你",
+        "PFW" => "转发了你的贴文"
     ];
 }
 

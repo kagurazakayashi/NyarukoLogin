@@ -71,9 +71,12 @@ CREATE TABLE `u1_encryption` (
   `appid` int UNSIGNED NOT NULL COMMENT '已注册应用ID',
   `devid` int UNSIGNED DEFAULT NULL COMMENT '设备表ID',
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '生成时间',
-  `c_code` char(6) CHARACTER SET armscii8 COLLATE armscii8_general_ci DEFAULT NULL COMMENT '验证码',
-  `c_time` datetime DEFAULT NULL COMMENT '验证码生成时间',
-  `c_img` text CHARACTER SET armscii8 COLLATE armscii8_bin COMMENT '验证码网址'
+  `vc1code` char(6) CHARACTER SET armscii8 COLLATE armscii8_general_ci DEFAULT NULL COMMENT '验证码',
+  `vc1time` datetime DEFAULT NULL COMMENT '验证码生成时间',
+  `vc2code` tinytext CHARACTER SET ascii COLLATE ascii_bin COMMENT '扩展验证码',
+  `vc2time` int DEFAULT NULL COMMENT '扩展验证码生成时间',
+  `vc2type` enum('num','sms','mail') CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT '扩展验证码类型',
+  `vc2try` int UNSIGNED NOT NULL DEFAULT '0' COMMENT '扩展验证码尝试次数'
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='设备令牌表';
 
 -- --------------------------------------------------------
@@ -89,7 +92,7 @@ CREATE TABLE `u1_gender` (
   `description` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '介绍',
   `person` tinyint(1) NOT NULL DEFAULT '0' COMMENT '推荐人称代词(0它1他2她)',
   `list` tinyint(1) NOT NULL DEFAULT '0' COMMENT '列表组'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='性别表';
 
 --
 -- 转存表中的数据 `u1_gender`
@@ -186,7 +189,7 @@ CREATE TABLE `u1_history` (
   `session` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT '会话代码',
   `ipid` int NOT NULL COMMENT 'IP表id',
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发生时间',
-  `operation` enum('USER_SIGN_UP','USER_SIGN_IN','USER_SUB_SIGN_UP') CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL COMMENT '执行操作',
+  `operation` enum('USER_SIGN_UP','USER_SIGN_IN','USER_SUB_SIGN_UP','USER_SEND_MAIL','USER_SEND_SNS') CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL COMMENT '执行操作',
   `sender` tinytext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '发送者',
   `receiver` tinytext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '接收者',
   `process` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '过程',
@@ -226,7 +229,7 @@ CREATE TABLE `u1_info` (
 
 CREATE TABLE `u1_integral` (
   `id` int NOT NULL COMMENT 'ID',
-  `hash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
+  `inthash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '哈希',
   `business_name` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL COMMENT '业务唯一名称',
   `integral_number` bigint NOT NULL DEFAULT '0' COMMENT '积分数'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='积分表';
@@ -258,6 +261,24 @@ CREATE TABLE `u1_jurisdiction` (
   `jurisdiction_business` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '权限描述',
   `including_othe_jurisdiction` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci COMMENT '包含其他的权限'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='权限表';
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `u1_messages`
+--
+
+CREATE TABLE `u1_messages` (
+  `id` bigint UNSIGNED NOT NULL COMMENT '序号',
+  `hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '消息哈希',
+  `fromusr` text CHARACTER SET ascii COLLATE ascii_bin COMMENT '多个发件人',
+  `tousr` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '收件人',
+  `type` char(3) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL COMMENT '类型模板',
+  `text` tinytext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '消息内容',
+  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  `pri` tinyint(1) NOT NULL DEFAULT '0' COMMENT '优先级',
+  `readed` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未1已读2固定'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='站内消息';
 
 -- --------------------------------------------------------
 
@@ -314,6 +335,23 @@ CREATE TABLE `u1_session` (
 -- --------------------------------------------------------
 
 --
+-- 表的结构 `u1_stopword`
+--
+
+CREATE TABLE `u1_stopword` (
+  `id` int NOT NULL COMMENT '序号',
+  `swhash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '词合并SHA1',
+  `sw0` tinytext COLLATE utf8mb4_unicode_520_ci NOT NULL COMMENT '敏感词',
+  `sw1` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '同时包括词汇1',
+  `sw2` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '同时包括词汇2',
+  `sw3` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '同时包括词汇3',
+  `chrint` tinyint NOT NULL DEFAULT '0' COMMENT '多词汇间隔字符数',
+  `ps` tinytext COLLATE utf8mb4_unicode_520_ci COMMENT '备注'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci COMMENT='敏感词表';
+
+-- --------------------------------------------------------
+
+--
 -- 表的结构 `u1_usergroup`
 --
 
@@ -360,7 +398,8 @@ ALTER TABLE `u1_app`
 -- 表的索引 `u1_business`
 --
 ALTER TABLE `u1_business`
-  ADD PRIMARY KEY (`id`,`business_name`);
+  ADD PRIMARY KEY (`id`) USING BTREE,
+  ADD UNIQUE KEY `business_name` (`business_name`);
 
 --
 -- 表的索引 `u1_device`
@@ -398,13 +437,15 @@ ALTER TABLE `u1_history`
 -- 表的索引 `u1_info`
 --
 ALTER TABLE `u1_info`
-  ADD PRIMARY KEY (`id`) USING BTREE;
+  ADD PRIMARY KEY (`id`) USING BTREE,
+  ADD UNIQUE KEY `userhash` (`userhash`);
 
 --
 -- 表的索引 `u1_integral`
 --
 ALTER TABLE `u1_integral`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `inthash` (`inthash`);
 
 --
 -- 表的索引 `u1_ip`
@@ -416,7 +457,16 @@ ALTER TABLE `u1_ip`
 -- 表的索引 `u1_jurisdiction`
 --
 ALTER TABLE `u1_jurisdiction`
-  ADD PRIMARY KEY (`id`,`jurisdiction_name`);
+  ADD PRIMARY KEY (`id`) USING BTREE,
+  ADD UNIQUE KEY `jurisdiction_name` (`jurisdiction_name`);
+
+--
+-- 表的索引 `u1_messages`
+--
+ALTER TABLE `u1_messages`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `hash` (`hash`),
+  ADD KEY `tousr` (`tousr`);
 
 --
 -- 表的索引 `u1_protection`
@@ -433,6 +483,13 @@ ALTER TABLE `u1_protection`
 ALTER TABLE `u1_session`
   ADD PRIMARY KEY (`id`) USING BTREE,
   ADD UNIQUE KEY `token` (`token`);
+
+--
+-- 表的索引 `u1_stopword`
+--
+ALTER TABLE `u1_stopword`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `swhash` (`swhash`);
 
 --
 -- 表的索引 `u1_usergroup`
@@ -514,6 +571,12 @@ ALTER TABLE `u1_jurisdiction`
   MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID';
 
 --
+-- 使用表AUTO_INCREMENT `u1_messages`
+--
+ALTER TABLE `u1_messages`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '序号';
+
+--
 -- 使用表AUTO_INCREMENT `u1_protection`
 --
 ALTER TABLE `u1_protection`
@@ -524,6 +587,12 @@ ALTER TABLE `u1_protection`
 --
 ALTER TABLE `u1_session`
   MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID';
+
+--
+-- 使用表AUTO_INCREMENT `u1_stopword`
+--
+ALTER TABLE `u1_stopword`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT COMMENT '序号';
 
 --
 -- 使用表AUTO_INCREMENT `u1_usergroup`

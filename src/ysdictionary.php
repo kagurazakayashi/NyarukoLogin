@@ -13,13 +13,13 @@ class YSDictionary {
         for ($i=0; $i < count($vk); $i++) {
             $n = $vk[$i];
             if ($i % 2 == 0){
-				array_push($this->$vals,$n);
+				array_push($this->vals,$n);
 			} else {
-				array_push($this->$keys,strval($n));
+				array_push($this->keys,strval($n));
 			}
         }
-        $kc = count($this->$keys);
-        $vc = count($this->$vals);
+        $kc = count($this->keys);
+        $vc = count($this->vals);
         if ($kc < $vc) array_push($kc,null);
         else if ($vc < $kc) array_push($vc,null);
     }
@@ -29,9 +29,9 @@ class YSDictionary {
      * @param Array a 關聯數組
      */
     function dictionaryWithIndexedArray(array $a):void {
-        $this->$keys = array_keys($a);
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $this->$vals[$i] = $a[$this->$keys[$i]];
+        $this->keys = array_keys($a);
+        for ($i=0; $i < count($this->keys); $i++) {
+            $this->vals[$i] = $a[$this->keys[$i]];
         }
     }
 
@@ -41,8 +41,8 @@ class YSDictionary {
      * @param String k 鍵
      */
     function addObjectForKey($v,string $k):void {
-        array_push($this->$vals,$v);
-        array_push($this->$keys,$k);
+        array_push($this->vals,$v);
+        array_push($this->keys,$k);
     }
 
     /**
@@ -51,10 +51,10 @@ class YSDictionary {
      * @param String k 鍵
      */
     function replaceObjectForKey($v,string $k):void {
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $nk = $this->$keys[$i];
+        for ($i=0; $i < count($this->keys); $i++) {
+            $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
-                $this->$vals[$i] = $v;
+                $this->vals[$i] = $v;
             }
         }
     }
@@ -66,16 +66,16 @@ class YSDictionary {
      */
     function setObjectForKey($v,string $k):void {
         $r = false;
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $nk = $this->$keys[$i];
+        for ($i=0; $i < count($this->keys); $i++) {
+            $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
-                $this->$vals[$i] = $v;
+                $this->vals[$i] = $v;
                 $r = true;
             }
         }
         if (!$r) {
-            array_push($this->$vals,$v);
-            array_push($this->$keys,$k);
+            array_push($this->vals,$v);
+            array_push($this->keys,$k);
         }
     }
 
@@ -84,10 +84,10 @@ class YSDictionary {
      * @param String k 鍵
      */
     function objectForKey(string $k) {
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $nk = $this->$keys[$i];
+        for ($i=0; $i < count($this->keys); $i++) {
+            $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
-                return $this->$vals[$i];
+                return $this->vals[$i];
             }
         }
     }
@@ -98,10 +98,10 @@ class YSDictionary {
      */
     function objectsForKey(string $k):array {
         $r = [];
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $nk = $this->$keys[$i];
+        for ($i=0; $i < count($this->keys); $i++) {
+            $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
-                array_push($r,$this->$vals[$i]);
+                array_push($r,$this->vals[$i]);
             }
         }
         return $r;
@@ -115,16 +115,16 @@ class YSDictionary {
         $rm = function(int $i) {
             $nk = [];
             $nv = [];
-            for ($j=0; $j < count($this->$keys); $j++) {
+            for ($j=0; $j < count($this->keys); $j++) {
                 if ($i == $j) continue;
-                $nk[$j] = $this->$keys[$j];
-                $nv[$j] = $this->$vals[$j];
+                $nk[$j] = $this->keys[$j];
+                $nv[$j] = $this->vals[$j];
             }
-            $this->$keys = $nk;
-            $this->$vals = $nv;
+            $this->keys = $nk;
+            $this->vals = $nv;
         };
-        for ($i=0; $i < count($this->$keys); $i++) {
-            $nk = $this->$keys[$i];
+        for ($i=0; $i < count($this->keys); $i++) {
+            $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
                 $rm($i);
             }
@@ -145,10 +145,10 @@ class YSDictionary {
      * @description: 移除所有對象
      */
     function removeAllObjects():void {
-        $this->$keys = null; unset($this->$keys);
-        $this->$vals = null; unset($this->$vals);
-        $this->$keys = array();
-        $this->$vals = array();
+        $this->keys = null; unset($this->keys);
+        $this->vals = null; unset($this->vals);
+        $this->keys = array();
+        $this->vals = array();
     }
 
     /**
@@ -156,8 +156,8 @@ class YSDictionary {
      * @param YSDictionary dic 字典
      */
     function setDictionary(YSDictionary $dic) {
-        $this->$keys = $dic->$keys;
-        $this->$vals = $dic->$vals;
+        $this->keys = $dic->keys;
+        $this->vals = $dic->vals;
     }
 
     /**
@@ -165,31 +165,30 @@ class YSDictionary {
      * @return Int 字典中的對象數量
      */
     function count():int {
-        return count($this->$keys);
+        return count($this->keys);
     }
 
     /**
      * @description: 獲取所有鍵
      * @return Array<String> 鍵數組
      */
-    function allKeys():int {
-        return $this->$keys;
+    function allKeys():array {
+        return $this->keys;
     }
 
     /**
      * @description: 獲取所有對象
      * @return Array<Object> 對象數組
      */
-    function allValues():int {
-        return $this->$vals;
+    function allValues():array {
+        return $this->vals;
     }
 
     /**
-     * @description: 析構，結束連接，關閉日誌文件
+     * @description: 析構
      */
     function __destruct() {
-        $this->$keys = null; unset($this->$keys);
-        $this->$vals = null; unset($this->$vals);
+        $this->keys = null; unset($this->keys);
+        $this->vals = null; unset($this->vals);
     }
 }
-?>
