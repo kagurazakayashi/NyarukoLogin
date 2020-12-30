@@ -14,7 +14,6 @@ class nyamessage {
      * @param int    pri  优先级
      */
     function newMessage(array $to, array $from = [], string $type = "", string $text = "", int $pri = 0) {
-        global $nlcore;
         // 檢查輸入
         $typeLen = strlen($type);
         $typeStr = $type;
@@ -43,7 +42,7 @@ class nyamessage {
                     $this->newMessageInsert($fromStr, $tohash, $typeStr, $text, $pri);
                 }
             } else {
-                // 發件人是系統訊息，無需合併資訊，立即建立新訊息
+                // 發件人是系統訊息，無需合併訊息，立即建立新訊息
                 $this->newMessageInsert($fromStr, $tohash, $typeStr, $text, $pri);
             }
         }
@@ -70,14 +69,14 @@ class nyamessage {
         ];
         if ($type) $insertDic["type"] = $type;
         if ($from) $insertDic["fromusr"] = $type;
-        $result = $nlcore->db->insert($tableStr, $insertDic);
-        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2080002);
+        $dbResult = $nlcore->db->insert($tableStr, $insertDic);
+        if ($dbResult[0] >= 2000000) $nlcore->msg->stopmsg(2080002);
     }
 
     /**
-     * @description: 檢查是否有類似訊息（資訊型別、收件人、訊息內容相同）
+     * @description: 檢查是否有類似訊息（訊息型別、收件人、訊息內容相同）
      * @param  string to   收件人使用者雜湊
-     * @param  string type 資訊型別程式碼
+     * @param  string type 訊息型別程式碼
      * @return array/null 當前查到的先有類似訊息資料
      */
     function checkRepetitive(string $to, string $type): array {
@@ -89,10 +88,10 @@ class nyamessage {
             "type" => $type,
             "readed" => 0
         ];
-        $dbreturn = $nlcore->db->select($columnArr, $tableStr, $whereDic);
-        if ($dbreturn[0] == 1010000) {
-            return $dbreturn[2][0];
-        } else if ($dbreturn[0] == 1010001) {
+        $dbResult = $nlcore->db->select($columnArr, $tableStr, $whereDic);
+        if ($dbResult[0] == 1010000) {
+            return $dbResult[2][0];
+        } else if ($dbResult[0] == 1010001) {
             return null;
         } else {
             $nlcore->msg->stopmsg(2080000);
@@ -100,7 +99,7 @@ class nyamessage {
     }
 
     /**
-     * @description: 將資訊整合到原有的相似資訊中
+     * @description: 將訊息整合到原有的相似訊息中
      * @param array  data 查詢類似訊息時伺服器返回資料
      * @param string from 發件人使用者雜湊，支援多個發件人，使用逗號分隔
      */
@@ -113,16 +112,77 @@ class nyamessage {
             array_push($fromusrArr, $from);
             $fromStr = implode(',', $fromusrArr);
         }
-        // 更新已有資訊記錄
+        // 更新已有訊息記錄
         $updateDic = [
             "fromusr" => $fromStr
         ];
         $whereDic = [
             "id" => $data["id"]
         ];
-        $dbreturn = $nlcore->db->update($updateDic, $tableStr, $whereDic);
-        if ($dbreturn[0] >= 2000000) {
+        $dbResult = $nlcore->db->update($updateDic, $tableStr, $whereDic);
+        if ($dbResult[0] >= 2000000) {
             $nlcore->msg->stopmsg(2080001);
+        }
+    }
+
+    /**
+     * @description: 獲取我的訊息
+     * @param string to     要查詢訊息列表的使用者雜湊
+     * @param int    mode   要獲得的訊息型別
+     *               0 重要未讀資訊  1 普通未讀資訊  2 已讀資訊
+     * @param int    limit  從哪條開始
+     * @param int    offset 讀取多少條
+     */
+    function getMessage(string $to, string $mode, int $limit = 0, int $offset = 10): array {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["messages"];
+        $columnArr = ["hash", "fromusr", "tousr", "type", "text", "time", "pri", "readed"];
+        $whereDic = ["tousr" => $to];
+        if ($mode == 0) {
+            $whereDic["readed"] = 0;
+            $whereDic["pri"] = 1;
+        } else if ($mode == 1) {
+            $whereDic["readed"] = 0;
+            $whereDic["pri"] = 0;
+        } else if ($mode == 2) {
+            $whereDic["readed"] = 1;
+        }
+        $dbResult = $nlcore->db->select($columnArr, $tableStr, $whereDic, "", "AND", false, ["time"], [$limit, $offset]);
+        if ($dbResult[0] >= 2000000) {
+            $nlcore->msg->stopmsg(2080003);
+        } else if ($dbResult[0] == 1010000) {
+            return $dbResult[2];
+        }
+        return null;
+    }
+
+    /**
+     * @description: 生成友好通知訊息，以 info 鍵插入每個條目
+     * @param array &messageArr 使用 getMessage 獲得的通知訊息陣列指標
+     */
+    function genText(array &$messageArr): void {
+        global $nlcore;
+        $cfgNum = $nlcore->cfg->app->messageNum;
+        $cfgTmp = $nlcore->cfg->app->messageTmp;
+        for ($i = 0; $i < count($messageArr); $i++) {
+            $messageItem = $messageArr[$i];
+            $fromusrArr = explode(',', $messageItem["fromusr"]);
+            $info = "";
+            $fromusrArrCount = count($fromusrArr);
+            $numStr = $cfgNum[$fromusrArrCount - 1] ?? $nlcore->msg->stopmsg(2080004, 'cfgNum');
+            $tmpStr = $cfgTmp[$messageItem["type"]] ?? $nlcore->msg->stopmsg(2080004, 'cfgTmp');
+            if ($fromusrArrCount >= 1) {
+                $info = str_replace("%1", $fromusrArr[0], $numStr);
+            }
+            if ($fromusrArrCount >= 2) {
+                $info = str_replace("%2", $fromusrArr[1], $numStr);
+            }
+            if ($fromusrArrCount >= 3) {
+                $info = str_replace("%3", strval($fromusrArrCount), $numStr);
+            }
+            $info .= $tmpStr;
+            $messageItem["info"] = $info;
+            $messageArr[$i] = $messageItem;
         }
     }
 }
