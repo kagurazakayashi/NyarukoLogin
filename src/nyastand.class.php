@@ -103,7 +103,7 @@ class stand {
             "ipid" => $ipId,
             "result" => $returnClientData["code"]
         ];
-        // 返回到客戶端
+        // 準備返回到客戶端的資料
         $tableStr = $nlcore->cfg->db->tables["history"];
         $result = $nlcore->db->insert($tableStr, $insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);

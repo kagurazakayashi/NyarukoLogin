@@ -110,7 +110,7 @@ class nyafunc {
         return false;
     }
     /**
-     * @description: 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
+     * @description: 獲取所選性別資訊
      * @param String gender 性別名稱
      * @param String localization 本地化性別名稱
      * @param Int list 性別列表ID
@@ -198,7 +198,7 @@ class nyafunc {
      * @param Array columnArr 要查询的项目
      * @return Array<Array> 當前使用者資訊
      */
-    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true, $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "address", "profile", "description", "image", "background"]): array {
+    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true, $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "age", "address", "profile", "description", "image", "background"]): array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
@@ -428,7 +428,7 @@ class nyafunc {
         if (!$onlytype) array_push($columnArr, "os", "device", "osver");
         $whereDic = ["id" => $deviceid];
         $resultdev = $nlcore->db->select($columnArr, $tableStr, $whereDic);
-        if (!isset($resultdev[2][0])) $nlcore->msg->stopmsg(2040212);
+        if (!isset($resultdev[2][0])) $nlcore->msg->stopmsg(2040712);
         if ($onlytype) {
             if (!isset($resultdev[2][0]["type"])) $nlcore->msg->stopmsg(2040213);
             return $resultdev[2][0]["type"];

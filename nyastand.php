@@ -6,7 +6,7 @@ require_once "src/nyauserinfoedit.class.php";
 // IP檢查和解密客戶端提交的資訊
 $nlcore->sess->decryptargv("signup");
 // 檢查用戶是否登入
-$nlcore->safe->userLogged($inputInformation);
+$nlcore->sess->userLogged();
 // 初始化類別
 $stand = new stand();
 // 實現功能

@@ -26,3 +26,4 @@ git_stats
 *.7z
 *.xz
 NyarukoLogin.wiki
+tests/t.php

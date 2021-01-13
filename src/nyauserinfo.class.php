@@ -16,7 +16,7 @@ class userinfo {
         $cuser = $argReceived["cuser"] ?? $userHash;
         $userinfo = $nlcore->func->getuserinfo($cuser);
         if (count($userinfo) == 0) $nlcore->msg->stopmsg(2070001);
-        $returnJson = $nlcore->msg->m(0, 1030300);
+        $returnJson = $nlcore->msg->m(0, 1030202);
         $returnJson["uinfo"] = $userinfo;
         return $returnJson;
     }

@@ -39,21 +39,41 @@ class userInfoEdit {
     /**
      * @description: 批量檢查並加入更新計劃
      * @param Array updateDic ["條目名稱"=>"條目內容"]，不传则直接从用户提交中搜索
-     * @return Array 執行結果
      */
-    function batchUpdate(array $updateDic = []): void {
-        if (count($updateDic) == 0) $updateDic = $this->argReceived;
+    function batchUpdate(array $updateDic = []): array {
+        $newUpdateDic = [];
+        if (count($updateDic) == 0) {
+            $updateDic = $this->argReceived;
+        }
         if (isset($updateDic["name"])) {
             $this->verifyName($updateDic["name"]);
             $this->verifyNameId($updateDic["name"]);
         }
-        if (isset($updateDic["gender"])) $this->verifyGender(intval($updateDic["gender"]), true);
-        if (isset($updateDic["pronoun"])) $this->verifyPronoun($updateDic["pronoun"]);
-        if (isset($updateDic["address"])) $this->verifyAddress($updateDic["address"]);
-        if (isset($updateDic["profile"])) $this->verifyProfile($updateDic["profile"]);
-        if (isset($updateDic["description"])) $this->verifyDescription($updateDic["description"]);
-        if (isset($updateDic["image"])) $this->verifyImage($updateDic["image"]);
-        if (isset($updateDic["background"])) $this->verifyBackground($updateDic["background"]);
+        if (isset($updateDic["gender"])) {
+            $this->verifyGender(intval($updateDic["gender"]), true);
+        }
+        if (isset($updateDic["pronoun"])) {
+            $this->verifyPronoun($updateDic["pronoun"]);
+        }
+        if (isset($updateDic["age"])) {
+            $this->verifyAge(intval($updateDic["age"]));
+        }
+        if (isset($updateDic["address"])) {
+            $this->verifyAddress($updateDic["address"]);
+        }
+        if (isset($updateDic["profile"])) {
+            $this->verifyProfile($updateDic["profile"]);
+        }
+        if (isset($updateDic["description"])) {
+            $this->verifyDescription($updateDic["description"]);
+        }
+        if (isset($updateDic["image"])) {
+            $this->verifyImage($updateDic["image"]);
+        }
+        if (isset($updateDic["background"])) {
+            $this->verifyBackground($updateDic["background"]);
+        }
+        return $this->updateDic;
     }
     /**
      * @description: 檢查輸入字元串
@@ -124,6 +144,19 @@ class userInfoEdit {
         global $nlcore;
         if ($pronoun < 0 || $pronoun > 2) $nlcore->msg->stopmsg(2040601, $pronoun);
         $this->updateDic["pronoun"] = $pronoun;
+    }
+    /**
+     * @description: 檢查年齡
+     * @param String pronoun 新的年齡
+     */
+    function verifyAge(int $age): void {
+        global $nlcore;
+        if ($age > 100) {
+            $nlcore->msg->stopmsg(2040601, $pronoun);
+        } else if ($age == 0) {
+            return;
+        }
+        $this->updateDic["age"] = $age;
     }
     /**
      * @description: 檢查性別
