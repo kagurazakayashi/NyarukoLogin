@@ -19,9 +19,8 @@ class nyauploadfile {
         $relativepaths = $savedirarr[2]; //相对路径
         $savedir = $savedirarr[0]; //目标存储文件夹
         $stmpdirs = $nlcore->func->savepath("tmpdir", false, "", 0)[0] . DIRECTORY_SEPARATOR;
-        $stmpdir = $stmpdirs[0]; //二压临时文件夹
-
-        $uploaddirstrcount = strlen($savedir);
+        // $stmpdir = $stmpdirs[0]; //二压临时文件夹
+        // $uploaddirstrcount = strlen($savedir);
         //遍历文件资讯
         $returnfile = [];
         $returnClientData = [];
@@ -73,38 +72,7 @@ class nyauploadfile {
                 } else {
                     $nlcore->msg->stopmsg(2050106);
                 }
-                // 创建json计划文件
-                $sizesavepath = [];
-                foreach ($imageresize as $key => $sizes) {
-                    // 检查是否能提供该尺寸
-                    if (in_array(0, $sizes) || $this->getresize($mediainfojson["width"], $mediainfojson["height"], $sizes[0], $sizes[1])[2]) {
-                        foreach ($nowextres as $convextension) {
-                            $newsizes = $sizes;
-                            $nowsizefile = $key . '.' . $convextension;
-                            array_unshift($newsizes, $nowsizefile);
-                            array_push($sizesavepath, $newsizes);
-                        }
-                        array_push($sizearr, $key);
-                    }
-                }
-                $filejsonarr["to"] = $sizesavepath;
-                // foreach ($imageresize as $key => $value) {
-                //     $resizetores = $this->resizeto($tmpfile, $savefile, $key, $mediatype["extension"], $value);
-                //     $newfiles = $resizetores[0];
-                //     $isexists = $resizetores[1];
-                //     foreach ($newfiles as $newfile) {
-                //         $newfilesub = substr($newfile, $uploaddirstrcount);
-                //         $filepatharr = explode(".", $newfilesub);
-                //         $filepatharrc = count($filepatharr);
-                //         $extname = $filepatharr[$filepatharrc-1];
-                //         $sizename = $filepatharr[$filepatharrc-2];
-                //         if (!in_array($extname,$nowextres)) {
-                //             array_push($nowextres,$extname);
-                //         }
-                //     }
-                // }
-                // $nowpathsub = substr($savefile,strlen($savedirarr[1]));
-                // $nowpathsub = str_replace("\\","/",$nowpathsub);
+                $filejsonarr["to"] = $this->addResizeJob($imageresize, $mediainfojson, $nowextres, $sizearr);
             } else if ($mediatype["media"] == "video") {
                 $rediskey = $nlcore->cfg->db->redis_tables["convertvideo"];
                 $nowextres = ["mp4"];
@@ -118,29 +86,7 @@ class nyauploadfile {
                 $mediainfojson["height"] = intval($mediainfojson["height"]);
                 $mediainfojson["duration"] = floatval($mediainfojson["duration"]);
                 $mediainfojson["bit_rate"] = intval($mediainfojson["bit_rate"]);
-                $videowidth = intval($mediainfojson["width"]);
-                $videoheight = intval($mediainfojson["height"]);
-                // 创建json计划文件
-                $sizesavepath = [];
-                foreach ($videoresize as $key => $sizes) {
-                    // 检查是否能提供该尺寸
-                    if (!in_array(0, $sizes) && $this->getresize($mediainfojson["width"], $mediainfojson["height"], $sizes[0], $sizes[1])[2]) {
-                        $newsizes = $sizes;
-                        if ($videowidth < $videoheight) {
-                            $newsizes = [$sizes[1], $sizes[0], $sizes[2]];
-                        }
-                        $newwidth = intval($newsizes[0]);
-                        $newheight = intval($newsizes[1]);
-                        if ($newwidth > $videowidth || $newheight > $videoheight) {
-                            continue;
-                        }
-                        $nowsizefile = $key . '.mp4';
-                        array_unshift($newsizes, $nowsizefile);
-                        array_push($sizesavepath, $newsizes);
-                        array_push($sizearr, $key);
-                    }
-                }
-                $filejsonarr["to"] = $sizesavepath;
+                $filejsonarr["to"] = $this->addResizeJob($videoresize, $mediainfojson, $nowextres, $sizearr);
             }
             $filejsonarr["info"] = $mediainfojson;
             list($timesub1, $timesub2) = explode(' ', microtime());
@@ -202,6 +148,39 @@ class nyauploadfile {
     }
 
     /**
+     * @description: 新增二壓計劃目標
+     * @param Array resizeList 尺寸設定陣列 [寬,高,其他資訊...]
+     * @param Array mediainfojson 媒體資訊字典
+     * @param Array nowextres 目標副檔名陣列
+     * @param Array &$sizearr 尺寸列表陣列指標
+     * @return Array 二壓計劃目標資訊二維陣列
+     */
+    function addResizeJob(array $resizeList, array $mediainfojson, array $nowextres, array &$sizearr): array {
+        $sizesavepath = [];
+        foreach ($resizeList as $key => $sizes) {
+            // 檢查是否能提供該尺寸
+            $newSizeArr = null;
+            if ($sizes[0] == 0 && $sizes[1] == 0) {
+                $newSizeArr = [$mediainfojson["width"], $mediainfojson["height"], true];
+            } else {
+                $newSizeArr = $this->getresize($mediainfojson["width"], $mediainfojson["height"], $sizes[0], $sizes[1]);
+            }
+            if ($newSizeArr[2]) {
+                // 為每個副檔名新增轉換任務
+                $newSizeArr[2] = $sizes[2];
+                foreach ($nowextres as $convextension) {
+                    $newsizes = $newSizeArr;
+                    $nowsizefile = $key . '.' . $convextension;
+                    array_unshift($newsizes, $nowsizefile);
+                    array_push($sizesavepath, $newsizes);
+                }
+                array_push($sizearr, $key);
+            }
+        }
+        return $sizesavepath;
+    }
+
+    /**
      * @description: 计算缩小图片后的宽高（如果已经小于设定值则输出原尺寸）
      * @param Float imageWidth 原始图片宽度
      * @param Float imageHeight 原始图片高度
@@ -214,18 +193,20 @@ class nyauploadfile {
         $newHeight = $imageHeight;
         $imageScale = $imageWidth / $imageHeight;
         $maxScale = $maxWidth / $maxHeight;
-        if ($maxScale < $imageScale) {
+        if ($maxScale <= $imageScale) {
             $newWidth = $maxWidth;
             $newHeight = $maxWidth / $imageScale;
         } else if ($maxScale > $imageScale) {
             $newHeight = $maxHeight;
             $newWidth = $maxHeight * $imageScale;
         }
-        if ($newWidth > $imageWidth && $newHeight > $imageHeight) {
-            return [$imageWidth, $imageHeight, false];
+        $returnArr = null;
+        if ($newWidth >= $imageWidth && $newHeight >= $imageHeight) {
+            $returnArr = [$imageWidth, $imageHeight, false];
         } else {
-            return [$newWidth, $newHeight, true];
+            $returnArr = [$newWidth, $newHeight, true];
         }
+        return $returnArr;
     }
     /**
      * @description: 将图片限制到指定尺寸，压缩成更小的 gif 或 jpg+webp 格式，然后存入日期文件夹。
@@ -329,7 +310,7 @@ class nyauploadfile {
             }
         }
         if (!$mediatype || !in_array($mediatype["media"], $enable)) {
-            return ["code" => 2050102, "info" => $mime_type.($mediatype["media"] ?? "")]; //$mediatype["media"]; //
+            return ["code" => 2050102, "info" => $mime_type . ($mediatype["media"] ?? "")]; //$mediatype["media"]; //
         }
         if ($mediatype["media"] == "video") { //如果是视频
             //当前类型的限制大小
@@ -337,7 +318,7 @@ class nyauploadfile {
                 return ["code" => 2050101, "info" => strval($nowfile["size"])];
             }
             //检查视频时长是否太长
-            $videoduration = $this->getvideomediainfo($nowfile["tmp_name"], "duration");
+            $videoduration = intval($this->getvideomediainfo($nowfile["tmp_name"], ["duration"])[0]);
             if ($videoduration > $uploadconf["videoduration"]) {
                 return ["code" => 2050103, "info" => strval($videoduration)];
             }
@@ -353,20 +334,20 @@ class nyauploadfile {
         return $mediatype;
     }
     /**
-     * @description: 获取视频详细信息（第一次获取时会缓存）
+     * @description: 獲取影片詳細資訊（第一次獲取時會建立快取）
      * composer require php-ffmpeg/php-ffmpeg
-     * @param String file 视频文件路径
-     * @param String key 要获取的属性
-     * @return Array/String 取得的视频信息
+     * @param String file 影片檔案路徑
+     * @param Array key 要獲取的屬性
+     * @return Array 取得的影片資訊
      */
-    function getvideomediainfo($file, $key) {
+    function getvideomediainfo(string $file, array $key): array {
         if ($this->mediainfo == null) {
             global $nlcore;
             $logger = null;
             $ffprobe = FFMpeg\FFProbe::create($nlcore->cfg->app->ffconf, $logger);
             $this->mediainfo = $ffprobe->streams($file)->videos()->first()->all();
         }
-        if (is_array($key)) {
+        if (count($key) > 1) {
             $rval = [];
             foreach ($key as $nowkey) {
                 if (isset($this->mediainfo[$nowkey])) {
@@ -376,8 +357,8 @@ class nyauploadfile {
                 }
             }
             return $rval;
-        } else if (isset($this->mediainfo[$key])) {
-            return $this->mediainfo[$key];
+        } else if (isset($this->mediainfo[$key[0]])) {
+            return [$this->mediainfo[$key[0]]];
         }
         return null;
     }
