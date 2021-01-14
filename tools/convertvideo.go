@@ -63,6 +63,7 @@ func main() {
 	flag.StringVar(&wmfont, "wmfont", "simhei.ttf", "水印字体")
 	flag.StringVar(&keypath, "kpath", "/www/wwwroot/zyz/user/tools/go/convertfile/file/encrypt.keyinfo", "视频加密key地址")
 	flag.StringVar(&ffmpegpath, "ffmpeg", "/usr/bin/ffmpeg", "FFmpeg执行文件路径")
+	flag.BoolVar(&isrm, "isrm", true, "是否删除sh文件")
 	flag.Parse()
 
 	fmt.Println("STRART convertbideo v1.0")
@@ -345,7 +346,10 @@ func scaleVideo(temp string, todir string, toname string, info map[string]interf
 	tempvideopath := strings.Split(temp, ".")
 	shfile := fmt.Sprintf("%s.%s.sh", tempvideopath[0], tofile[0])
 	// println(shfile)
-	sh := fmt.Sprintf("cat %s >>convertvideo.log && echo >>convertvideo.log && date >>convertvideo.log && %s -i %s -i %s -strict -2 -filter_complex %s -b:v %s -hls_time 5 -hls_key_info_file %s -hls_playlist_type vod -hls_segment_filename \"%s.%s.ts\" %s -hide_banner -y >>convertvideo.log 2>&1 && echo ===== >>convertvideo.log && rm -f %s", shfile, ffmpegpath, temp, watermarkimage, vf, bitrate, keypath, tofileTSPath, "%d", tofilepath, shfile)
+	sh := fmt.Sprintf("cat %s >>convertvideo.log && echo >>convertvideo.log && date >>convertvideo.log && %s -i %s -i %s -strict -2 -filter_complex %s -b:v %s -hls_time 5 -hls_key_info_file %s -hls_playlist_type vod -hls_segment_filename \"%s.%s.ts\" %s -hide_banner -y >>convertvideo.log 2>&1 && echo ===== >>convertvideo.log", shfile, ffmpegpath, temp, watermarkimage, vf, bitrate, keypath, tofileTSPath, "%d", tofilepath)
+	if isrm {
+		sh += " && rm -f " + shfile
+	}
 	content := []byte(sh)
 	err := ioutil.WriteFile(shfile, content, 0777)
 	check(1, "ioutil.WriteFile", err)
