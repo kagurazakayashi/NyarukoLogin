@@ -16,6 +16,8 @@ uurl = jsonfiledata["url"]+"nyastand.php"
 salt = ''.join(random.sample(string.ascii_letters + string.digits, 16))
 udataarr = {
     "token":jsonfiledata["token"],
-    "nickname":"小雅诗"+salt
+    "nickname":"小雅诗"+salt,
+    "gender":"2",
+    "age":"18"
 }
 test_core.postarray(uurl,udataarr,True)

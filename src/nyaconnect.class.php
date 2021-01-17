@@ -147,7 +147,7 @@ class nyadbconnect {
         $orderstr = "";
         if (count($order) > 0) {
             $orderstr = " ORDER BY `" . $order[0] . "`";
-            if ($order[1] === true) $orderstr .= " DESC";
+            if (isset($order[1]) && $order[1] === true) $orderstr .= " DESC";
         }
         if (count($limit) > 0) {
             $orderstr .= " limit ";

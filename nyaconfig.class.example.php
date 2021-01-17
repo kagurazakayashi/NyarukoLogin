@@ -35,7 +35,7 @@ class nyasetting_db {
         "app" => "u1_app", //外部程序表
         "integral" => "u1_integral", //积分表
         "ip" => "u1_ip", //IP地址表
-        "jurisdiction" => "u1_jurisdiction", //权限表
+        "permission" => "u1_permission", //权限表
         "protection" => "u1_protection", //密保表
         "session" => "u1_session", //会话令牌表
         "users" => "u1_users", //用户表

@@ -332,18 +332,18 @@ class nyalogin {
                 $tid = $apptoken["id"];
             }
         }
-        if ($tid == -1) $nlcore->msg->stopmsg(2040211);
+        if ($tid == -1) $nlcore->msg->stopmsg(2040711);
         //取出要刪除會話的裝置型號
         $tableStr = $nlcore->cfg->db->tables["session"];
         $columnArr = ["devid"];
         $whereDic = ["id" => $tid];
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
-        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040212);
+        if ($result[0] >= 2000000 || !isset($result[2][0]["devid"])) $nlcore->msg->stopmsg(2040712);
         $devid = $result[2][0]["devid"];
         //刪除最舊的會話
         $delwheredic = ["id" => $tid];
         $delresult = $nlcore->db->delete($tableStr, $delwheredic);
-        if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040211);
+        if ($delresult[0] >= 2000000) $nlcore->msg->stopmsg(2040711);
         //查裝置表來返回被登出的裝置型號
         $logoutdevinfo = $nlcore->func->getdeviceinfo($devid);
         return $logoutdevinfo;
