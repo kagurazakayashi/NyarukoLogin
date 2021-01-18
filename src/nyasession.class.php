@@ -236,6 +236,74 @@ class nyasession {
             $nlcore->msg->stopmsg(2020417, $apptoken);
         }
     }
+
+    /**
+     * @description: 登出當前使用者，刪除會話令牌
+     */
+    function logout() {
+        global $nlcore;
+        $this->logoutUser();
+        $returnClientData = $nlcore->msg->m(0, 1020103);
+        return $returnClientData;
+    }
+
+    /**
+     * @description: 登出當前使用者，刪除會話令牌
+     * @param String appToken 會話令牌，不傳則試圖獲取當前令牌
+     * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
+     */
+    function logoutUser(string $userToken = null, int $mode=3) {
+        global $nlcore;
+        if ($userToken == null) {
+            if ($this->userToken == null) {
+                $nlcore->msg->stopmsg(2040700, 'nil');
+            } else {
+                $userToken = $this->userToken;
+            }
+        }
+        if ($mode == 1 || $mode == 3) {
+            $redisKey = 's_' . $userToken;
+            if ($nlcore->cfg->enc->redisCacheTimeout != 0 && $nlcore->db->initRedis() && $nlcore->db->redis->exists($redisKey)) {
+                $nlcore->db->redis->del($redisKey);
+            }
+        }
+        if ($mode == 2 || $mode == 3) {
+            $tableStr = $nlcore->cfg->db->tables["session"];
+            $whereDic = ["token" => $userToken];
+            $dbresult = $nlcore->db->delete($tableStr, $whereDic);
+            if ($dbresult[0] >= 2000000) $nlcore->msg->stopmsg(2040711);
+        }
+    }
+
+    /**
+     * @description: 登出當前裝置，刪除金鑰對
+     * @param String appToken 應用令牌，不传则试图获取当前令牌
+     * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
+     */
+    function logoutDevice(string $appToken = null, int $mode=3, bool $logoutUser=true) {
+        global $nlcore;
+        if ($appToken == null) {
+            if ($this->appToken == null) {
+                $nlcore->msg->stopmsg(2040713, 'nil');
+            } else {
+                $appToken = $this->appToken;
+            }
+        }
+        if ($mode == 1 || $mode == 3) {
+            $redisKey = $nlcore->cfg->db->redis_tables["rsa"] . $appToken;
+            if ($nlcore->cfg->enc->redisCacheTimeout != 0 && $nlcore->db->initRedis() && $nlcore->db->redis->exists($redisKey)) {
+                $nlcore->db->redis->del($redisKey);
+            }
+        }
+        if ($mode == 2 || $mode == 3) {
+            $tableStr = $nlcore->cfg->db->tables["encryption"];
+            $whereDic = ["apptoken" => $appToken];
+            $dbresult = $nlcore->db->delete($tableStr, $whereDic);
+            if ($dbresult[0] >= 2000000) $nlcore->msg->stopmsg(2040713);
+            // 若從資料庫刪除金鑰對，同時需要將使用者登出
+            if ($logoutUser) $this->logoutUser();
+        }
+    }
     /**
      * @description: 使用 RSA 方式進行解密
      * @param String encryptedJson 客戶端提交的加密資料
@@ -259,17 +327,22 @@ class nyasession {
             // 先嚐試從 Redis 中載入
             $redisName = $nlcore->cfg->db->redis_tables["rsa"];
             $redisKey = $redisName . $apptoken;
-            if ($redisTimeout != 0 && $nlcore->db->initRedis()) {
-                if ($nlcore->db->redis->exists($redisKey)) {
-                    $redisVal = $nlcore->db->redis->get($redisKey);
-                    $keyArr = explode("|", $redisVal);
+            if ($redisTimeout != 0 && $nlcore->db->initRedis() && $nlcore->db->redis->exists($redisKey)) {
+                $redisVal = $nlcore->db->redis->get($redisKey);
+                $keyArr = explode("|", $redisVal);
+                if (count($keyArr) != 2) {
                     $this->publicKey = $keyArr[0];
                     $this->privateKey = $keyArr[1];
+                } else {
+                    // 移除 Redis 中的错误条目
+                    $nlcore->sess->logoutDevice($apptoken, 1);
                 }
             }
             // 校驗是否為私鑰和公鑰
             $nlcore->safe->autoRsaAddTag();
             if (!$nlcore->safe->autoCheck()) {
+                // 移除 Redis 中的错误条目
+                $nlcore->sess->logoutDevice($apptoken, 1);
                 // 不能從 Redis 中載入，從 MySQL 中載入
                 $datadic = ["apptoken" => $apptoken];
                 $tableStr = $nlcore->cfg->db->tables["encryption"];
@@ -280,8 +353,17 @@ class nyasession {
                     $nlcore->msg->stopmsg(2020409, $apptoken ?? "no token");
                 }
                 $rdata = $result[2][0];
-                if (!isset($rdata["private"]) || !isset($rdata["public"])) {
-                    $nlcore->msg->stopmsg(2020421, $apptoken);
+                // 金鑰只有一個還是兩個都沒有
+                $rdataNone = 0;
+                if (!isset($rdata["private"])) $rdataNone++;
+                if (!isset($rdata["public"])) $rdataNone++;
+                if ($rdataNone == 1) {
+                    // 只有一個沒有，刪除錯誤的金鑰對
+                    $nlcore->sess->logoutDevice($apptoken, 2);
+                }
+                if ($rdataNone > 0) {
+                    // 只要有一個沒有，就返回錯誤
+                    $nlcore->msg->stopmsg(2020421, $apptoken, strval($rdataNone));
                 }
                 $this->publicKey = $rdata["public"];
                 $this->privateKey = $rdata["private"];
@@ -453,6 +535,7 @@ class nyasession {
     function userLogged(): void {
         global $nlcore;
         $argReceived = $this->argReceived;
+        if (!isset($argReceived["token"])) $nlcore->msg->stopmsg(2040400, "T-N");
         $userToken = $argReceived["token"];
         if (!$nlcore->safe->is_rhash64($userToken)) $nlcore->msg->stopmsg(2040402, "T-" . $userToken);
         $userSessionInfo = $this->sessionstatuscon($userToken, true);
