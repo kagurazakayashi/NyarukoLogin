@@ -465,25 +465,38 @@ class nyafunc {
         return [$name, $nameid, $userHash];
     }
     /**
-     * @description: 从用户哈希获取用户[昵称#唯一码]
-     * @param String/Array<String> fullnickname 完整昵称或已经分好的[名称,ID]数组
-     * @return Null/String 用户哈希
+     * @description: 從使用者雜湊獲取使用者[暱稱,唯一碼]
+     * @param String userHash 使用者雜湊
+     * @return Array [暱稱,唯一碼]
      */
-    function userhash2fullnickname($userHash = "") {
+    function userHash2nickNameArr(string $userHash = ""): array {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["info"];
         $columnArr = ["name", "nameid"];
         $whereDic = ["userhash" => $userHash];
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         if ($result[0] == 1010001) {
-            return null;
+            return [];
         } else if ($result[0] != 1010000) {
             $nlcore->msg->stopmsg(2040200);
         }
-        if (count($result[2][0]) != 2 || !isset($result[2][0]["name"]) || !isset($result[2][0]["nameid"])) {
+        $nameInfoArr = $result[2][0];
+        if (count($nameInfoArr) != 2 || !isset($nameInfoArr["name"]) || !isset($nameInfoArr["nameid"])) {
             $nlcore->msg->stopmsg(2050002);
         }
-        return implode("#", $result[2][0]);
+        return [$nameInfoArr["name"], $nameInfoArr["nameid"]];
+    }
+    /**
+     * @description: [暱稱,唯一碼]转换为"暱稱#唯一碼"
+     * @param Array fullnickname userhash2fullnickname 函式生成的陣列
+     * @return String 組裝好的暱稱ID字串
+     */
+    function nickNameArr2nickNameFullStr(array $fullnickname): string {
+        global $nlcore;
+        $separators = $nlcore->cfg->app->separator;
+        $mention = $separators["mention"];
+        $namelink = $separators["namelink"];
+        return $mention . implode($namelink, $fullnickname);
     }
 
     /**
