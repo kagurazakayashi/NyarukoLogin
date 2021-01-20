@@ -5,6 +5,59 @@
  * @package NyarukoLogin
  */
 class nyamessage {
+    /**
+     * @description: 使用者私信
+     * @param array  to   收件人使用者雜湊，支援多個收件人
+     * @param string text 要发送的内容
+     */
+    //TODO
+    function newMessageFromUser() {
+        global $nlcore;
+        $from = $nlcore->sess->userToken;
+        $to = $nlcore->sess->argReceived["to"];
+        if (!$nlcore->safe->is_rhash64($to)) {
+            $nlcore->msg->stopmsg(2020209);
+        }
+        $text = $nlcore->sess->argReceived["text"];
+        if (strlen($text) == 0) {
+            // TODO
+        }
+        $nlcore->safe->wordfilter($text);
+        // TODO: 檢查是否有傳送站內信的許可權
+        $permission = $nlcore->safe->permission();
+        if (!$permission) {
+            // TODO: 許可權被拒絕
+        }
+        $nlcore->safe->wordfilter($text);
+        $this->newMessage($to, [$from], $text);
+    }
+
+    /**
+     * @description: 獲取當前使用者的私信（讀取客戶端提交資訊）
+     * @return array 該使用者收到的私信原始資料（可能需要進一步處理）
+     */
+    function getMessageFromUser(): array {
+        global $nlcore;
+        $to = $nlcore->sess->userHash;
+        if ($to && !$nlcore->safe->is_rhash64($to)) {
+            $nlcore->msg->stopmsg(2040400);
+        }
+        $mode = isset($nlcore->sess->argReceived["mode"]) ? intval($nlcore->sess->argReceived["mode"]) : -1;
+        $limit = isset($nlcore->sess->argReceived["limit"]) ? intval($nlcore->sess->argReceived["limit"]) : 0;
+        $offset = isset($nlcore->sess->argReceived["offset"]) ? intval($nlcore->sess->argReceived["offset"]) : 10;
+        $onlynum = (isset($nlcore->sess->argReceived["onlylen"]) && intval($nlcore->sess->argReceived["onlylen"]) > 0) ? true : false;
+        $msgArr = $this->getMessage($to, $mode, $onlynum, $limit, $offset);
+        $returnArr = $nlcore->msg->m(0, 1000000);
+        if ($onlynum) {
+            $returnArr["msgnum"] = intval($msgArr[0]["count(*)"]);
+        } else {
+            $this->genText($msgArr);
+            $returnArr["msglist"] = $msgArr;
+            $returnArr["msgnum"] = count($msgArr);
+        }
+        $returnArr["mode"] = $mode;
+        return $returnArr;
+    }
 
     /**
      * @description: 建立一個新的站內信（先檢查）
@@ -79,7 +132,7 @@ class nyamessage {
      * @description: 檢查是否有類似訊息（訊息型別、收件人、訊息內容相同）
      * @param  string to   收件人使用者雜湊
      * @param  string type 訊息型別程式碼
-     * @return array 當前查到的先有類似訊息資料
+     * @return array  當前查到的先有類似訊息資料
      */
     function checkRepetitive(string $to, string $type): array {
         global $nlcore;
@@ -132,16 +185,17 @@ class nyamessage {
 
     /**
      * @description: 獲取我的訊息
-     * @param string to     要查詢訊息列表的使用者雜湊
-     * @param int    mode   要獲得的訊息型別
-     *               0 重要未讀資訊  1 普通未讀資訊  2 已讀資訊  ? 所有資訊
-     * @param int    limit  從哪條開始
-     * @param int    offset 讀取多少條
+     * @param string to      要查詢訊息列表的使用者雜湊
+     * @param int    mode    要獲得的訊息型別
+     *               0 重要未讀　1 普通未讀　2 所有未讀　3 已讀　? 所有
+     * @param bool   onlynum 只返回數量（將忽略下面兩項引數）
+     * @param int    limit   從哪條開始
+     * @param int    offset  讀取多少條
      */
-    function getMessage(string $to, int $mode, int $limit = 0, int $offset = 10): array {
+    function getMessage(string $to, int $mode, bool $onlynum = false, int $limit = 0, int $offset = 10): array {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["messages"];
-        $columnArr = ["hash", "fromusr", "tousr", "type", "text", "time", "pri", "readed"];
+        $columnArr = $onlynum ? null : ["hash", "fromusr", "tousr", "type", "text", "time", "pri", "readed"];
         $whereDic = ["tousr" => $to];
         if ($mode == 0) {
             $whereDic["readed"] = 0;
@@ -150,9 +204,15 @@ class nyamessage {
             $whereDic["readed"] = 0;
             $whereDic["pri"] = 0;
         } else if ($mode == 2) {
+            $whereDic["readed"] = 0;
+        } else if ($mode == 3) {
             $whereDic["readed"] = 1;
         }
-        $dbResult = $nlcore->db->select($columnArr, $tableStr, $whereDic, "", "AND", false, ["time"], [$limit, $offset]);
+        if ($onlynum) {
+            $dbResult = $nlcore->db->scount($tableStr, $whereDic);
+        } else {
+            $dbResult = $nlcore->db->select($columnArr, $tableStr, $whereDic, "", "AND", false, ["time"], [$limit, $offset]);
+        }
         if ($dbResult[0] >= 2000000) {
             $nlcore->msg->stopmsg(2080003);
         } else if ($dbResult[0] == 1010000) {
@@ -164,7 +224,7 @@ class nyamessage {
     /**
      * @description: 生成友好通知訊息，以 info 鍵插入每個條目
      * @param array &messageArr 使用 getMessage 獲得的通知訊息陣列指標
-     * @param int maxLen 信息预览的显示长度 0为不显示，63为最大值（负数视为63）
+     * @param int   maxLen 信息预览的显示长度 0为不显示，63为最大值（负数视为63）
      */
     function genText(array &$messageArr, int $maxLen = 0): void {
         global $nlcore;
@@ -178,7 +238,7 @@ class nyamessage {
             $numStr = $cfgNum[$fromusrArrCount - 1] ?? $nlcore->msg->stopmsg(2080004, 'cfgNum');
             $tmpStr = $cfgTmp[$messageItem["type"]] ?? $nlcore->msg->stopmsg(2080004, 'cfgTmp');
             // 為每個使用者雜湊生成暱稱
-            for ($j=0; $j < count($fromusrArr); $j++) {
+            for ($j = 0; $j < count($fromusrArr); $j++) {
                 $fromusrArr[$j] = $nlcore->func->nickNameArr2nickNameFullStr($nlcore->func->userHash2nickNameArr($fromusrArr[$j]));
             }
             // 建立友好資訊

@@ -9,7 +9,9 @@ $nlcore->sess->userLogged();
 // 實現功能
 $nyamessage = new nyamessage();
 $returnClientData = [];
-if (isset($nlcore->sess->argReceived["text"]) && isset($nlcore->sess->argReceived["to"])) {
+if (isset($nlcore->sess->argReceived["readstat"])) {
+    $returnClientData = $nyamessage->setStatFromUser();
+} else if (isset($nlcore->sess->argReceived["text"]) && isset($nlcore->sess->argReceived["to"])) {
     $returnClientData = $nyamessage->newMessageFromUser();
 } else {
     $returnClientData = $nyamessage->getMessageFromUser();

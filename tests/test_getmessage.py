@@ -12,7 +12,10 @@ if jsonfiledata["url"] == "":
     exit()
 uurl = jsonfiledata["url"]+"nyamessage.php"
 udataarr = {
-    "token":jsonfiledata["token"],
-    "mode":-1  # 0 重要未讀資訊  1 普通未讀資訊  2 已讀資訊  ? 所有資訊
+    "token": jsonfiledata["token"],
+    "mode": 2,  # 0 重要未讀　1 普通未讀　2 所有未讀　3 已讀　? 所有
+    "onlylen": 0,
+    "limit": 0,
+    "offset": 10
 }
-test_core.postarray(uurl,udataarr,True)
+test_core.postarray(uurl, udataarr, True)
