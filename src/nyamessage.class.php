@@ -273,4 +273,51 @@ class nyamessage {
             $messageArr[$i] = $messageItem;
         }
     }
+
+    /**
+     * @description: 將某個通知資訊標記為已讀或未讀（讀取客戶端提交資訊）
+     */
+    function setStatFromUser() {
+        global $nlcore;
+        $isRead = isset($nlcore->sess->argReceived["readstat"]) ? intval($nlcore->sess->argReceived["readstat"]) : 1;
+        $editLine = 0;
+        if ($isRead != 2) {
+            $msgHash = $nlcore->sess->argReceived["msghash"] ?? "";
+            if (strlen($msgHash) == 0 || !$nlcore->safe->is_rhash64($msgHash)) {
+                $nlcore->msg->stopmsg(2080006);
+            }
+            $editLine = $this->setStat($isRead, $nlcore->sess->userHash, $msgHash);
+        } else {
+            $editLine = $this->setStat($isRead, $nlcore->sess->userHash);
+        }
+        $returnArr = $nlcore->msg->m(0, 1000000);
+        $returnArr["num"] = $editLine;
+        return $returnArr;
+    }
+
+    /**
+     * @description: 將某個通知資訊標記為已讀或未讀
+     * @param string hash   通知雜湊 或 使用者雜湊（isRead == 2 時）
+     * @param int    isRead 標記為 0未讀 1已讀 2全部已讀
+     */
+    function setStat(int $isRead = 1, string $userHash = null, string $msgHash = null) {
+        global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["messages"];
+        $whereDic = [];
+        $updateDic = [
+            "readed" => 1
+        ];
+        $whereDic = [
+            "tousr" => $userHash
+        ];
+        if ($isRead != 2) {
+            $whereDic["hash"] = $msgHash;
+            $updateDic["readed"] = ($isRead > 0) ? 1 : 0;
+        }
+        $dbResult = $nlcore->db->update($updateDic, $tableStr, $whereDic);
+        if ($dbResult[0] >= 2000000) {
+            $nlcore->msg->stopmsg(2080005);
+        }
+        return $dbResult[3];
+    }
 }
