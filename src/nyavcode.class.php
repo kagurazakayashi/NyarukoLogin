@@ -10,19 +10,24 @@ class nyavcode {
     private $module = "";
     private $code = 000000;
     /**
-     * @description: 建立簡訊驗證碼
+     * @description: 建立簡訊或郵箱驗證碼
      * @param Array argReceived 客戶端提交資訊陣列
      * @return Array 可返回客戶端的資訊
      */
     function getvcode($argReceived): array {
         global $nlcore;
-        $modulei = 0; //1.sms,2.mail
+        $modulei = 0; //1.sms,2.mail,3.test
         // 檢查是否提供目標
         $to = isset($argReceived["to"]) ? $argReceived["to"] : $nlcore->msg->stopmsg(2000101);
         // 檢查是否提供目標型別
-        if (isset($argReceived["type"]) && (strcmp($argReceived["type"], "sms") != 0 || strcmp($argReceived["type"], "mail") != 0)) {
+        if (
+            isset($argReceived["type"]) &&
+            (strcmp($argReceived["type"], "sms") != 0 || strcmp($argReceived["type"], "mail") != 0) ||
+            strcmp($argReceived["type"], "test") != 0
+        ) {
             if ($argReceived["type"] == "sms") $modulei = 1;
             else if ($argReceived["type"] == "mail") $modulei = 2;
+            else if ($argReceived["type"] == "test") $modulei = 3;
         } else {
             // 如果沒有提供目標型別，自動判斷目標型別
             if (is_numeric($to)) {
@@ -37,13 +42,18 @@ class nyavcode {
                 $nlcore->msg->stopmsg(2000102);
             }
         }
+        $returnArr = [];
         if ($modulei == 1) {
             $this->module = 'sms';
-            return $this->getvcode_sms($to);
+            $returnArr = $this->getvcode_sms($to);
         } else if ($modulei == 2) {
             $this->module = 'mail';
-            return $this->getvcode_mail($to);
+            $returnArr = $this->getvcode_mail($to);
+        } else if ($modulei == 3) {
+            $this->module = 'mail';
+            $returnArr = $this->getvcode_test();
         }
+        return $returnArr;
     }
     /**
      * @description: 建立簡訊驗證碼
@@ -121,6 +131,16 @@ class nyavcode {
         $returnClientData = $nlcore->msg->m(0, $statusCode, $mailAddr . $resultMessage);
         if ($debug) $returnClientData['debug'] = $this->code;
         return $returnClientData;
+    }
+    /**
+     * @description: 建立测试驗證碼
+     * @return Array 可返回客戶端的資訊
+     */
+    function getvcode_test(): array {
+        global $nlcore;
+        $this->code = rand(100000, 999999);
+        $this->save(); // 儲存驗證碼
+        return $nlcore->msg->m(0, 1030302, $this->code);
     }
     /**
      * @description: 傳送郵件
@@ -248,6 +268,35 @@ class nyavcode {
         }
     }
     /**
+     * @description: 檢查驗證碼是否正確，並建立預分配令牌（客戶端輸入）
+     * @param  array argReceived 客戶端提交資訊陣列
+     * @return array 準備返回客戶端的資訊
+     */
+    function chkVCode(array $argReceived):array {
+        global $nlcore;
+        // 檢查輸入
+        if (!isset($argReceived["vcode"])) {
+            $nlcore->msg->stopmsg(2020600, 'null');
+        }
+        if (!isset($argReceived["type"])) {
+            $nlcore->msg->stopmsg(2020605, 'null');
+        }
+        if (strcmp($argReceived["type"], "sms") != 0 && strcmp($argReceived["type"], "mail") != 0) {
+            $nlcore->msg->stopmsg(2020605, $argReceived["type"]);
+        }
+        $this->check($argReceived["vcode"], $argReceived["type"]);
+        // 建立預分配令牌 [新的預分配令牌,起始時間,結束時間]
+        $preTokenArr = $nlcore->sess->preTokenNew();
+        $returnArr = $nlcore->msg->m(0, 1000000);
+        if (count($preTokenArr) >= 3) {
+            $returnArr["pretoken"] = $preTokenArr[0];
+            $returnArr["pretokenstart"] = $preTokenArr[1];
+            $returnArr["pretokenend"] = $preTokenArr[2];
+        }
+        return $returnArr;
+    }
+
+    /**
      * @description: 檢查驗證碼是否正確
      * @param Int code 驗證碼
      * @param String module 功能模块
@@ -284,6 +333,7 @@ class nyavcode {
             }
             // 刪除已經驗證透過的資訊
             $redis->del($key);
+            $this->removeSqlvcode();
         } else {
             // 嘗試從 MySQL 載入
             // 檢查是否有驗證碼資料
@@ -356,7 +406,7 @@ class nyavcode {
             'vc2code' => null,
             'vc2time' => null,
             'vc2type' => null,
-            'vc2try' => null
+            'vc2try' => 0
         ];
         $result = $nlcore->db->update($updateDic, $tableStr, $whereDic);
         if ($result[0] >= 2000000) {

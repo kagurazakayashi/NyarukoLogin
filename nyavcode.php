@@ -6,7 +6,7 @@ require_once "src/nyacaptcha.class.php";
 require_once "src/nyaaliyun.class.php"; // 需要使用阿里雲服務則匯入此檔案
 // IP 檢查和解密客戶端提交的資訊
 $nlcore->sess->decryptargv("userinfo");
-//检查验证码是否正确
+// 检查验证码是否正确
 $nyacaptcha = new nyacaptcha();
 if (!$nyacaptcha->verifycaptcha($nlcore->sess->appToken, ($nlcore->sess->argReceived["captcha"] ?? ''))) die();
 // 實現功能

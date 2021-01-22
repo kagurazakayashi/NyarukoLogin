@@ -19,9 +19,9 @@ class nyasession {
     public $timeString = null;
 
     /**
-     * @description: 檢查 token 是否有效
-     * @param String token 會話令牌
-     * @return Void 無返回值為透過，如果出問題則直接將異常返回給客戶端
+     * @description: 從 SQL 檢查 token 是否有效（從客戶端獲取 token）
+     * @param  string token 會話令牌
+     * @return void   無返回值為透過，如果出問題則直接將異常返回給客戶端
      */
     function sessionstatus(string $token): void {
         global $nlcore;
@@ -42,7 +42,8 @@ class nyasession {
         if (!$usertoken || !$nlcore->safe->is_rhash64($argReceived["token"])) {
             $nlcore->msg->stopmsg(2040400, $usertoken);
         }
-        $status = $this->sessionstatuscon($argReceived["token"], false);
+        $type = isset($argReceived["type"]) ? intval($argReceived["type"]) : 0;
+        $status = $this->sessionstatuscon($argReceived["token"], false, $type);
         if (count($status) > 0) {
             $statinfo = $nlcore->msg->m(0, 1030200);
             $statinfo = array_merge($statinfo, $status);
@@ -52,22 +53,27 @@ class nyasession {
             $nlcore->msg->stopmsg(1030201);
         }
     }
+
     /**
-     * @description: 檢查 token 是否有效
-     * @param String token 會話令牌
-     * @param Bool getuserhash 需要獲取使用者雜湊
-     * @return Array 空陣列(無效) 或 起始-結束 時間陣列
+     * @description: 從 SQL 檢查 token 是否有效
+     * @param  string token       會話令牌
+     * @param  bool   getuserhash 需要獲取使用者雜湊
+     * @param  int    type        驗證碼型別 0標準 1預分配
+     * @return array  [] (無效) 或 [起始,結束] 時間
      */
-    function sessionstatuscon(string $token, bool $getuserhash): array {
+    function sessionstatuscon(string $token, bool $getuserhash, int $type = 0): array {
         $rtoken = $this->redisLoadToken($token);
         if (count($rtoken) > 0) {
-            if (!$getuserhash) array_pop($rtoken, "userhash");
+            if (!$getuserhash && isset($rtoken["userhash"])) unset($rtoken["userhash"]);
             return $rtoken;
         }
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["session"];
-        $columnArr = ["time", "endtime", "userhash"];
-        $whereDic = ["token" => $token];
+        $columnArr = ["time", "endtime", "userhash", "type"];
+        $whereDic = [
+            "token" => $token,
+            "type" => $type
+        ];
         $customWhere = "`endtime` > CURRENT_TIME";
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic, $customWhere);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401);
@@ -75,9 +81,13 @@ class nyasession {
             $startend = $result[2][0];
             $starttime = strtotime($startend["time"]);
             $endtime = strtotime($startend["endtime"]);
+            $type = intval($startend["type"]);
             $userHash = $startend["userhash"];
-            $this->redissave($token, $starttime, $endtime, $userHash);
-            $returnarr = ["starttime" => $starttime, "endtime" => $endtime];
+            $this->redissave($token, $starttime, $endtime, $userHash, $type);
+            $returnarr = [
+                "starttime" => $starttime,
+                "endtime" => $endtime
+            ];
             if ($getuserhash) $returnarr["userhash"] = $startend["userhash"];
             return $returnarr;
         }
@@ -85,29 +95,35 @@ class nyasession {
     }
     /**
      * @description: 將 token 儲存到 Redis
-     * @param String token 會話令牌
-     * @param Int time 使用者有效期起始時間戳
-     * @param Int endtime 使用者有效期結束時間戳
-     * @param String userhash 使用者唯一雜湊
+     * @param  string token    會話令牌
+     * @param  int    time     使用者有效期起始時間戳
+     * @param  int    endtime  使用者有效期結束時間戳
+     * @param  string userhash 使用者唯一雜湊
+     * @return bool   是否允許使用 Redis 儲存
      */
-    function redissave(string $token, int $time, int $endtime, string $userHash): void {
+    function redissave(string $token, int $time, int $endtime, string $userHash, int $type = 0): bool {
         global $nlcore;
-        if (!$nlcore->db->initRedis()) return;
+        if (!$nlcore->db->initRedis()) return false;
         $key = $nlcore->cfg->db->redis_tables["session"] . $token;
         $timelen = $endtime - time();
-        if ($timelen < 0) die("endtimeERR" . $time); //DEBUG
-        if ($timelen > $nlcore->cfg->app->sessioncachemaxtime) $timelen = $nlcore->cfg->app->sessioncachemaxtime;
-        $val = json_encode([$time, $endtime, $userHash]);
+        // if ($timelen < 0) die("endtimeERR" . $time); //DEBUG
+        if ($type == 1 && $timelen > $nlcore->cfg->verify->pretokentimeout) {
+            $timelen = $nlcore->cfg->app->pretokentimeout;
+        } else if ($timelen > $nlcore->cfg->verify->tokentimeout) {
+            $timelen = $nlcore->cfg->app->tokentimeout;
+        }
+        $val = json_encode([$time, $endtime, $userHash, $type]);
         $nlcore->db->redis->setex($key, $timelen, $val);
+        return true;
     }
     /**
      * @description: 從 Redis 檢查 token 是否有效
-     * @param String token 會話令牌
-     * @return Array 空陣列(無效) 或 起始-結束 時間陣列
+     * @param  string token 會話令牌
+     * @return array  [] (無效) 或 [起始,結束] 時間
      */
     function redisLoadToken(string $token): array {
         global $nlcore;
-        if (!$nlcore->db->initRedis()) return false;
+        if (!$nlcore->db->initRedis()) return [];
         $key = $nlcore->cfg->db->redis_tables["session"] . $token;
         $val = $nlcore->db->redis->get($key);
         if ($val) {
@@ -115,12 +131,53 @@ class nyasession {
             return [
                 "time" => $val[0],
                 "endtime" => $val[1],
-                "userhash" => $val[2]
+                "userhash" => $val[2],
+                "type" => $val[3] ?? 0
             ];
         } else {
             return [];
         }
     }
+
+    /**
+     * @description: 建立新的預分配令牌
+     * @return array [新的預分配令牌,起始時間,結束時間]
+     */
+    function preTokenNew(): array {
+        global $nlcore;
+        $appToken = $nlcore->sess->appToken;
+        $datetime = $nlcore->safe->getdatetime();
+        $timestamp = $datetime[0];
+        $timestr = $datetime[1];
+        $token = $nlcore->safe->rhash64(strval(rand(1000, 9999)) . $timestamp);
+        $tokentimeout = $nlcore->cfg->verify->pretokentimeout;
+        $tokentimeout += $timestamp;
+        $tokentimeoutstr = $nlcore->safe->getdatetime(null, $tokentimeout)[1];
+        $deviceid = $nlcore->func->getdeviceid($appToken);
+        $ua = (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) ? $ua = $_SERVER["HTTP_USER_AGENT"] : null;
+        $devicetype = $nlcore->func->getdeviceinfo($deviceid, true);
+        // 準備資料
+        $insertDic = [
+            "token" => $token,
+            "type" => 1,
+            "apptoken" => $appToken,
+            "ipid" => $nlcore->sess->ipId,
+            "devid" => $deviceid,
+            "devtype" => $devicetype,
+            "time" => $timestr,
+            "endtime" => $tokentimeoutstr
+        ];
+        if ($ua) $insertDic["ua"] = $ua;
+        // 寫入 Redis
+        if (!$this->redissave($token, strtotime($timestr), strtotime($tokentimeoutstr), '', 1)) {
+            // 如果 寫入 Redis 失敗，寫入 MySQL
+            $tableStr = $nlcore->cfg->db->tables["session"];
+            $result = $nlcore->db->insert($tableStr, $insertDic);
+            if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040113);
+        }
+        return [$token,$timestr,$tokentimeoutstr];
+    }
+
     /**
      * @description: ☆資料接收☆ 解析變體、base64解碼、解密、解析 JSON 到陣列
      * GET/POST: 見 WiKi : 加密通訊處理流程.md
@@ -252,7 +309,7 @@ class nyasession {
      * @param String appToken 會話令牌，不傳則試圖獲取當前令牌
      * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
      */
-    function logoutUser(string $userToken = null, int $mode=3) {
+    function logoutUser(string $userToken = null, int $mode = 3) {
         global $nlcore;
         if ($userToken == null) {
             if ($this->userToken == null) {
@@ -280,7 +337,7 @@ class nyasession {
      * @param String appToken 應用令牌，不传则试图获取当前令牌
      * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
      */
-    function logoutDevice(string $appToken = null, int $mode=3, bool $logoutUser=true) {
+    function logoutDevice(string $appToken = null, int $mode = 3, bool $logoutUser = true) {
         global $nlcore;
         if ($appToken == null) {
             if ($this->appToken == null) {

@@ -109,7 +109,7 @@ class nyasetting_app {
     var $timestamplimit = 60; //允许客户端与服务端的时间差异（秒；如果客户端报告的话）
     var $totpcompensate = 0; //TOTP 补偿，需要客户端匹配
     var $totptimeslice = 3; //尝试用之前 x 个验证码尝试解密次数，1为当前时间（至少为1），每次回溯时间为30秒。
-    var $sessioncachemaxtime = 86400; //会话 token 缓存到 Redis 的最大时长（秒）
+    var $sessioncachemaxtime = 86400; //会话 token 缓存到 Redis 的最大时长（秒）//已弃用！
     var $sessioncachefirst = true; //允许使用 quick 来直接访问 Redis token 缓存加速
     var $frequency = false; //启动接口访问频率限制
     //各功能时长设定（每个IP地址）：[多少秒内,最多允许访问多少次,简写]
@@ -319,6 +319,7 @@ class nyasetting_verify {
     var $passwordlength = [6, 1024];
     //默认 token 有效时间(秒)
     var $tokentimeout = 15552000;
+    var $pretokentimeout = 600;
     var $needlogin = [
         "userinfo" => false
     ];
