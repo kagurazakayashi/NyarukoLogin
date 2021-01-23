@@ -12,7 +12,7 @@ class nyasignup {
      * @param String appToken 客戶端令牌
      * @param Int ipId IP地址ID
      * @param Array userHash 使用者雜湊
-     * @return 準備返回到客戶端的資訊陣列
+     * @return Array 準備返回到客戶端的資訊陣列
      */
     function adduser(array $argReceived, string $appToken, int $ipId): array {
         global $nlcore;
@@ -31,7 +31,13 @@ class nyasignup {
             }
         }
         // 檢查驗證碼是否正確
-        if (isset($argReceived["captcha"])) {
+        if (isset($argReceived["prevcode"])) {
+            $prevcode = $nlcore->sess->preTokenVerify($argReceived["prevcode"]);
+            if (count($prevcode) == 0) $nlcore->msg->stopmsg(2020600);
+            if (isset($argReceived["prevcode"]) || intval($argReceived["rmprevcode"]) > 0) {
+                $nlcore->sess->preTokenRemove($argReceived["prevcode"]);
+            }
+        } else if (isset($argReceived["captcha"])) {
             if ($logincaptcha[2] == false) $nlcore->msg->stopmsg(2020605);
             $nyacaptcha = new nyacaptcha();
             if (!$nyacaptcha->verifycaptcha($appToken, $argReceived["captcha"])) $nlcore->msg->stopmsg(2020600);

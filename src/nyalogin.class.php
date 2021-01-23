@@ -87,6 +87,7 @@ class nyalogin {
         if (!$vcodeOK) {
             if ($enableLoginType[2] == false) $nlcore->msg->stopmsg(2040115);
             $password = $nlcore->safe->passwordhash($argReceived["password"], $userinfoarr["pwdend"]);
+            // TODO: 检查密码是否过期
             if ($password != $userinfoarr["pwd"]) {
                 // 密碼錯誤。記錄歷史記錄。
                 $this->loginfailuretimes($userid, $userfail);
@@ -192,12 +193,7 @@ class nyalogin {
         $tokentimeoutstr = $nlcore->safe->getdatetime(null, $tokentimeout)[1];
         $deviceid = $nlcore->func->getdeviceid($appToken);
         // 獲取 UA
-        $ua = null;
-        if (isset($argReceived["ua"]) && strlen($argReceived["ua"]) > 0) {
-            $ua = $argReceived["ua"];
-        } else if (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) {
-            $ua = $_SERVER["HTTP_USER_AGENT"];
-        }
+        $ua = (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) ? $ua = $_SERVER["HTTP_USER_AGENT"] : null;
         // 獲取裝置型別
         $devicetype = $nlcore->func->getdeviceinfo($deviceid, true);
         $insertDic = [
@@ -210,6 +206,7 @@ class nyalogin {
             "time" => $timestr,
             "endtime" => $tokentimeoutstr
         ];
+        if ($ua) $insertDic["ua"] = $ua;
         $tableStr = $nlcore->cfg->db->tables["session"];
         $result = $nlcore->db->insert($tableStr, $insertDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040113);

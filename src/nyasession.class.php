@@ -179,6 +179,29 @@ class nyasession {
     }
 
     /**
+     * @description: 驗證預分配令牌
+     * @param  string token 預分配令牌
+     * @return array  [] (無效) 或 [起始時間,結束時間]
+     */
+    function preTokenVerify(string $token): array {
+        global $nlcore;
+        if ($nlcore->safe->is_rhash64($token) == false) return [];
+        // 從 Redis 驗證
+        $rtoken = $this->redisLoadToken($token);
+        if (count($rtoken) == 0) {
+            // Redis 禁用或找不到，從 MySQL 驗證
+            $rtoken = $this->sessionstatuscon($token, false, 1);
+            if (count($rtoken) == 0) {
+                return [];
+            }
+        } else if ($rtoken["type"] != 1) {
+            // 令牌型別不正確
+            return [];
+        }
+        return $rtoken;
+    }
+
+    /**
      * @description: ☆資料接收☆ 解析變體、base64解碼、解密、解析 JSON 到陣列
      * GET/POST: 見 WiKi : 加密通訊處理流程.md
      * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
