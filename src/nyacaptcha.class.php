@@ -13,16 +13,16 @@ class nyacaptcha {
     }
     /**
      * @description: 建立驗證碼
-     * @param Bool extnow 是否立即將資訊返回給客戶端
-     * @param Bool showcaptcha 是否直接返回驗證碼明碼，而不是圖片
-     * @param Bool showimage 是否直接輸出驗證碼圖片
-     * @return Array<String> 驗證碼相關資訊：
-     * code 狀態碼
-     * time 驗證碼生成時間
-     * img 驗證碼檔名（不包括副檔名和路徑）
+     * @param  bool  extnow      是否立即將資訊返回給客戶端
+     * @param  bool  showcaptcha 是否直接返回驗證碼明碼，而不是圖片
+     * @param  bool  showimage   是否直接輸出驗證碼圖片
+     * @return array 驗證碼相關資訊：
+     * code    狀態碼
+     * time    驗證碼生成時間
+     * img     驗證碼檔名（不包括副檔名和路徑）
      * captcha 驗證碼內容
-     * file 驗證碼圖片本地儲存路徑(extnow 時不輸出)
-     * url 驗證碼圖片網址
+     * file    驗證碼圖片本地儲存路徑(extnow 時不輸出)
+     * url     驗證碼圖片網址
      */
     function getcaptcha($extnow = true, $showcaptcha = false, $showimage = false) {
         global $nlcore;
@@ -92,18 +92,19 @@ class nyacaptcha {
     }
     /**
      * @description: 建立 Redis 鍵名
-     * @return String 鍵名
+     * @return string 鍵名
      */
     function redisKeyName(): string {
         global $nlcore;
         return $nlcore->cfg->db->redis_tables["vcode1"] . $nlcore->sess->appToken;
     }
+
     /**
      * @description: 驗證碼驗證失敗後用此函式重新建立一個
-     * @param String code 錯誤程式碼
-     * @return Array<String> 驗證碼相關資訊（其中code、msg會不同）
+     * @param  string code 錯誤程式碼
+     * @return array  驗證碼相關資訊（其中code、msg會不同）
      */
-    function verifyfailgetnew($code) {
+    function verifyfailgetnew(string $code): array {
         global $nlcore;
         $retuenarr = $this->getcaptcha(false);
         $retuenarr["code"] = $code;
@@ -114,13 +115,14 @@ class nyacaptcha {
 
     /**
      * @description: 驗證圖形驗證碼是否正確
-     * @param String captchacode 驗證碼
-     * @param String totpsecret totp加密碼
-     * @return Bool 是否可以通行
+     * @param  string captchacode 驗證碼
+     * @param  string totpsecret totp加密碼
+     * @return bool   是否可以通行
      */
-    function verifycaptcha($appToken, $captchacode) {
+    function verifycaptcha(string $appToken, string $captchacode): bool {
         if (strlen($captchacode) < 4) return false;
         global $nlcore;
+        $tableStr = $nlcore->cfg->db->tables["encryption"];
         if ($nlcore->db->initRedis()) {
             // 嘗試從 Redis 載入
             $redis = $nlcore->db->redis;
@@ -133,7 +135,7 @@ class nyacaptcha {
                     $this->verifyfailgetnew(2020505); // 不匹配
                     return false;
                 }
-                // 刪除已經驗證透過的資訊
+                // 從 Redis 刪除已經驗證的碼
                 $redis->del($key);
             } else {
                 $nlcore->msg->stopmsg(2020505);
@@ -141,7 +143,6 @@ class nyacaptcha {
         } else {
             // 嘗試從 MySQL 載入
             $columnArr = ["id", "vc1code", "vc1time"];
-            $tableStr = $nlcore->cfg->db->tables["encryption"];
             $whereDic = [
                 "apptoken" => $appToken
             ];
@@ -160,16 +161,16 @@ class nyacaptcha {
                 $this->verifyfailgetnew(2020503);
                 return false;
             }
-            // 刪除已經驗證透過的資訊
-            $updateDic = [
-                "vc1code" => null,
-                "vc1time" => null
-            ];
-            $whereDic = [
-                "id" => $cinfo["id"]
-            ];
-            $dbreturn = $nlcore->db->update($updateDic, $tableStr, $whereDic);
         }
+        // 從 MySQL 刪除已經驗證的碼
+        $updateDic = [
+            "vc1code" => null,
+            "vc1time" => null
+        ];
+        $whereDic = [
+            "apptoken" => $appToken
+        ];
+        $dbreturn = $nlcore->db->update($updateDic, $tableStr, $whereDic);
         return true;
     }
 }

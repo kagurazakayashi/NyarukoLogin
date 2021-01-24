@@ -202,6 +202,24 @@ class nyasession {
     }
 
     /**
+     * @description: 刪除預分配令牌
+     * @param  string token 預分配令牌
+     */
+    function preTokenRemove(string $token) {
+        global $nlcore;
+        // 從 Redis 刪除
+        $redisKey = 's_' . $token;
+        if ($nlcore->db->initRedis() && $nlcore->db->redis->exists($redisKey)) {
+            $nlcore->db->redis->del($redisKey);
+        }
+        // 從 SQL 刪除
+        $tableStr = $nlcore->cfg->db->tables["session"];
+        $whereDic = ["token" => $token];
+        $dbresult = $nlcore->db->delete($tableStr, $whereDic);
+        if ($dbresult[0] >= 2000000) $nlcore->msg->stopmsg(2040306);
+    }
+
+    /**
      * @description: ☆資料接收☆ 解析變體、base64解碼、解密、解析 JSON 到陣列
      * GET/POST: 見 WiKi : 加密通訊處理流程.md
      * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項

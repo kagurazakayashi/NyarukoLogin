@@ -1,6 +1,6 @@
 <?php
 // USE: require_once "nyacore.class.php";
-if (count($_POST) == 0 && count($_GET) == 0) die(header("HTTP/1.1 403 Forbidden"));
+if (!isset($nyacore403off) && count($_POST) == 0 && count($_GET) == 0) die(header("HTTP/1.1 403 Forbidden"));
 $phpfiledir = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR;
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."vendor".DIRECTORY_SEPARATOR."autoload.php";
 require_once $phpfiledir."..".DIRECTORY_SEPARATOR."nyaconfig.class.php";

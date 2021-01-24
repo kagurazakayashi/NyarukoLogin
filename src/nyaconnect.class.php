@@ -475,7 +475,7 @@ class nyadbconnect {
     function dic2sql($dic = null, $mode = 0, $islike = false) {
         if ($dic === null) return "*";
         else if (count($dic) == 0) return "";
-        else if (strcmp(current($dic), "*") == 0 || strlen(current($dic)) == 0) return $dic[0];
+        else if ((strcmp(current($dic), "*") == 0 || strlen(current($dic)) == 0) && isset($dic[0])) return $dic[0];
         $dicKey = array_keys($dic);
         for ($i = 0; $i < count($dicKey); $i++) {
             $nowKey = $dicKey[$i];
