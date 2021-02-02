@@ -115,7 +115,7 @@ class nyadbconnect {
         if ($logfilepath) {
             $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
             $proxyaddr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? "@" . $_SERVER['HTTP_X_FORWARDED_FOR'] : "";
-            $logstr = "[" . $nlcore->safe->getdatetime()[1] . "][" . $ipaddr . $proxyaddr . "]" . $logstr . PHP_EOL;
+            $logstr = "[" . $nlcore->safe->getdatetime()[1] . "][" . $ipaddr . $proxyaddr . "][" . $_SERVER['PHP_SELF'] . "]" . $logstr . PHP_EOL;
             if (!$this->logfile) $this->logfile = fopen($logfilepath, "a");
             fwrite($this->logfile, $logstr);
         }
@@ -372,7 +372,7 @@ class nyadbconnect {
                 $orderstr .= strval($limit[0]);
             }
         }
-        $sqlcmd = "SELECT " . $columnStr . " FROM `" . $tableStr . "` WHERE MATCH (" . $searchColumnStr . ") AGAINST ('" . $searchStr . "' IN " . $nbMode . " MODE) ".$orderstr.";";
+        $sqlcmd = "SELECT " . $columnStr . " FROM `" . $tableStr . "` WHERE MATCH (" . $searchColumnStr . ") AGAINST ('" . $searchStr . "' IN " . $nbMode . " MODE) " . $orderstr . ";";
         return $this->sqlc($sqlcmd);
     }
 

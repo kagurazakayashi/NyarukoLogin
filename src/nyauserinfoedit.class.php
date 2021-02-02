@@ -24,15 +24,8 @@ class userInfoEdit {
         // 檢查使用哪個使用者操作
         if (strlen($userHash) > 0) {
             $this->userHash = $userHash;
-            if (isset($this->argReceived["userhash"]) && strcmp($this->userHash, $this->argReceived["userhash"]) != 0) {
-                $subuser = $this->argReceived["userhash"];
-                if (strcmp($this->userHash, $subuser) != 0) {
-                    if (!$nlcore->safe->is_rhash64($subuser)) $nlcore->msg->stopmsg(2070003, "S-" . $subuser);
-                    $issub = $nlcore->func->issubaccount($this->userHash, $subuser)[0];
-                    if ($issub == false) $nlcore->msg->stopmsg(2070004, "S-" . $subuser);
-                    $this->userHash = $subuser;
-                }
-            }
+            $subUserHash = $nlcore->func->subAccountChk();
+            if (count($subUserHash) == 1) $this->userHash = $subUserHash[0];
             $this->whereDic = ["userhash" => $this->userHash];
         }
     }

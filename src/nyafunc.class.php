@@ -247,7 +247,7 @@ class nyafunc {
      * @description: 獲取此賬戶所屬的子賬戶資訊
      * @param String mainuserhash 主賬戶雜湊
      * @param Bool getuserinfos 是否查詢每一個子賬戶的詳細資訊
-     * @return Array 子賬戶雜湊和詳細資訊
+     * @return Array [子賬戶雜湊] 或 [詳細資訊]
      */
     function subaccount(string $mainuserhash, bool $getuserinfos = false): array {
         global $nlcore;
@@ -270,6 +270,29 @@ class nyafunc {
             $nlcore->msg->stopmsg(2070002);
         }
         return $childs;
+    }
+    /**
+     * @description: 查詢當前客戶端提供的引數 "userhash" 是否屬於某個使用者的子賬戶
+     * @param  bool  getuserinfos 是否查詢子賬戶的詳細資訊
+     * @return array [賬戶詳細資訊] 或 [子賬戶雜湊] 或 [] (客戶端沒有要求驗證)
+     */
+    function subAccountChk(bool $getuserinfos = false): array {
+        global $nlcore;
+        if (isset($nlcore->sess->argReceived["userhash"]) && strcmp($nlcore->sess->userHash, $nlcore->sess->argReceived["userhash"]) != 0) {
+            $subuser = $nlcore->sess->argReceived["userhash"];
+            if (strcmp($nlcore->sess->userHash, $subuser) != 0) {
+                if (!$nlcore->safe->is_rhash64($subuser)) $nlcore->msg->stopmsg(2070003, "S-" . $subuser);
+                $subInfo = $nlcore->func->issubaccount($nlcore->sess->userHash, $subuser, $getuserinfos);
+                $issub = $subInfo[0];
+                if ($issub == false) $nlcore->msg->stopmsg(2070004, "S-" . $subuser);
+                if ($getuserinfos) {
+                    return $subInfo[2] ?? [$subuser];
+                } else {
+                    return [$subuser];
+                }
+            }
+        }
+        return [];
     }
     /**
      * @description: 查詢當前子賬戶是否屬於此賬戶

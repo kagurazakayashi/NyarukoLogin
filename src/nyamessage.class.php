@@ -46,14 +46,39 @@ class nyamessage {
         $limit = isset($nlcore->sess->argReceived["limit"]) ? intval($nlcore->sess->argReceived["limit"]) : 0;
         $offset = isset($nlcore->sess->argReceived["offset"]) ? intval($nlcore->sess->argReceived["offset"]) : 10;
         $onlynum = (isset($nlcore->sess->argReceived["onlylen"]) && intval($nlcore->sess->argReceived["onlylen"]) > 0) ? true : false;
-        $msgArr = $this->getMessage($to, $mode, $onlynum, $limit, $offset);
+        // 要查詢的使用者範圍
+        $all = false;
+        if (isset($nlcore->sess->argReceived["userhash"])) {
+            if (strcmp('all', $nlcore->sess->argReceived["userhash"]) == 0) {
+                // 遍歷查詢某個賬戶及其所有子賬戶的資訊
+                $all = true;
+            } else {
+                // 查詢某個子賬戶的資訊
+                $subUserHash = $nlcore->func->subAccountChk();
+                if (count($subUserHash) == 1) $to = $subUserHash[0];
+            }
+        }
+        // 查詢使用者訊息
         $returnArr = $nlcore->msg->m(0, 1000000);
+        $msgArr = $this->getMessage($to, $mode, $onlynum, $limit, $offset);
         if ($onlynum) {
             $returnArr["msgnum"] = intval($msgArr[0]["count(*)"]);
         } else {
             $this->genText($msgArr);
             $returnArr["msglist"] = $msgArr;
             $returnArr["msgnum"] = count($msgArr);
+        }
+        if ($all) {
+            foreach ($nlcore->func->subaccount($nlcore->sess->userHash) as $userInfo) {
+                $msgArr = $this->getMessage($userInfo["userhash"], $mode, $onlynum, $limit, $offset);
+                if ($onlynum) {
+                    $returnArr["msgnum"] += intval($msgArr[0]["count(*)"]);
+                } else {
+                    $this->genText($msgArr);
+                    $returnArr["msglist"] = array_merge($returnArr["msglist"], $msgArr);
+                    $returnArr["msgnum"] += count($msgArr);
+                }
+            }
         }
         $returnArr["mode"] = $mode;
         return $returnArr;
@@ -279,6 +304,19 @@ class nyamessage {
      */
     function setStatFromUser() {
         global $nlcore;
+        // 要查詢的使用者範圍
+        $all = false;
+        $userHash = $nlcore->sess->userHash;
+        if (isset($nlcore->sess->argReceived["userhash"])) {
+            if (strcmp('all', $nlcore->sess->argReceived["userhash"]) == 0) {
+                // 遍歷查詢某個賬戶及其所有子賬戶的資訊
+                $all = true;
+            } else {
+                // 查詢某個子賬戶的資訊
+                $subUserHash = $nlcore->func->subAccountChk();
+                if (count($subUserHash) == 1) $userHash = $subUserHash[0];
+            }
+        }
         $isRead = isset($nlcore->sess->argReceived["readstat"]) ? intval($nlcore->sess->argReceived["readstat"]) : 1;
         $editLine = 0;
         if ($isRead != 2) {
@@ -286,9 +324,13 @@ class nyamessage {
             if (strlen($msgHash) == 0 || !$nlcore->safe->is_rhash64($msgHash)) {
                 $nlcore->msg->stopmsg(2080006);
             }
-            $editLine = $this->setStat($isRead, $nlcore->sess->userHash, $msgHash);
+            $editLine = $this->setStat($isRead, $userHash, $msgHash);
+        } else if ($all) {
+            foreach ($nlcore->func->subaccount($nlcore->sess->userHash) as $userInfo) {
+                $editLine += $this->setStat($isRead, $userInfo["userhash"]);
+            }
         } else {
-            $editLine = $this->setStat($isRead, $nlcore->sess->userHash);
+            $editLine = $this->setStat($isRead, $userHash);
         }
         $returnArr = $nlcore->msg->m(0, 1000000);
         $returnArr["num"] = $editLine;
@@ -296,11 +338,12 @@ class nyamessage {
     }
 
     /**
-     * @description: 將某個通知資訊標記為已讀或未讀
-     * @param string hash   通知雜湊 或 使用者雜湊（isRead == 2 時）
-     * @param int    isRead 標記為 0未讀 1已讀 2全部已讀
+     * @description:  將某個通知資訊標記為已讀或未讀
+     * @param  string hash   通知雜湊 或 使用者雜湊（isRead == 2 時）
+     * @param  int    isRead 標記為 0未讀 1已讀 2全部已讀
+     * @return int    影響的資料行數
      */
-    function setStat(int $isRead = 1, string $userHash = null, string $msgHash = null) {
+    function setStat(int $isRead = 1, string $userHash = null, string $msgHash = null):int {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["messages"];
         $whereDic = [];

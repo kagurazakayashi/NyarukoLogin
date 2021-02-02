@@ -1073,7 +1073,7 @@ class nyasafe {
             }
             $log = json_encode($logarr);
             if (!$log) $log = "(DATA)";
-            $logstr = "[" . $this->getdatetime()[1] . "][" . $ipaddr . $proxyaddr . "][" . $mode . "] " . $log . PHP_EOL;
+            $logstr = "[" . $this->getdatetime()[1] . "][" . $ipaddr . $proxyaddr . "][" . $_SERVER['PHP_SELF'] . "][" . $mode . "] " . $log . PHP_EOL;
             if (!$this->logfile) $this->logfile = fopen($logfilepath, "a");
             fwrite($this->logfile, $logstr);
         }
@@ -1372,7 +1372,7 @@ class nyasafe {
     /**
      * @description: TODO: 檢查使用者是否擁有某項許可權
      */
-    function permission():bool {
+    function permission(): bool {
         return true;
     }
     /**
