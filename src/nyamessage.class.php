@@ -102,8 +102,8 @@ class nyamessage {
         } else if ($typeLen != 3) {
             return;
         }
-        if (mb_strlen($text) > 63) {
-            $text = mb_substr($text, 0, 63);
+        if (mb_strlen($text) > 64) {
+            $text = mb_substr($text, 0, 64);
         }
         if ($pri < 0 || $pri > 9) {
             return;

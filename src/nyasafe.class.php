@@ -394,10 +394,12 @@ class nyasafe {
      * @description: 驗證是否為包含大小寫的MD6變體字串
      * @param String str MD6變體字串
      * @param String length 預期的字串長度
-     * @return Int 是否匹配： > 0 或 != false
+     * @return Bool 是否匹配
      */
-    function is_rhash64(string $str, int $length = 64) {
-        return preg_match("/^[A-Za-z0-9]{" . $length . "}$/", $str);
+    function is_rhash64(string $str, int $length = 64):bool {
+        if (!ctype_alnum($str)) return false;
+        if (strlen($str) != $length) return false;
+        return true;
     }
     /**
      * @description: 進行MD5後進行隨機大小寫轉換
@@ -410,10 +412,10 @@ class nyasafe {
     /**
      * @description: 驗證是否為包含大小寫的MD5變體字串
      * @param String str MD5變體字串
-     * @return Int 是否匹配 > 0 || != false
+     * @return Bool 是否匹配 > 0 || != false
      */
     function is_rhash32(string $str) {
-        return preg_match("/^[A-Za-z0-9]{32}$/", $str);
+        return $this->is_rhash64($str,32);
     }
     /**
      * @description: 生成一段随机文本

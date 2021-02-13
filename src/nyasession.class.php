@@ -108,9 +108,9 @@ class nyasession {
         $timelen = $endtime - time();
         // if ($timelen < 0) die("endtimeERR" . $time); //DEBUG
         if ($type == 1 && $timelen > $nlcore->cfg->verify->pretokentimeout) {
-            $timelen = $nlcore->cfg->app->pretokentimeout;
+            $timelen = $nlcore->cfg->verify->pretokentimeout;
         } else if ($timelen > $nlcore->cfg->verify->tokentimeout) {
-            $timelen = $nlcore->cfg->app->tokentimeout;
+            $timelen = $nlcore->cfg->verify->tokentimeout;
         }
         $val = json_encode([$time, $endtime, $userHash, $type]);
         $nlcore->db->redis->setex($key, $timelen, $val);

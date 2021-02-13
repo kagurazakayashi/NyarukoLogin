@@ -1,6 +1,4 @@
-<p align="center"><img src="icon/icon.png" width="128"></p>
-
-# NyarukoLogin 2
+# ![](icon/icon.png) NyarukoLogin 2
 
 一个通用的用户登录系统，目标是本身作为一个服务，为外部业务系统进行服务，可多开，可负载均衡。
 
@@ -112,19 +110,25 @@
     - [x] 自动顶掉当前种类设备的较旧登录会话
   - [ ] 两步验证
   - [x] 测试脚本
-- [ ] 用户资料
+- [x] 用户注册
+  - [x] 注册验证
+    - [x] 客户端使用图形验证码注册新用户
+    - [x] 客户端使用邮件注册新用户
+    - [x] 客户端使用短信注册新用户
+    - [x] 创建临时令牌
+    - [x] 客户端使用临时令牌注册新用户
+    - [x] 删除临时令牌
+- [x] 用户资料
   - [x] 为昵称生成唯一代码（神楽坂雅詩#5534）
   - [x] 多元性别选项和独立称呼方式选项支持
   - [x] 一个用户可以关联多份资料（例如注册自己的宠物）
-  - [ ] 昵称，地址，签名，个人介绍 的编辑与审核
-  - [ ] 头像，背景图 的编辑与审核
-  - [ ] 展示相框
-  - [ ] 背景图支持视频
-  - [ ] 资料修改测试脚本
-- [ ] 子账户支持
+  - [x] 昵称，地址，签名，个人介绍 的编辑
+  - [x] 头像，背景图 的编辑
+  - [x] 资料修改测试脚本
+- [x] 子账户支持
   - [x] 查询主账户下有哪些子账户
   - [x] 查询子账户的资料
-  - [ ] 查询指定子账户是否属于当前主账户
+  - [x] 查询指定子账户是否属于当前主账户
 - [ ] 两步验证和密码保护管理
   - [ ] 谷歌验证器
     - [ ] 创建
@@ -142,18 +146,18 @@
     - [ ] 验证
     - [ ] 重置
     - [ ] 测试脚本
-  - [ ] 短信验证码
-    - [ ] 创建
-    - [ ] 发送
-    - [ ] 验证
+  - [x] 短信验证码
+    - [x] 创建
+    - [x] 发送
+    - [x] 验证
     - [ ] 手机号变更
-    - [ ] 测试脚本
-  - [ ] 邮件验证码
-    - [ ] 创建
-    - [ ] 发送
-    - [ ] 验证
+    - [x] 测试脚本
+  - [x] 邮件验证码
+    - [x] 创建
+    - [x] 发送
+    - [x] 验证
     - [ ] 邮箱变更
-    - [ ] 测试脚本
+    - [x] 测试脚本
   - [ ] 实名认证
     - [ ] 身份证号格式识别
     - [ ] 外部系统校验身份证
@@ -171,24 +175,12 @@
   - [ ] 为每个业务的每个用户提供积分档位和称号对应
   - [ ] 为外部系统提供积分变更接口
   - [ ] 测试脚本
-- [ ] 关注
-  - [ ] 分页获取关注他人列表
-  - [ ] 分页获取关注者列表
-  - [ ] 识别是否关注、互相关注
-  - [ ] 测试脚本
-- [ ] 黑名单
-  - [ ] 拉黑他人
-  - [ ] 分页获取黑名单列表
-  - [ ] 检查对方是否位于黑名单
-  - [ ] 检查是否位于对方黑名单
-  - [ ] 根据双方黑名单提供过滤接口
-  - [ ] 测试脚本
-- [ ] 站内信
-  - [ ] 系统通知
-  - [ ] 接收和发送用户间站内信
-  - [ ] 接收来自外部系统提供的站内信（提及、评论、转发、视频完成二压等）
-  - [ ] 组合相同类型通知
-  - [ ] 测试脚本
+- [x] 站内信
+  - [x] 系统通知
+  - [x] 接收和发送用户间站内信
+  - [x] 接收来自外部系统提供的站内信（提及、评论、转发、视频完成二压等）
+  - [x] 组合相同类型通知
+  - [x] 测试脚本
 - [ ] 搜索
   - [x] 区间和排序
   - [ ] 模糊搜索用户
@@ -209,18 +201,29 @@
 ### 处理流程
 - [加密通信处理流程](https://github.com/kagurazakayashi/NyarukoLogin/wiki/加密通信处理流程)
 - [用户注册流程](https://github.com/kagurazakayashi/NyarukoLogin/wiki/用户注册流程)
-  - [获取验证码](https://github.com/kagurazakayashi/NyarukoLogin/wiki/获取验证码)
+  - [获取图形验证码](https://github.com/kagurazakayashi/NyarukoLogin/wiki/获取图形验证码)
+  - [获取短信和邮件验证码](https://github.com/kagurazakayashi/NyarukoLogin/wiki/获取短信和邮件验证码)
+  - [验证短信和邮件验证码](https://github.com/kagurazakayashi/NyarukoLogin/wiki/验证短信和邮件验证码)
+  - [注册新用户](https://github.com/kagurazakayashi/NyarukoLogin/wiki/注册新用户)
+  - [注册新子账户](https://github.com/kagurazakayashi/NyarukoLogin/wiki/注册新子账户)
 - [用户登录流程](https://github.com/kagurazakayashi/NyarukoLogin/wiki/用户登录流程)
   - [检查是否已经登录](https://github.com/kagurazakayashi/NyarukoLogin/wiki/检查是否已经登录)
+  - [登出](https://github.com/kagurazakayashi/NyarukoLogin/wiki/登出)
 - [接口测试流程](https://github.com/kagurazakayashi/NyarukoLogin/wiki/接口测试流程)
   - [功能测试脚本](https://github.com/kagurazakayashi/NyarukoLogin/wiki/功能测试脚本)
 - [文件上传](https://github.com/kagurazakayashi/NyarukoLogin/wiki/文件上传)
   - [查询媒体文件可提供的尺寸与格式](https://github.com/kagurazakayashi/NyarukoLogin/wiki/查询媒体文件可提供的尺寸与格式)
 
-## 其他功能
-- [搜索用户](https://github.com/kagurazakayashi/NyarukoLogin/wiki/搜索用户)
+### 功能
+- 用户信息查询
+  - [搜索用户](https://github.com/kagurazakayashi/NyarukoLogin/wiki/搜索用户)
+  - [查询用户资料](https://github.com/kagurazakayashi/NyarukoLogin/wiki/查询用户资料)
+- 通知和站内信
+  - [站内信发送](https://github.com/kagurazakayashi/NyarukoLogin/wiki/站内信发送)
+  - [站内信列表获取](https://github.com/kagurazakayashi/NyarukoLogin/wiki/站内信列表获取)
+  - [站内信已读标记](https://github.com/kagurazakayashi/NyarukoLogin/wiki/站内信已读标记)
 
-## 后台服务
+### 后台服务
 - [后台服务](https://github.com/kagurazakayashi/NyarukoLogin/wiki/后台服务)
 
 ### 附加工具

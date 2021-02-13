@@ -25,5 +25,4 @@ git_stats
 .idea
 *.7z
 *.xz
-NyarukoLogin.wiki
-tests/t.php
+doc
