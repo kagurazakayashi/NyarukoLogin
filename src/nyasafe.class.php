@@ -1372,12 +1372,6 @@ class nyasafe {
         return strtoupper(implode('', $colorArr));
     }
     /**
-     * @description: TODO: 檢查使用者是否擁有某項許可權
-     */
-    function permission(): bool {
-        return true;
-    }
-    /**
      * @description: 析構，關閉日誌檔案
      */
     function __destruct() {

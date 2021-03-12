@@ -14,6 +14,7 @@ class nyasession {
     public $userToken = null;
     public $userSessionInfo = null;
     public $userHash = null;
+    public $groupInfo = null; // [id,name,info,permission]
     // 时间记录相关
     public $timeStamp = null;
     public $timeString = null;
@@ -175,7 +176,7 @@ class nyasession {
             $result = $nlcore->db->insert($tableStr, $insertDic);
             if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040113);
         }
-        return [$token,$timestr,$tokentimeoutstr];
+        return [$token, $timestr, $tokentimeoutstr];
     }
 
     /**
@@ -644,13 +645,80 @@ class nyasession {
         $this->userHash = $userHash;
     }
     /**
-     * @description: 将准备好的数组打包成 JSON 返回给客户端，并停止当前 PHP 程序
-     * @param  returnClientData 数据数组
+     * @description: 將準備好的陣列打包成 JSON 返回給客戶端，並停止當前 PHP 程式
+     * @param returnClientData 資料陣列
      */
     function returnToClient($returnClientData) {
         header('Content-Type:application/json;charset=utf-8');
         exit(json_encode($returnClientData));
     }
+    /**
+     * @description: 獲取使用者屬於哪個使用者組，並獲取此使用者組的資訊，查詢一次後會快取
+     * @param string userHash 要查詢的使用者雜湊，預設為當前使用者雜湊，如果提供此項則禁用快取功能
+     * @return array 所在組的資訊陣列 [id,name,info,permission]
+     */
+    function inGroup(string $userHash = ''): array {
+        global $nlcore;
+        $isNowUser = (strlen($userHash) == 0);
+        if ($isNowUser && $this->groupInfo) {
+            return $this->groupInfo;
+        }
+        if ($isNowUser) {
+            if ($this->userHash == null) {
+                $nlcore->msg->stopmsg(2040400, "G" . $userHash);
+            }
+            $userHash = $this->userHash;
+        }
+        $tableStr = $nlcore->cfg->db->tables["usergroup"];
+        $columnArr = ["groupid"];
+        $whereDic = [
+            "userhash" => $userHash
+        ];
+        $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
+        if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401);
+        $groupid = $result[2][0]["groupid"] ?? null;
+        if (!$groupid) {
+            $nlcore->msg->stopmsg(2040800, "G");
+        }
+        // 查询该用户组的信息
+        $tableStr = $nlcore->cfg->db->tables["group"];
+        $columnArr = ["id", "name", "info", "permission"];
+        $whereDic = [
+            "id" => $groupid
+        ];
+        $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
+        $groupInfoArr = $result[2][0] ?? null;
+        if (!$groupInfoArr) {
+            $nlcore->msg->stopmsg(2040800, "I");
+        }
+        $groupInfos = [
+            $groupInfoArr["id"],
+            $groupInfoArr["name"],
+            $groupInfoArr["info"],
+            $groupInfoArr["permission"],
+        ];
+        if ($isNowUser) {
+            $this->groupInfo = $groupInfos;
+        }
+        return $groupInfos;
+    }
+    /**
+     * @description: 檢查使用者是否擁有某項許可權
+     * @param String permissionName 所需的許可權名稱
+     * @return Boolean 是否允許
+     */
+    function permission(string $permissionName): bool {
+        // 查询该用户所在的组 id
+        // 查询该组所具有的权限列表（逗号分隔）
+        // 检查所需权限是否存在
+        $groupInfos = $this->inGroup();
+        $permissions = explode(',', $groupInfos[3]);
+        if (in_array($permissionName,$permissions)) {
+            return true;
+        }
+        return false;
+    }
+
     function __destruct() {
         $this->publicKey = null;
         unset($this->publicKey);
