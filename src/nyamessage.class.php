@@ -23,10 +23,11 @@ class nyamessage {
             // TODO
         }
         $nlcore->safe->wordfilter($text);
-        // TODO: 檢查是否有傳送站內信的許可權
-        $permission = $nlcore->safe->permission();
+        // 查是否有傳送站內信的許可權
+        $permission = $nlcore->sess->permission("SYS_SEND_MESSAGE_TO_USER");
         if (!$permission) {
-            // TODO: 許可權被拒絕
+            $nlcore->msg->stopmsg(2080007);
+            return;
         }
         $nlcore->safe->wordfilter($text);
         $this->newMessage($to, [$from], $text);
