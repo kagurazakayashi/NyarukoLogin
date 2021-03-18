@@ -677,25 +677,25 @@ class nyasession {
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040401);
         $groupid = $result[2][0]["groupid"] ?? null;
-        if (!$groupid) {
+        if ($groupid === null) {
             $nlcore->msg->stopmsg(2040800, "G");
         }
         // 查询该用户组的信息
         $tableStr = $nlcore->cfg->db->tables["group"];
-        $columnArr = ["id", "name", "info", "permission"];
+        $columnArr = ["id", "name", "describe", "jurisdiction"];
         $whereDic = [
             "id" => $groupid
         ];
         $result = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         $groupInfoArr = $result[2][0] ?? null;
-        if (!$groupInfoArr) {
+        if ($groupInfoArr === null) {
             $nlcore->msg->stopmsg(2040800, "I");
         }
         $groupInfos = [
-            $groupInfoArr["id"],
-            $groupInfoArr["name"],
-            $groupInfoArr["info"],
-            $groupInfoArr["permission"],
+            $groupInfoArr[$columnArr[0]],
+            $groupInfoArr[$columnArr[1]],
+            $groupInfoArr[$columnArr[2]],
+            $groupInfoArr[$columnArr[3]],
         ];
         if ($isNowUser) {
             $this->groupInfo = $groupInfos;

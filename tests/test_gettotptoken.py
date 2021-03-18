@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 # pip install onetimepass
+# （已废弃）
 # pip install demjson
 import sys
 import onetimepass as otp

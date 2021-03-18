@@ -15,11 +15,13 @@ class userinfo {
         // 取得使用者個性化資訊
         $cuser = $argReceived["cuser"] ?? $userHash;
         $userinfo = $nlcore->func->getuserinfo($cuser);
+        if (empty($userinfo)) {
+            $nlcore->msg->stopmsg(2070001);
+        }
         $groupInfos = $nlcore->sess->inGroup();
         $userinfo["groupCode"] = $groupInfos[1];
         $userinfo["groupName"] = $groupInfos[2];
         $userinfo["permissions"] = explode(',', $groupInfos[3]);
-        if (count($userinfo) == 0) $nlcore->msg->stopmsg(2070001);
         $returnJson = $nlcore->msg->m(0, 1030202);
         $returnJson["uinfo"] = $userinfo;
         return $returnJson;
