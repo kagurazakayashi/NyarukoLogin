@@ -173,9 +173,10 @@ class nyadbconnect {
      */
     function gColumnStr(array $columnArr): string {
         $columnStr = "";
-        if (count($columnArr) == 0) {
-            $columnStr = "*";
-        } else if (is_array($columnArr[0])) {
+        if (empty($columnArr)) {
+            return "*";
+        }
+        if (is_array($columnArr[0])) {
             $tablecolumnarr = [];
             foreach ($columnArr as $tc) {
                 $table = $this->safe($tc[0]);
@@ -184,6 +185,9 @@ class nyadbconnect {
             }
             $columnStr = implode(",", $tablecolumnarr);
         } else if (is_string($columnArr[0])) {
+            if (strlen($columnArr[0]) == 0 || $columnArr[0] == "*") {
+                return "*";
+            }
             $columnStr = "`" . implode("`,`", $this->safe($columnArr)) . "`";
         }
         return $columnStr;
@@ -371,6 +375,9 @@ class nyadbconnect {
             } else {
                 $orderstr .= strval($limit[0]);
             }
+        }
+        if ($columnStr == "`*`") {
+            $columnStr = "*";
         }
         $sqlcmd = "SELECT " . $columnStr . " FROM `" . $tableStr . "` WHERE MATCH (" . $searchColumnStr . ") AGAINST ('" . $searchStr . "' IN " . $nbMode . " MODE) " . $orderstr . ";";
         return $this->sqlc($sqlcmd);
