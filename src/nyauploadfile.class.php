@@ -1,13 +1,23 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 檔案上傳處理
+ *
+ * 處理客戶端上傳的圖片與影片檔案，生成縮圖計劃並調用後端二壓服務。
+ *
+ * @package NyarukoLogin
+ */
 // require_once 'vendor/autoload.php';
 class nyauploadfile {
     private $mediainfo = null;
     /**
-     * @description: 功能入口：獲取上傳檔案的資訊
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @return 準備返回到客戶端的資訊陣列
+     * 功能入口：獲取上傳檔案的資訊
+     *
+     * @param array $argReceived 客戶端提交資訊陣列
+     * @return array 準備返回到客戶端的資訊陣列
      */
-    function getuploadfile(array $argReceived) {
+    function getuploadfile(array $argReceived): array {
         global $nlcore;
         if (!isset($_FILES["file"])) $nlcore->msg->stopmsg(2050104);
         $uploadconf = $nlcore->cfg->app->upload;
@@ -148,12 +158,13 @@ class nyauploadfile {
     }
 
     /**
-     * @description: 新增二壓計劃目標
-     * @param Array resizeList 尺寸設定陣列 [寬,高,其他資訊...]
-     * @param Array mediainfojson 媒體資訊字典
-     * @param Array nowextres 目標副檔名陣列
-     * @param Array &$sizearr 尺寸列表陣列指標
-     * @return Array 二壓計劃目標資訊二維陣列
+     * 新增二壓計劃目標
+     *
+     * @param array $resizeList    尺寸設定陣列
+     * @param array $mediainfojson 媒體資訊字典
+     * @param array $nowextres     目標副檔名陣列
+     * @param array &$sizearr      尺寸列表陣列（傳參考）
+     * @return array 二壓計劃目標資訊二維陣列
      */
     function addResizeJob(array $resizeList, array $mediainfojson, array $nowextres, array &$sizearr): array {
         $sizesavepath = [];
@@ -181,14 +192,15 @@ class nyauploadfile {
     }
 
     /**
-     * @description: 计算缩小图片后的宽高（如果已经小于设定值则输出原尺寸）
-     * @param Float imageWidth 原始图片宽度
-     * @param Float imageHeight 原始图片高度
-     * @param Float maxWidth 目标尺寸宽度
-     * @param Float maxHeight 目标尺寸高度
-     * @return Array<Float,Float,Bool> 新的宽高,以及是否需要调整
+     * 計算縮小圖片後的寬高
+     *
+     * @param float $imageWidth  原始圖片寬度
+     * @param float $imageHeight 原始圖片高度
+     * @param float $maxWidth    目標尺寸寬度
+     * @param float $maxHeight   目標尺寸高度
+     * @return array{0:float,1:float,2:bool} 新的寬高及是否需要調整
      */
-    function getresize($imageWidth, $imageHeight, $maxWidth, $maxHeight) {
+    function getresize(float $imageWidth, float $imageHeight, float $maxWidth, float $maxHeight): array {
         $newWidth = $imageWidth;
         $newHeight = $imageHeight;
         $imageScale = $imageWidth / $imageHeight;
@@ -209,15 +221,16 @@ class nyauploadfile {
         return $returnArr;
     }
     /**
-     * @description: 将图片限制到指定尺寸，压缩成更小的 gif 或 jpg+webp 格式，然后存入日期文件夹。
-     * @param String imagefile 图片临时文件完整路径
-     * @param String savefile 最终存储文件路径（无.）
-     * @param String saveext 最终存储文件路径扩展名前补位（在.后添加）
-     * @param String type 扩展名
-     * @param Array sizequality 最大尺寸和清晰度 [宽,高,在 jpg+webp 模式时的压缩比]
-     * @return Array [[文件完整路径],是否找到重复文件]
+     * 將圖片限制到指定尺寸並壓縮
+     *
+     * @param string $imagefile   圖片暫存檔完整路徑
+     * @param string $savefile    最終儲存檔案路徑（不含副檔名）
+     * @param string $key         尺寸鍵名
+     * @param string $type        副檔名
+     * @param array  $sizequality 最大尺寸和清晰度 [寬, 高, 壓縮比]
+     * @return array 檔案完整路徑陣列及是否找到重複檔案
      */
-    function resizeto($imagefile, $savefile, $key, $type, $sizequality) {
+    function resizeto(string $imagefile, string $savefile, string $key, string $type, array $sizequality): array {
         $imagick = new Imagick($imagefile);
         $imagick->stripImage(); //去除图片信息
         $isresize = ($sizequality[0] <= 0 || $sizequality[1] <= 0) ? false : true;
@@ -276,13 +289,14 @@ class nyauploadfile {
         }
     }
     /**
-     * @description: 检查文件是否符合要求
-     * @param String nowfile 当前文件完整路径
-     * @param Array uploadconf 上传配置数组
-     * @param Array enable 允许上传的媒体类别，默认["image","video"]都可以
-     * @return Array [错误代码(0正常),MIME类型,扩展名,image还是video]
+     * 檢查檔案是否符合要求
+     *
+     * @param array $nowfile    當前檔案資訊
+     * @param array $uploadconf 上傳設定陣列
+     * @param array $enable     允許上傳的媒體類別
+     * @return array [錯誤代碼(0正常), MIME 類型, 副檔名, 媒體類別]
      */
-    function chkfile($nowfile, $uploadconf, $enable = ["image", "video"]) {
+    function chkfile(array $nowfile, array $uploadconf, array $enable = ["image", "video"]): array {
         //检查错误代码
         if ($nowfile["error"] != 0) {
             return ["code" => 2050100, "info" => $nowfile["error"]];
@@ -334,13 +348,13 @@ class nyauploadfile {
         return $mediatype;
     }
     /**
-     * @description: 獲取影片詳細資訊（第一次獲取時會建立快取）
-     * composer require php-ffmpeg/php-ffmpeg
-     * @param String file 影片檔案路徑
-     * @param Array key 要獲取的屬性
-     * @return Array 取得的影片資訊
+     * 獲取影片詳細資訊
+     *
+     * @param string   $file 影片檔案路徑
+     * @param string[] $key  要獲取的屬性名稱陣列
+     * @return ?array 取得的影片資訊，無匹配鍵時返回 null
      */
-    function getvideomediainfo(string $file, array $key): array {
+    function getvideomediainfo(string $file, array $key): ?array {
         if ($this->mediainfo == null) {
             global $nlcore;
             $logger = null;
@@ -363,11 +377,12 @@ class nyauploadfile {
         return null;
     }
     /**
-     * @description: 通过读取文件头原始数据，判断文件真实类型（已废弃）
-     * @param String filename 文件完整路径
-     * @return String 文件扩展名
+     * 透過讀取檔案頭判斷檔案真實類型（已廢棄）
+     *
+     * @param string $filename 檔案完整路徑
+     * @return string 檔案副檔名
      */
-    function getImagetype($filename) {
+    function getImagetype(string $filename): string {
         $file = fopen($filename, 'rb');
         $bin = fread($file, 2); //只读2字节
         fclose($file);
@@ -393,11 +408,12 @@ class nyauploadfile {
         return $fileType;
     }
     /**
-     * @description: 合并多name上传的文件
-     * @param Array $_FILES
-     * @return Array 转换后的数组
+     * 合併多 name 上傳的檔案
+     *
+     * @param array $files $_FILES 陣列
+     * @return array 轉換後的檔案資訊陣列
      */
-    function filearr($files) {
+    function filearr(array $files): array {
         if (!$files || count($files) == 0) return [];
         $filearr = null;
         $filekeys = array_keys($files);

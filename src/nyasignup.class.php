@@ -1,18 +1,22 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 賬戶註冊
+ * 使用者註冊邏輯
+ *
+ * 處理新使用者註冊流程，包括驗證碼檢查、密碼強度驗證、使用者資訊初始化等。
+ *
  * @package NyarukoLogin
  */
 require_once "nyavcode.class.php";
 class nyasignup {
     /**
-     * @description: 功能入口：新增新使用者
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @param String appToken 客戶端令牌
-     * @param Int ipId IP地址ID
-     * @param Array userHash 使用者雜湊
-     * @return Array 準備返回到客戶端的資訊陣列
+     * 功能入口：新增新使用者
+     *
+     * @param array  $argReceived 客戶端提交資訊陣列
+     * @param string $appToken    客戶端令牌
+     * @param int    $ipId        IP 地址 ID
+     * @return array 準備返回到客戶端的資訊陣列
      */
     function adduser(array $argReceived, string $appToken, int $ipId): array {
         global $nlcore;
@@ -172,10 +176,10 @@ class nyasignup {
         return $returnClientData;
     }
     /**
-     * @description: 僅做測試用，生成加密後密碼
-     * @param String password 明文密碼
-     * @param String timestr 密碼到期時間的時間文字
-     * @return 直接返回加密後的內容到客戶端
+     * 僅做測試用，生成加密後密碼
+     *
+     * @param string $password 明文密碼
+     * @param string $timestr  密碼到期時間的文字格式
      */
     function passwordhashtest(string $password, string $timestr): void {
         global $nlcore;

@@ -1,7 +1,11 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 檢查使用者資訊
+ * 使用者資訊欄位驗證
+ *
+ * 檢查並驗證使用者提交的個人資料欄位（暱稱、性別、年齡等），並執行資料庫更新。
+ *
  * @package NyarukoLogin
  */
 class userInfoEdit {
@@ -11,11 +15,10 @@ class userInfoEdit {
     public $updateDic = [];
     private $whereDic;
     /**
-     * @description: 構造：載入從客戶端輸入的資訊，取出所需資訊
-     * @param nyacore NyarukoLogin 核心
-     * @param Array argReceived 客戶端輸入的資訊（$nlcore->sess->decryptargv）
-     * @param Sting userHash 使用者雜湊（$nlcore->safe->userHash）
-     *   如果不提供使用者雜湊，則只進行有限的檢查，並且不能進行資料庫更新。
+     * 建構子：載入從客戶端輸入的資訊，取出所需資訊
+     *
+     * @param array  $argReceived 客戶端輸入的資訊
+     * @param string $userHash    使用者雜湊，不提供則只進行有限檢查
      */
     function __construct(array $argReceived, string $userHash = "") {
         global $nlcore;
@@ -30,8 +33,10 @@ class userInfoEdit {
         }
     }
     /**
-     * @description: 批量檢查並加入更新計劃
-     * @param Array updateDic ["條目名稱"=>"條目內容"]，不传则直接从用户提交中搜索
+     * 批量檢查並加入更新計劃
+     *
+     * @param array $updateDic 鍵值對陣列，不傳則從使用者提交中搜尋
+     * @return array 本次已納入更新的欄位字典
      */
     function batchUpdate(array $updateDic = []): array {
         $newUpdateDic = [];
@@ -69,9 +74,10 @@ class userInfoEdit {
         return $this->updateDic;
     }
     /**
-     * @description: 檢查輸入字元串
-     * @param String str 字元串
-     * @param String func 功能名稱
+     * 檢查輸入字元串
+     *
+     * @param string $str  字元串
+     * @param string $func 功能名稱
      */
     function verifyString(string $str, string $func): void {
         global $nlcore;
@@ -86,9 +92,10 @@ class userInfoEdit {
         $this->updateDic[$func] = $str;
     }
     /**
-     * @description: 檢查輸入媒體檔案
-     * @param String paths 媒體檔案路徑（逗號分隔）
-     * @param String func 功能名稱
+     * 檢查輸入媒體檔案
+     *
+     * @param string $paths 媒體檔案路徑（逗號分隔）
+     * @param string $func  功能名稱
      */
     function verifyFile(string $paths, string $func): void {
         global $nlcore;
@@ -101,8 +108,9 @@ class userInfoEdit {
         $this->updateDic[$func] = $paths;
     }
     /**
-     * @description: 執行資料庫更新
-     * @return Array 已更新的列名
+     * 執行資料庫更新
+     *
+     * @return array 已更新的欄位名稱陣列
      */
     function sqlc(): array {
         if (strlen($this->userHash) == 0 || !$this->whereDic || count($this->whereDic) == 0 || count($this->updateDic) == 0) return [];
@@ -113,15 +121,17 @@ class userInfoEdit {
         return $ukeys;
     }
     /**
-     * @description: 檢查暱稱（會重新生成暱稱唯一碼）
-     * @param String name 新的暱稱
+     * 檢查暱稱（會重新生成暱稱唯一碼）
+     *
+     * @param string $name 新的暱稱
      */
     function verifyName(string $name): void {
         $this->verifyString($name, "name");
     }
     /**
-     * @description: 會重新生成暱稱唯一碼
-     * @param String name 新的暱稱
+     * 重新生成暱稱唯一碼
+     *
+     * @param string $name 新的暱稱
      */
     function verifyNameId(string $name): void {
         if (strlen($this->userHash) == 0) return;
@@ -130,8 +140,9 @@ class userInfoEdit {
         $this->updateDic["nameid"] = $nameid;
     }
     /**
-     * @description: 檢查人稱代詞
-     * @param String pronoun 新的人稱代詞
+     * 檢查人稱代詞
+     *
+     * @param int $pronoun 新的人稱代詞（0-2）
      */
     function verifyPronoun(int $pronoun): void {
         global $nlcore;
@@ -139,22 +150,24 @@ class userInfoEdit {
         $this->updateDic["pronoun"] = $pronoun;
     }
     /**
-     * @description: 檢查年齡
-     * @param String pronoun 新的年齡
+     * 檢查年齡
+     *
+     * @param int $age 新的年齡
      */
     function verifyAge(int $age): void {
         global $nlcore;
         if ($age > 100) {
-            $nlcore->msg->stopmsg(2040601, $pronoun);
+            $nlcore->msg->stopmsg(2040601, strval($age));
         } else if ($age == 0) {
             return;
         }
         $this->updateDic["age"] = $age;
     }
     /**
-     * @description: 檢查性別
-     * @param Int gender 新的性別ID
-     * @param Bool autoPronoun 自動檢查人稱代詞
+     * 檢查性別
+     *
+     * @param int  $gender      新的性別 ID
+     * @param bool $autoPronoun 是否自動檢查人稱代詞
      */
     function verifyGender(int $gender, bool $autoPronoun = true): void {
         global $nlcore;
@@ -166,36 +179,41 @@ class userInfoEdit {
         if ($autoPronoun) $this->verifyPronoun($genders[0]["person"]);
     }
     /**
-     * @description: 檢查地址
-     * @param String address 新的地址
+     * 檢查地址
+     *
+     * @param string $address 新的地址
      */
     function verifyAddress(string $address): void {
         $this->verifyString($address, "address");
     }
     /**
-     * @description: 檢查簽名
-     * @param String profile 新的簽名
+     * 檢查簽名
+     *
+     * @param string $profile 新的簽名
      */
     function verifyProfile(string $profile): void {
         $this->verifyString($profile, "profile");
     }
     /**
-     * @description: 檢查介紹
-     * @param String description 新的介紹
+     * 檢查介紹
+     *
+     * @param string $description 新的介紹
      */
     function verifyDescription(string $description): void {
         $this->verifyString($description, "description");
     }
     /**
-     * @description: 檢查頭像
-     * @param String image 新的頭像路徑
+     * 檢查頭像
+     *
+     * @param string $image 新的頭像路徑
      */
     function verifyImage(string $image): void {
         $this->verifyFile($image, "image");
     }
     /**
-     * @description: 檢查背景
-     * @param String background 新的背景路徑
+     * 檢查背景
+     *
+     * @param string $background 新的背景路徑
      */
     function verifyBackground(string $background): void {
         $this->verifyFile($background, "background");

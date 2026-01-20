@@ -1,5 +1,11 @@
 <?php
-// 子賬戶註冊
+declare(strict_types=1);
+/**
+ * 子帳戶建立端點 - 處理建立子帳戶的請求，在主帳戶下建立附屬帳戶。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyastand.class.php";
 require_once "src/nyauserinfoedit.class.php";

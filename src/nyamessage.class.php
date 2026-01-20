@@ -1,17 +1,18 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 站內信和站內通知
+ * 站內信與站內通知
+ *
+ * 處理使用者之間的站內訊息收發、訊息合併、已讀/未讀狀態管理等。
+ *
  * @package NyarukoLogin
  */
 class nyamessage {
     /**
-     * @description: 使用者私信
-     * @param array  to   收件人使用者雜湊，支援多個收件人
-     * @param string text 要发送的内容
+     * 使用者私信發送（讀取客戶端提交資訊）
      */
-    //TODO
-    function newMessageFromUser() {
+    function newMessageFromUser(): void {
         global $nlcore;
         $from = $nlcore->sess->userToken;
         $to = $nlcore->sess->argReceived["to"];
@@ -34,8 +35,9 @@ class nyamessage {
     }
 
     /**
-     * @description: 獲取當前使用者的私信（讀取客戶端提交資訊）
-     * @return array 該使用者收到的私信原始資料（可能需要進一步處理）
+     * 獲取當前使用者的私信（讀取客戶端提交資訊）
+     *
+     * @return array 該使用者收到的私信原始資料
      */
     function getMessageFromUser(): array {
         global $nlcore;
@@ -86,14 +88,15 @@ class nyamessage {
     }
 
     /**
-     * @description: 建立一個新的站內信（先檢查）
-     * @param array  to   收件人使用者雜湊，支援多個收件人，不可以空白
-     * @param array  from 發件人使用者雜湊，支援多個發件人，空白則為系統訊息
-     * @param string type 型別模板（配置檔案中的 $messageTmp）
-     * @param string text 訊息內容文字
-     * @param int    pri  优先级
+     * 建立一個新的站內信（先檢查重複）
+     *
+     * @param string[] $to   收件人使用者雜湊陣列
+     * @param string[] $from 發件人使用者雜湊陣列，空白則為系統訊息
+     * @param string   $type 型別模板代碼
+     * @param string   $text 訊息內容文字
+     * @param int      $pri  優先級（0-9）
      */
-    function newMessage(array $to, array $from = [], string $type = "", string $text = "", int $pri = 0) {
+    function newMessage(array $to, array $from = [], string $type = "", string $text = "", int $pri = 0): void {
         global $nlcore;
         // 檢查輸入
         $typeLen = strlen($type);
@@ -115,7 +118,7 @@ class nyamessage {
             $fromStr = count($from) > 0 ? implode(',', $from) : null;
             if ($fromStr) {
                 // 检查是否有类似消息
-                $dataItem = $this->checkRepetitive($tohash, $typeStr, $fromStr);
+                $dataItem = $this->checkRepetitive($tohash, $typeStr);
                 if (count($dataItem) > 0) {
                     $this->newMessageUpdate($dataItem, $fromStr);
                 } else {
@@ -130,14 +133,15 @@ class nyamessage {
     }
 
     /**
-     * @description: 建立一個新的站內信
-     * @param string from 發件人使用者雜湊，支援多個發件人，使用逗號分隔，空白則為系統訊息
-     * @param string type 型別模板（配置檔案中的 $messageTmp）
-     * @param string to   收件人使用者雜湊，支援多個收件人，不可以空白
-     * @param string text 訊息內容文字
-     * @param int    pri  优先级
+     * 建立一個新的站內信（直接寫入）
+     *
+     * @param ?string $from 發件人使用者雜湊，逗號分隔多個發件人，null 為系統訊息
+     * @param ?string $type 型別模板代碼
+     * @param string  $to   收件人使用者雜湊
+     * @param string  $text 訊息內容文字
+     * @param int     $pri  優先級
      */
-    function newMessageInsert(string $from = null, string $type = null, string $to, string $text, int $pri): void {
+    function newMessageInsert(?string $from, ?string $type, string $to, string $text, int $pri): void {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["messages"];
         $hash = $nlcore->safe->randstr(64);
@@ -155,20 +159,23 @@ class nyamessage {
     }
 
     /**
-     * @description: 檢查是否有類似訊息（訊息型別、收件人、訊息內容相同）
-     * @param  string to   收件人使用者雜湊
-     * @param  string type 訊息型別程式碼
-     * @return array  當前查到的先有類似訊息資料
+     * 檢查是否有類似訊息（同一收件人、同一型別、未讀）
+     *
+     * @param string  $to   收件人使用者雜湊
+     * @param ?string $type 訊息型別代碼
+     * @return array 現有的類似訊息資料
      */
-    function checkRepetitive(string $to, string $type): array {
+    function checkRepetitive(string $to, ?string $type): array {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["messages"];
         $columnArr = ["id", "fromusr"];
         $whereDic = [
             "tousr" => $to,
-            "type" => $type,
             "readed" => 0
         ];
+        if ($type !== null) {
+            $whereDic["type"] = $type;
+        }
         $dbResult = $nlcore->db->select($columnArr, $tableStr, $whereDic);
         if ($dbResult[0] == 1010000) {
             return $dbResult[2][0];
@@ -180,9 +187,10 @@ class nyamessage {
     }
 
     /**
-     * @description: 將訊息整合到原有的相似訊息中
-     * @param array  data 查詢類似訊息時伺服器返回資料
-     * @param string from 發件人使用者雜湊，支援多個發件人，使用逗號分隔
+     * 將訊息整合到原有的相似訊息中
+     *
+     * @param array  $data 相似訊息資料
+     * @param string $from 發件人使用者雜湊
      */
     function newMessageUpdate(array $data, string $from): void {
         global $nlcore;
@@ -210,13 +218,14 @@ class nyamessage {
     }
 
     /**
-     * @description: 獲取我的訊息
-     * @param string to      要查詢訊息列表的使用者雜湊
-     * @param int    mode    要獲得的訊息型別
-     *               0 重要未讀　1 普通未讀　2 所有未讀　3 已讀　? 所有
-     * @param bool   onlynum 只返回數量（將忽略下面兩項引數）
-     * @param int    limit   從哪條開始
-     * @param int    offset  讀取多少條
+     * 獲取指定使用者的訊息
+     *
+     * @param string $to      要查詢訊息列表的使用者雜湊
+     * @param int    $mode    訊息類型：0 重要未讀 1 普通未讀 2 所有未讀 3 已讀 其他 全部
+     * @param bool   $onlynum 只返回數量
+     * @param int    $limit   起始偏移
+     * @param int    $offset  讀取筆數
+     * @return array 訊息陣列
      */
     function getMessage(string $to, int $mode, bool $onlynum = false, int $limit = 0, int $offset = 10): array {
         global $nlcore;
@@ -248,9 +257,10 @@ class nyamessage {
     }
 
     /**
-     * @description: 生成友好通知訊息，以 info 鍵插入每個條目
-     * @param array &messageArr 使用 getMessage 獲得的通知訊息陣列指標
-     * @param int   maxLen 信息预览的显示长度 0为不显示，63为最大值（负数视为63）
+     * 生成友好通知訊息，以 message 鍵插入每個條目
+     *
+     * @param array &$messageArr 使用 getMessage 獲得的通知訊息陣列（傳參考）
+     * @param int   $maxLen      資訊預覽顯示長度，0 為不顯示，63 為最大值
      */
     function genText(array &$messageArr, int $maxLen = 0): void {
         global $nlcore;
@@ -301,9 +311,11 @@ class nyamessage {
     }
 
     /**
-     * @description: 將某個通知資訊標記為已讀或未讀（讀取客戶端提交資訊）
+     * 將某個通知資訊標記為已讀或未讀（讀取客戶端提交資訊）
+     *
+     * @return array 包含影響行數的結果
      */
-    function setStatFromUser() {
+    function setStatFromUser(): array {
         global $nlcore;
         // 要查詢的使用者範圍
         $all = false;
@@ -339,12 +351,14 @@ class nyamessage {
     }
 
     /**
-     * @description:  將某個通知資訊標記為已讀或未讀
-     * @param  string hash   通知雜湊 或 使用者雜湊（isRead == 2 時）
-     * @param  int    isRead 標記為 0未讀 1已讀 2全部已讀
-     * @return int    影響的資料行數
+     * 將某個通知資訊標記為已讀或未讀
+     *
+     * @param int     $isRead   標記為 0 未讀 1 已讀 2 全部已讀
+     * @param ?string $userHash 使用者雜湊
+     * @param ?string $msgHash  訊息雜湊（isRead != 2 時必須提供）
+     * @return int 影響的資料行數
      */
-    function setStat(int $isRead = 1, string $userHash = null, string $msgHash = null):int {
+    function setStat(int $isRead = 1, ?string $userHash = null, ?string $msgHash = null): int {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["messages"];
         $whereDic = [];

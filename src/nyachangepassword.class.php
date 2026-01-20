@@ -1,20 +1,21 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 修改密碼
+ * 修改密碼
+ *
+ * 處理使用者密碼變更，支援透過手機號或郵箱進行密碼重設。
+ *
  * @package NyarukoLogin
  */
-class nyachangepassword
-{
+class nyachangepassword {
     /**
-     * @description: 修改密碼
-     * @param string userid 使用者名稱(郵箱/手機)
-     * @param string oldpassword 舊密碼
-     * @param string newpassword 新密碼
+     * 修改密碼
+     *
+     * @param array $argReceived 客戶端提交資訊陣列
      * @return array 準備返回到客戶端的資訊陣列
      */
-    function changepassword(array $argReceived): array
-    {
+    function changepassword(array $argReceived): array {
         global $nlcore;
         $userid = $argReceived["userid"] ?? $nlcore->msg->stopmsg(2030104, '1');
         // $oldpassword = $argReceived["oldpassword"] ?? $nlcore->msg->stopmsg(2030104,'2');

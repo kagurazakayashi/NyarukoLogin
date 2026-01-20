@@ -1,15 +1,21 @@
 <?php
+declare(strict_types=1);
+
 /**
- * @description: 獲取某個媒體檔案路徑
+ * 媒體檔案路徑解析
+ *
+ * 根據客戶端提供的路徑解析並返回對應的媒體檔案網址。
+ *
  * @package NyarukoLogin
-*/
+ */
 class nyamediafiles {
     /**
-     * @description: 獲取某個媒體檔案路徑
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @return 準備返回到客戶端的資訊陣列
+     * 獲取某個媒體檔案路徑
+     *
+     * @param array $argReceived 客戶端提交資訊陣列
+     * @return array 準備返回到客戶端的資訊陣列
      */
-    function mediafiles($argReceived) {
+    function mediafiles(array $argReceived): array {
         global $nlcore;
         if (!isset($argReceived["path"])) {
             $nlcore->msg->stopmsg(2050201);
@@ -24,4 +30,3 @@ class nyamediafiles {
         return $returnClientData;
     }
 }
-?>

@@ -1,5 +1,11 @@
 <?php
-// 使用者登入
+declare(strict_types=1);
+/**
+ * 使用者登入端點 - 處理使用者登入請求，驗證使用者名稱與密碼，並回傳登入狀態與使用者資訊。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyalogin.class.php";
 require_once "src/nyacaptcha.class.php";

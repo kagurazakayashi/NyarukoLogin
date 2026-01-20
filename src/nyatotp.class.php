@@ -1,4 +1,13 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * TOTP 動態驗證碼（已棄用）
+ *
+ * 此加密方式已棄用，待兩步驗證重寫時重新實作。
+ *
+ * @package NyarukoLogin
+ */
 // 此檔案已棄用
 // 此加密方式已經棄用
 // TODO:兩步驗證時進行重寫
@@ -8,23 +17,22 @@ class nyatotp {
         $this->ga = new PHPGangsta_GoogleAuthenticator();
     }
     /**
-     * @description: 创建用户动态验证码
-     * @param String appname 应用名称
-     * @param String mail 用户邮箱
-     * @param String username 用户名称
-     * @return String otpauth URL
+     * 建立使用者動態驗證碼
+     *
+     * @param string $appname  應用名稱
+     * @param string $mail     使用者郵箱
+     * @param string $username 使用者名稱
+     * @return string otpauth URL
      */
-    function newusertotp($appname,$mail,$username) {
+    function newusertotp(string $appname, string $mail, string $username): string {
         $secret = $this->ga->createSecret();
         $otpauth = "otpauth://totp/".$appname.":".$mail."?secret=".$secret."&issuer=".$username;
         return $otpauth;
     }
     /**
-     * @description: 创建设备动态验证码
-     * @param String<32> appsecret 应用密钥
-     * @param Int timestamp 时间戳
+     * 建立裝置動態驗證碼
      */
-    function newdevicetotp() {
+    function newdevicetotp(): void {
         global $nlcore;
         $argv = count($_POST) > 0 ? $_POST : $_GET;
         if (!isset($argv["appsecret"])) $nlcore->msg->stopmsg(2000101,null,"",false);
@@ -119,18 +127,22 @@ class nyatotp {
         ));
     }
     /**
-     * @description: 验证设备动态验证码
-     * @param String<32> appsecret 应用密钥（不是 TOTP 密钥）
-     * @param UInt<6> numcode 动态口令
-     * @param UInt clocktolerance 允许的时钟差异（值 x 30秒）
+     * 驗證裝置動態驗證碼
+     *
+     * @param string $secret          動態驗證碼金鑰
+     * @param int    $numcode         動態口令
+     * @param int    $clocktolerance  允許的時鐘差異（值 x 30 秒）
+     * @return bool 是否驗證成功
      */
-    function verificationtotp($secret,$numcode,$clocktolerance=2) {
+    function verificationtotp(string $secret, int $numcode, int $clocktolerance = 2): bool {
         $garesult = $this->ga->verifyCode($secret,$numcode,$clocktolerance);
         if ($garesult) return true;
         return false;
     }
-    //验证加密信息
-    function encrypttest() {
+    /**
+     * 加密測試
+     */
+    function encrypttest(): void {
         global $nlcore;
         $argvarr = $nlcore->sess->decryptargv("encrypttest");
         $dataarray = $argvarr[0];
@@ -142,4 +154,3 @@ class nyatotp {
         unset($this->ga);
     }
 }
-?>

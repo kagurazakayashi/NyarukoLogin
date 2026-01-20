@@ -1,13 +1,19 @@
 <?php
+declare(strict_types=1);
+
 /**
- * @description: 模糊搜尋使用者
+ * 模糊搜尋使用者
+ *
+ * 根據關鍵詞模糊搜尋使用者暱稱與唯一碼。
+ *
  * @package NyarukoLogin
-*/
+ */
 class nyasearch {
     /**
-     * @description: 功能入口：輸入關鍵詞，模糊搜尋使用者
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @return 準備返回到客戶端的資訊陣列
+     * 功能入口：輸入關鍵詞，模糊搜尋使用者
+     *
+     * @param array $argReceived 客戶端提交資訊陣列
+     * @return array 準備返回到客戶端的資訊陣列
      */
     function search(array $argReceived): array {
         global $nlcore;
@@ -26,7 +32,7 @@ class nyasearch {
         switch ($argReceived["type"]) {
             case "username":
                 if (!$limit) $limit = [10];
-                $result = $this->searchuser($argReceived["word"], ["name", "nameid"], $limit);
+                $result = $this->searchuser($argReceived["word"], $limit);
                 $returnClientData["results"] = $result;
                 break;
             default:
@@ -35,13 +41,13 @@ class nyasearch {
         return $returnClientData;
     }
     /**
-     * @description: 輸入關鍵詞，模糊搜尋使用者
-     * @param String word 關鍵詞
-     * @param Array columnArr 需要搜尋的列
-     * @param Array limit 限制結果數量
-     * @return 使用者暱稱和暱稱唯一碼
+     * 輸入關鍵詞，模糊搜尋使用者
+     *
+     * @param string    $word  關鍵詞
+     * @param ?int[]    $limit 限制結果數量 [offset, count]
+     * @return array 使用者暱稱和暱稱唯一碼
      */
-    function searchuser(string $word, array $columnArr, $limit = null): array {
+    function searchuser(string $word, ?array $limit = null): array {
         global $nlcore;
         $columnArr = ["name", "nameid"];
         $whereDic = [

@@ -1,5 +1,11 @@
 <?php
-// 使用者登入
+declare(strict_types=1);
+/**
+ * 密碼變更端點 - 處理使用者變更密碼的請求，驗證舊密碼後更新為新密碼。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyachangepassword.class.php";
 require_once "src/nyacaptcha.class.php";

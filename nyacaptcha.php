@@ -1,5 +1,11 @@
 <?php
-// 创建验证码
+declare(strict_types=1);
+/**
+ * 驗證碼產生端點 - 產生圖形驗證碼供客戶端使用，防止自動化攻擊。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyacaptcha.class.php";
 // IP 檢查和解密客戶端提交的資訊

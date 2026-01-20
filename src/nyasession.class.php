@@ -1,4 +1,15 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 使用者會話與加密通訊管理類
+ *
+ * 負責處理客戶端請求的解密、驗證、會話管理、Token 管理、
+ * RSA 金鑰對的載入與快取、使用者登入狀態檢查、
+ * 使用者群組查詢與權限驗證等功能。
+ *
+ * @package NyarukoLogin
+ */
 class nyasession {
     public $privateKey = ""; // 用於解密來自客戶端資料的私鑰
     public $publicKey = "";  // 用於加密傳送到客戶端資料的公鑰
@@ -20,9 +31,10 @@ class nyasession {
     public $timeString = null;
 
     /**
-     * @description: 從 SQL 檢查 token 是否有效（從客戶端獲取 token）
-     * @param  string token 會話令牌
-     * @return void   無返回值為透過，如果出問題則直接將異常返回給客戶端
+     * 從 SQL 檢查 token 是否有效（從客戶端獲取 token）
+     *
+     * @param string $token 會話令牌
+     * @return void 無返回值為通過，如果出問題則直接將異常返回給客戶端
      */
     function sessionstatus(string $token): void {
         global $nlcore;
@@ -56,11 +68,12 @@ class nyasession {
     }
 
     /**
-     * @description: 從 SQL 檢查 token 是否有效
-     * @param  string token       會話令牌
-     * @param  bool   getuserhash 需要獲取使用者雜湊
-     * @param  int    type        驗證碼型別 0標準 1預分配
-     * @return array  [] (無效) 或 [起始,結束] 時間
+     * 從 SQL 檢查 token 是否有效
+     *
+     * @param string $token 會話令牌
+     * @param bool $getuserhash 需要獲取使用者雜湊
+     * @param int $type 驗證碼型別：0 標準, 1 預分配
+     * @return array [] (無效) 或 [起始,結束] 時間
      */
     function sessionstatuscon(string $token, bool $getuserhash, int $type = 0): array {
         $rtoken = $this->redisLoadToken($token);
@@ -95,12 +108,14 @@ class nyasession {
         return [];
     }
     /**
-     * @description: 將 token 儲存到 Redis
-     * @param  string token    會話令牌
-     * @param  int    time     使用者有效期起始時間戳
-     * @param  int    endtime  使用者有效期結束時間戳
-     * @param  string userhash 使用者唯一雜湊
-     * @return bool   是否允許使用 Redis 儲存
+     * 將 token 儲存到 Redis
+     *
+     * @param string $token 會話令牌
+     * @param int $time 使用者有效期起始時間戳
+     * @param int $endtime 使用者有效期結束時間戳
+     * @param string $userHash 使用者唯一雜湊
+     * @param int $type 令牌型別（0 標準, 1 預分配）
+     * @return bool 是否成功使用 Redis 儲存
      */
     function redissave(string $token, int $time, int $endtime, string $userHash, int $type = 0): bool {
         global $nlcore;
@@ -118,9 +133,10 @@ class nyasession {
         return true;
     }
     /**
-     * @description: 從 Redis 檢查 token 是否有效
-     * @param  string token 會話令牌
-     * @return array  [] (無效) 或 [起始,結束] 時間
+     * 從 Redis 檢查 token 是否有效
+     *
+     * @param string $token 會話令牌
+     * @return array [] (無效) 或 [time, endtime, userhash, type]
      */
     function redisLoadToken(string $token): array {
         global $nlcore;
@@ -141,8 +157,9 @@ class nyasession {
     }
 
     /**
-     * @description: 建立新的預分配令牌
-     * @return array [新的預分配令牌,起始時間,結束時間]
+     * 建立新的預分配令牌
+     *
+     * @return array [新的預分配令牌, 起始時間, 結束時間]
      */
     function preTokenNew(): array {
         global $nlcore;
@@ -180,9 +197,10 @@ class nyasession {
     }
 
     /**
-     * @description: 驗證預分配令牌
-     * @param  string token 預分配令牌
-     * @return array  [] (無效) 或 [起始時間,結束時間]
+     * 驗證預分配令牌
+     *
+     * @param string $token 預分配令牌
+     * @return array [] (無效) 或 [起始時間, 結束時間]
      */
     function preTokenVerify(string $token): array {
         global $nlcore;
@@ -203,10 +221,12 @@ class nyasession {
     }
 
     /**
-     * @description: 刪除預分配令牌
-     * @param  string token 預分配令牌
+     * 刪除預分配令牌
+     *
+     * @param string $token 預分配令牌
+     * @return void
      */
-    function preTokenRemove(string $token) {
+    function preTokenRemove(string $token): void {
         global $nlcore;
         // 從 Redis 刪除
         $redisKey = 's_' . $token;
@@ -221,12 +241,13 @@ class nyasession {
     }
 
     /**
-     * @description: ☆資料接收☆ 解析變體、base64解碼、解密、解析 JSON 到陣列
-     * GET/POST: 見 WiKi : 加密通訊處理流程.md
-     * @param String module 功能名稱（$conf->limittime），提供此項將覆蓋下面兩項
-     * @param Int interval 在多少秒內
-     * @param Int times 允許請求多少次
-     * @param Bool onlyCheckIP 只檢查 IP 是否合法，不進行資料解析
+     * ☆資料接收☆ 解析變體、base64 解碼、解密、解析 JSON 到陣列
+     *
+     * @param string $module 功能名稱（$conf->limittime）
+     * @param int $interval 在多少秒內
+     * @param int $times 允許請求多少次
+     * @param bool $onlyCheckIP 只檢查 IP 是否合法，不進行資料解析
+     * @return void 不會正常返回，結果寫入 $this 的屬性
      */
     function decryptargv(string $module = "", int $interval = PHP_INT_MAX, int $times = PHP_INT_MAX, bool $onlyCheckIP = false): void {
         global $nlcore;
@@ -314,8 +335,9 @@ class nyasession {
         $this->appId = $appid;
     }
     /**
-     * @description: 仅获取應用令牌
-     * @return String 應用令牌
+     * 僅獲取應用令牌
+     *
+     * @return string 應用令牌
      */
     function getAppToken(): string {
         global $nlcore;
@@ -337,9 +359,11 @@ class nyasession {
     }
 
     /**
-     * @description: 登出當前使用者，刪除會話令牌
+     * 登出當前使用者，刪除會話令牌
+     *
+     * @return array 返回給客戶端的資料
      */
-    function logout() {
+    function logout(): array {
         global $nlcore;
         $this->logoutUser();
         $returnClientData = $nlcore->msg->m(0, 1020103);
@@ -347,11 +371,13 @@ class nyasession {
     }
 
     /**
-     * @description: 登出當前使用者，刪除會話令牌
-     * @param String appToken 會話令牌，不傳則試圖獲取當前令牌
-     * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
+     * 登出當前使用者，刪除會話令牌
+     *
+     * @param string|null $userToken 會話令牌，不傳則試圖獲取當前令牌
+     * @param int $mode 模式：1 從 Redis 刪除, 2 從資料庫刪除, 3 都刪除
+     * @return void
      */
-    function logoutUser(string $userToken = null, int $mode = 3) {
+    function logoutUser(string|null $userToken = null, int $mode = 3): void {
         global $nlcore;
         if ($userToken == null) {
             if ($this->userToken == null) {
@@ -375,11 +401,14 @@ class nyasession {
     }
 
     /**
-     * @description: 登出當前裝置，刪除金鑰對
-     * @param String appToken 應用令牌，不传则试图获取当前令牌
-     * @param String mode 模式 1從Redis刪除 2從資料庫刪除 3都刪除
+     * 登出當前裝置，刪除金鑰對
+     *
+     * @param string|null $appToken 應用令牌，不傳則試圖獲取當前令牌
+     * @param int $mode 模式：1 從 Redis 刪除, 2 從資料庫刪除, 3 都刪除
+     * @param bool $logoutUser 是否同時登出使用者
+     * @return void
      */
-    function logoutDevice(string $appToken = null, int $mode = 3, bool $logoutUser = true) {
+    function logoutDevice(string|null $appToken = null, int $mode = 3, bool $logoutUser = true): void {
         global $nlcore;
         if ($appToken == null) {
             if ($this->appToken == null) {
@@ -404,12 +433,13 @@ class nyasession {
         }
     }
     /**
-     * @description: 使用 RSA 方式進行解密
-     * @param String encryptedJson 客戶端提交的加密資料
-     * @param String apptoken 應用令牌，空字串則嘗試讀取預共享金鑰對
-     * @return Array [string:string] 客戶端提交的資料（解密後）
+     * 使用 RSA 方式進行解密
+     *
+     * @param string $encryptedJson 客戶端提交的加密資料
+     * @param string $apptoken 應用令牌，空字串則嘗試讀取預共享金鑰對
+     * @return array|null 客戶端提交的資料（解密後）
      */
-    function decryptRsaMode(string $encryptedJson, string $apptoken) {
+    function decryptRsaMode(string $encryptedJson, string $apptoken): array|null {
         global $nlcore;
         $isDefaultKey = (strlen($apptoken) == 1 && strcmp($apptoken, "d") == 0) ? true : false;
         if ($isDefaultKey) {
@@ -526,11 +556,14 @@ class nyasession {
         return $decryptDataFull;
     }
     /**
-     * @description: [已棄用] 使用 TOTP + XXTea 方式進行解密
-     * @param String argvs 客戶端提交的加密引數
-     * @return Array [string:string] 客戶端提交的引數（解密後）
+     * [已棄用] 使用 TOTP + XXTea 方式進行解密
+     *
+     * @param array $argvs 客戶端提交的加密引數
+     * @return array|null 客戶端提交的引數（解密後）
+     * @deprecated 請使用 decryptRsaMode 替代
      */
-    function decryptTotpXXteaMode($argvs) {
+    #[\Deprecated]
+    function decryptTotpXXteaMode(array $argvs): array|null {
         global $nlcore;
         // 查詢 apptoken 對應的 secret
         $datadic = ["apptoken" => $argvs["t"]];
@@ -578,11 +611,12 @@ class nyasession {
         return $argReceived;
     }
     /**
-     * @description: ☆資料傳送☆ 從陣列建立 JSON、加密、base64 編碼、變體
-     * @param String dataarray 要返回到客戶端的內容字典
-     * @return String 如果加密啟用，回傳加密後的資訊；否則返回明文 JSON
+     * ☆資料傳送☆ 從陣列建立 JSON、加密、base64 編碼、變體
+     *
+     * @param array $dataarray 要返回到客戶端的內容字典
+     * @return string 如果加密啟用，回傳加密後的資訊；否則返回明文 JSON
      */
-    function encryptargv($dataarray) {
+    function encryptargv(array $dataarray): string {
         global $nlcore;
         //加时间戳
         if (!isset($dataarray["timestamp"])) $dataarray["timestamp"] = time();
@@ -593,11 +627,12 @@ class nyasession {
         return $json;
     }
     /**
-     * @description: 使用 RSA 方式進行加密
-     * @param String json 要加密的 JSON
-     * @return String 加密後的資訊（JSON變種）
+     * 使用 RSA 方式進行加密
+     *
+     * @param string $json 要加密的 JSON
+     * @return string 加密後的資訊（JSON 變種）
      */
-    function encryptRsaMode(string $json) {
+    function encryptRsaMode(string $json): string {
         global $nlcore;
         if (strlen($this->privateKey) < 4 || strlen($this->publicKey) < 4) {
             return $json;
@@ -607,12 +642,15 @@ class nyasession {
         return $returndata;
     }
     /**
-     * @description: [已棄用] 使用 TOTP + XXTea 方式進行加密
-     * @param String json 要加密的 JSON
-     * @param String secret totp加密碼（可選，不加不進行加密）
-     * @return String 加密後的資訊（JSON變種）
+     * [已棄用] 使用 TOTP + XXTea 方式進行加密
+     *
+     * @param string $json 要加密的 JSON
+     * @param string|null $secret totp 加密碼（可選，不提供則不進行加密）
+     * @return string 加密後的資訊（JSON 變種）
+     * @deprecated 請使用 encryptRsaMode 替代
      */
-    function encryptTotpXXteaMode($json, $secret = null) {
+    #[\Deprecated]
+    function encryptTotpXXteaMode(string $json, string|null $secret = null): string {
         if ($secret) {
             global $nlcore;
             //使用secret生成totp数字
@@ -628,8 +666,9 @@ class nyasession {
         return $json;
     }
     /**
-     * @description: 驗證該使用者已登入並取得資訊，如果未登入直接返回錯誤資訊到客戶端。
-     * @return Array [會話令牌,使用者會話資訊,使用者雜湊]
+     * 驗證該使用者已登入並取得資訊，如果未登入直接返回錯誤資訊到客戶端
+     *
+     * @return void 結果寫入 $this 屬性 (userToken, userSessionInfo, userHash)
      */
     function userLogged(): void {
         global $nlcore;
@@ -645,17 +684,20 @@ class nyasession {
         $this->userHash = $userHash;
     }
     /**
-     * @description: 將準備好的陣列打包成 JSON 返回給客戶端，並停止當前 PHP 程式
-     * @param returnClientData 資料陣列
+     * 將準備好的陣列打包成 JSON 返回給客戶端，並停止當前 PHP 程式
+     *
+     * @param array $returnClientData 資料陣列
+     * @return never 永遠不會返回，必定終止執行
      */
-    function returnToClient($returnClientData) {
+    function returnToClient(array $returnClientData): never {
         header('Content-Type:application/json;charset=utf-8');
         exit(json_encode($returnClientData));
     }
     /**
-     * @description: 獲取使用者屬於哪個使用者組，並獲取此使用者組的資訊，查詢一次後會快取
-     * @param string userHash 要查詢的使用者雜湊，預設為當前使用者雜湊，如果提供此項則禁用快取功能
-     * @return array 所在組的資訊陣列 [id,name,info,permission]
+     * 獲取使用者屬於哪個使用者組，並獲取此使用者組的資訊，查詢一次後會快取
+     *
+     * @param string $userHash 要查詢的使用者雜湊，預設為當前使用者雜湊，提供此項則禁用快取功能
+     * @return array 所在組的資訊陣列 [id, name, info, permission]
      */
     function inGroup(string $userHash = ''): array {
         global $nlcore;
@@ -703,9 +745,10 @@ class nyasession {
         return $groupInfos;
     }
     /**
-     * @description: 檢查使用者是否擁有某項許可權
-     * @param String permissionName 所需的許可權名稱
-     * @return Boolean 是否允許
+     * 檢查使用者是否擁有某項權限
+     *
+     * @param string $permissionName 所需的權限名稱
+     * @return bool 是否允許
      */
     function permission(string $permissionName): bool {
         // 查询该用户所在的组 id
@@ -719,6 +762,11 @@ class nyasession {
         return false;
     }
 
+    /**
+     * 解構子
+     *
+     * @return void
+     */
     function __destruct() {
         $this->publicKey = null;
         unset($this->publicKey);

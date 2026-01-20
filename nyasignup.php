@@ -1,12 +1,18 @@
 <?php
-// 賬戶註冊
+declare(strict_types=1);
+/**
+ * 帳戶註冊端點 - 處理新使用者註冊請求，建立帳戶並進行必要的驗證。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyacaptcha.class.php";
-require_once "nyaverification.class.php";
+require_once "src/nyaverification.class.php";
 require_once "src/nyasignup.class.php";
 require_once "src/nyauserinfoedit.class.php";
 // IP檢查和解密客戶端提交的資訊
-$inputInformation = $nlcore->sess->decryptargv("signup");
+$nlcore->sess->decryptargv("signup");
 // 實現功能
 $nyasignup = new nyasignup();
 $returnClientData = $nyasignup->adduser($nlcore->sess->argReceived,$nlcore->sess->appToken,$nlcore->sess->ipId);

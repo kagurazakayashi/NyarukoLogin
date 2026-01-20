@@ -1,7 +1,12 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: MySQL/Redis 資料庫語句生成和連接管理類
+ * MySQL/Redis 資料庫語句生成和連接管理類
+ *
+ * 提供 MySQL 與 Redis 資料庫的連線管理、SQL 語句生成、
+ * 字典轉 SQL 語句（dic2sql）、全文搜尋、CRUD 操作等功能。
+ *
  * @package NyarukoLogin
  */
 class nyadbconnect {
@@ -13,9 +18,11 @@ class nyadbconnect {
     public $redis = null; //當前 Redis 資料庫
 
     /**
-     * @description: 初始化可寫入資料庫，按需建立SQL連接
+     * 初始化可寫入資料庫，按需建立 SQL 連線
+     *
+     * @return void
      */
-    function initWriteDbs() {
+    function initWriteDbs(): void {
         global $nlcore;
         $this->log("[CONNECT] read-write mode.");
         if (!$this->conW) {
@@ -26,9 +33,11 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 初始化隻讀資料庫，按需建立SQL連接
+     * 初始化唯讀資料庫，按需建立 SQL 連線
+     *
+     * @return void
      */
-    function initReadDbs() {
+    function initReadDbs(): void {
         global $nlcore;
         $this->log("[CONNECT] read-only mode.");
         if (!$this->conR) {
@@ -39,11 +48,12 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 初始化資料庫
-     * @param String selectdbs 資料庫配置數組($nlcore->cfg->db->*)
-     * @return mysqli_connect 資料庫連接對象
+     * 初始化 MySQL 資料庫連線
+     *
+     * @param array $selectdbs 資料庫配置陣列（$nlcore->cfg->db->*）
+     * @return mysqli|null 資料庫連線物件，失敗時 die()
      */
-    function initMysqli($selectdbs) {
+    function initMysqli(array $selectdbs) {
         global $nlcore;
         $selectdbscount = count($selectdbs) - 1;
         if ($selectdbscount >= 0) {
@@ -85,11 +95,12 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 清理提交數據中的註入語句
-     * @param String/Array data 要進行清理的內容，支援多維數組、字符串，其他類型（如 int）不清理
-     * @return String/Array 清理後的數組/字符串
+     * 清理提交資料中的注入語句
+     *
+     * @param array|string|mixed $data 要進行清理的內容，支援多維陣列、字串，其他型別（如 int）不清理
+     * @return array|string|mixed 清理後的陣列/字串
      */
-    function safe($data) {
+    function safe(mixed $data): mixed {
         $newdata = null;
         if (is_array($data)) {
             $newdata = [];
@@ -105,8 +116,10 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 將每條SQL語句和返回內容記錄在日誌檔案中，通過 nyaconfig 中的此項設定來進行偵錯。
-     * @param String logstr 要記錄的字元串
+     * 將每條 SQL 語句和返回內容記錄在日誌檔案中，透過 nyaconfig 中的此項設定來進行偵錯。
+     *
+     * @param string $logstr 要記錄的字串
+     * @return void
      */
     function log(string $logstr): void {
         global $nlcore;
@@ -122,16 +135,17 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 查詢資料
-     * @param Array<String/Array/Null> columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
-     * @param String tableStr 表名或 *JOIN*ON* 語句
-     * @param Array<String/String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]，[]為不使用
-     * @param Array<Int>/Array<Int,Int> limit 區間， [前N條] 或 [從多少,取多少]，[]為不使用
-     * @param Boolean islike 模糊搜素（可選，預設關）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 查詢資料
+     *
+     * @param array $columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
+     * @param string $tableStr 表名或 *JOIN*ON* 語句
+     * @param array $whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @param bool $islike 模糊搜尋（可選，預設關）
+     * @param array $order 排序方式 [排序依據,是否倒序]，[] 為不使用
+     * @param array $limit 區間，[前N條] 或 [從多少,取多少]，[] 為不使用
+     * @return array 返回的狀態碼和內容
      */
     function select(array $columnArr = [], string $tableStr, array $whereDic, string $customWhere = "", string $whereMode = "AND", bool $islike = false, array $order = [], array $limit = []): array {
         $this->initReadDbs();
@@ -167,9 +181,10 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 處理列輸入
-     * @param Array columnArr 要查詢的列名陣列
-     * @return String 查詢字串
+     * 處理列輸入，將列名陣列轉換為 SQL 查詢欄位字串
+     *
+     * @param array $columnArr 要查詢的列名陣列
+     * @return string 查詢欄位字串
      */
     function gColumnStr(array $columnArr): string {
         $columnStr = "";
@@ -194,12 +209,12 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 插入數據
-     * @param String tableStr 錶名
-     * @param Array <String:String> insertDic 要插入的數據字典
-     * @param Bool ignoreExisting 如果数据已经存在则不添加
-     * （僅適用於主鍵和索引，綜合所有輸入用 insertInNull 函式）
-     * @return Array <Int,Array> 返回的狀態碼和內容
+     * 插入資料
+     *
+     * @param string $tableStr 表名
+     * @param array $insertDic 要插入的資料字典
+     * @param bool $ignoreExisting 如果資料已經存在則不新增（僅適用於主鍵和索引，綜合所有輸入用 insertInNull 函式）
+     * @return array 返回的狀態碼和內容
      */
     function insert(string $tableStr, array $insertDic, bool $ignoreExisting = false): array {
         $this->initWriteDbs();
@@ -211,15 +226,16 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 更新數據
-     * @param Array<String:String> updateDic 要更新的數據字典
-     * @param String tableStr 錶名
-     * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 更新資料
+     *
+     * @param array $updateDic 要更新的資料字典
+     * @param string $tableStr 表名
+     * @param array $whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查注意）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @return array 返回的狀態碼和內容
      */
-    function update($updateDic, $tableStr, $whereDic, $customWhere = "", $whereMode = "AND") {
+    function update(array $updateDic, string $tableStr, array $whereDic, string $customWhere = "", string $whereMode = "AND"): array {
         $this->initWriteDbs();
         $updateDic = $this->safe($updateDic);
         $whereDic = $this->safe($whereDic);
@@ -231,15 +247,18 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 如果有則更新數據，冇有則插入數據
-     * 已棄用：請使用 insert 函式中的 ignoreExisting
-     * @param String tableStr 錶名
-     * @param Array<String:String> dataDic 要更新或插入的數據字典
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 如果有則更新資料，沒有則插入資料
+     *
+     * 已棄用：請使用 insert 函式中的 ignoreExisting 參數替代。
+     *
+     * @param string $tableStr 表名
+     * @param array $dataDic 要更新或插入的資料字典
+     * @param array|null $whereDic 條件字典（可選，預設 null）
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查注意）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @return array 返回的狀態碼和內容
      */
-    function insertUpdate($tableStr, $dataDic, $whereDic = null, $customWhere = "", $whereMode = "AND") {
+    function insertUpdate(string $tableStr, array $dataDic, array|null $whereDic = null, string $customWhere = "", string $whereMode = "AND"): array {
         $result = $this->scount($tableStr, $dataDic, $customWhere, $whereMode);
         if ($result[0] >= 2000000) return [$result[0]];
         $datacount = $result[2][0]["count(*)"];
@@ -253,14 +272,15 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 如果冇有，才添加數據
-     * @param String tableStr 錶名
-     * @param Array<String:String> dataDic 要更新或插入的數據字典
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 如果資料不存在才新增
+     *
+     * @param string $tableStr 表名
+     * @param array $dataDic 要更新的資料字典
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查注意）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @return array 返回的狀態碼和內容
      */
-    function insertInNull($tableStr, $dataDic, $customWhere = "", $whereMode = "AND") {
+    function insertInNull(string $tableStr, array $dataDic, string $customWhere = "", string $whereMode = "AND"): array {
         $result = $this->scount($tableStr, $dataDic, $customWhere, $whereMode);
         if ($result[0] >= 2000000) return [$result[0]];
         $datacount = $result[2][0]["count(*)"];
@@ -272,14 +292,15 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 刪除數據
-     * @param String tableStr 錶名
-     * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 刪除資料
+     *
+     * @param string $tableStr 表名
+     * @param array $whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查注意）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @return array 返回的狀態碼和內容
      */
-    function delete($tableStr, $whereDic, $customWhere = "", $whereMode = "AND") {
+    function delete(string $tableStr, array $whereDic, string $customWhere = "", string $whereMode = "AND"): array {
         $this->initWriteDbs();
         $whereDic = $this->safe($whereDic);
         $whereStr = $this->dic2sql($whereDic, 2);
@@ -289,15 +310,16 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 查詢有多少數據
-     * @param String tableStr 錶名
-     * @param Array<String:String> whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋。
-     * @param String customWhere 自定義條件錶達式（可選，預設空，不走安全檢查註意）
-     * @param String whereMode 條件判斷模式（AND/OR/...，可選，預設AND）
-     * @param Boolean islike 模糊搜素（可選，預設關）
-     * @return Array<Int,Array> 返回的狀態碼和內容
+     * 查詢資料筆數
+     *
+     * @param string $tableStr 表名
+     * @param array|null $whereDic 條件字典（k:列名=v:預期內容），列名支援 '*' 和 '.' 標記，詳細見 dic2sql 的註釋
+     * @param string $customWhere 自定義條件表達式（可選，預設空，不走安全檢查注意）
+     * @param string $whereMode 條件判斷模式（AND/OR/...，可選，預設 AND）
+     * @param bool $islike 模糊搜尋（可選，預設關）
+     * @return array 返回的狀態碼和內容
      */
-    function scount($tableStr, $whereDic = null, $customWhere = "", $whereMode = "AND", $islike = false) {
+    function scount(string $tableStr, array|null $whereDic = null, string $customWhere = "", string $whereMode = "AND", bool $islike = false): array {
         $this->initReadDbs();
         $whereDic = $this->safe($whereDic);
         $whereStr = $this->dic2sql($whereDic, 2, $islike);
@@ -307,26 +329,26 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 全文搜尋
-     * @param String tableStr 錶名
-     * @param Array columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
-     * @param Array searchColumn 要在哪些列中進行全文搜尋
-     * @param Int mode 搜尋模式選項，決定下一項引數要輸入什麼內容。
-     * 代码 功能描述      search参数的示例
-     * 0  傳統搜尋模式  ["yashi"]
-     * 1  模糊搜尋模式    ["yashi"]
-     * 2  萬用字元模式    ["yashi*"]
-     * 3  或者模式      ["miyabi","yashi"]
-     * 4  自定義模式    [[1,"miyabi"],[-1,"yashi"]]
-     *                  -1  不可以包含該關鍵詞
-     *                   0  如果包含該關鍵詞則降低相關性
-     *                   1  必須包含該關鍵詞
-     *                   2  自定義表示式
-     * 5  自然語言模式  ["yashi"]
-     *    （如「啟動 計算機」可搜尋到「……然而當計算機啟動之後，……」）
-     * @param Array search 要搜尋的內容（參考上面的示例）
-     * @param Array<String,Bool> order 排序方式[排序依據,是否倒序]，[]為不使用
-     * @param Array [int] / [int,int] limit 區間， [前N條] 或 [從多少,取多少]，[]為不使用
+     * 全文搜尋
+     *
+     * @param string $tableStr 表名
+     * @param array $columnArr 要查詢的列名陣列，支援兩種格式 ["列1","列2"] 或 [["表1","列1"],["表1","列2"]]，傳 [] 則為 *
+     * @param array $searchColumn 要在哪些列中進行全文搜尋
+     * @param int $mode 搜尋模式選項，決定下一項引數要輸入什麼內容：
+     *   0: 傳統搜尋模式  ["yashi"]
+     *   1: 模糊搜尋模式    ["yashi"]
+     *   2: 萬用字元模式    ["yashi*"]
+     *   3: 或者模式      ["miyabi","yashi"]
+     *   4: 自定義模式    [[1,"miyabi"],[-1,"yashi"]]
+     *      -1: 不可以包含該關鍵詞
+     *       0: 如果包含該關鍵詞則降低相關性
+     *       1: 必須包含該關鍵詞
+     *       2: 自定義表示式
+     *   5: 自然語言模式  ["yashi"]
+     * @param array $search 要搜尋的內容（參考上面的示例）
+     * @param array $order 排序方式 [排序依據,是否倒序]，[] 為不使用
+     * @param array $limit 區間，[前N條] 或 [從多少,取多少]，[] 為不使用
+     * @return array 返回的狀態碼和內容
      */
     function searchWord(string $tableStr, array $columnArr = [], array $searchColumn, int $mode, array $search, array $order = [], array $limit = []): array {
         $this->initReadDbs();
@@ -384,10 +406,11 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 全文搜尋的關鍵字過濾
-     * @param Array<String> words 要過濾的字串或字串陣列
-     * @param String 是否將空格也過濾掉
-     * @return Array<String> 已經經過過濾的字串陣列
+     * 全文搜尋的關鍵字過濾
+     *
+     * @param array $words 要過濾的字串或字串陣列
+     * @param bool $noSpace 是否將空格也過濾掉（預設 true）
+     * @return array 已經過濾的字串陣列
      */
     function searchWordSafe(array $words, bool $noSpace = true): array {
         for ($i = 0; $i < count($words); $i++) {
@@ -402,20 +425,22 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 測試SQL連接
-     * @return String mysql版本號
+     * 測試 SQL 連線
+     *
+     * @return string|false MySQL 版本號字串
      */
-    function sqltest() {
+    function sqltest(): string|false {
         $serinfo = mysqli_get_server_info($this->con);
         return $serinfo;
     }
 
     /**
-     * @description: 執行SQL連接
-     * @param String sqlcmd SQL語句
-     * @return Array [Int,Int,Array,Int,String] 0狀態碼,1新建的ID,2返回的數據,3受影響的行數,4所使用的SQL語句
+     * 執行 SQL 語句
+     *
+     * @param string $sqlcmd SQL 語句
+     * @return array [狀態碼, 新建的ID, 返回的資料, 受影響的行數, 所使用的 SQL 語句]
      */
-    function sqlc($sqlcmd) {
+    function sqlc(string $sqlcmd): array {
         global $nlcore;
         $this->log("[QUERY] " . $sqlcmd);
         $result = mysqli_query($this->con, $sqlcmd);
@@ -465,21 +490,26 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 將字典類型轉換為SQL語句
-     * @param Dictionary [String:String] dic 要轉換的字典 ["表名"=>"列名"]
+     * 將字典型別轉換為 SQL 語句片段
+     *
+     * **安全性警告：** val 欄位若以「$」開頭，則視為表達式並**繞過 SQL 引號包裝**，
+     * 直接拼接到 SQL 語句中。此功能僅用於特殊情境（如 mode=1 的 SET 子句），
+     * 使用前務必確保 `$val` 內容已經過充分的安全檢查，否則可能導致 SQL 注入風險。
+     *
+     * @param array|null $dic 要轉換的字典 ["表名"=>"列名"]
      *     key 中如果包含「.」，則視為 `表名`.`列名`
-     *     key 中如果包含「*」，「*」及之後內容將被捨棄。用於處理要包括同名 key 的需要。
-     *     val 中如果以「$」开头，则視為表示式，只用於 mode 1 。注意检查安全。
-     * @param Int mode 返回字符串的格式
-     *     0:  (列1, 列2) VALUES (值1, 值2)
-     *     1:  `列1`='值1', `列2`='值2'
-     *     2:  `列1`='值1' AND `列2`='值2'
-     *     3:  `列1`='值1' OR `列2`='值2'
-     *     4:  `列1` IN (值1, 值2)  *需要特殊字典格式：["列"=>[值1,值2]]
-     * @param Boolean islike 模糊搜素
-     * @return String 返回 SQL 語句片段，如果不提供要轉換的字典(null)，則返回通用「*」
+     *     key 中如果包含「*」，「*」及之後內容將被捨棄，用於處理包括同名 key 的需要
+     *     val 中如果以「$」開頭，則視為表達式，只用於 mode 1，**注意檢查安全**
+     * @param int $mode 返回字串的格式：
+     *     0: (列1, 列2) VALUES (值1, 值2)
+     *     1: `列1`='值1', `列2`='值2'
+     *     2: `列1`='值1' AND `列2`='值2'
+     *     3: `列1`='值1' OR `列2`='值2'
+     *     4: `列1` IN (值1, 值2) *需要特殊字典格式：["列"=>[值1,值2]]
+     * @param bool $islike 模糊搜尋
+     * @return string SQL 語句片段，如果字典為 null 則返回 "*"，空陣列返回 ""
      */
-    function dic2sql($dic = null, $mode = 0, $islike = false) {
+    function dic2sql(mixed $dic = null, int $mode = 0, bool $islike = false): string {
         if ($dic === null) return "*";
         else if (count($dic) == 0) return "";
         else if ((strcmp(current($dic), "*") == 0 || strlen(current($dic)) == 0) && isset($dic[0])) return $dic[0];
@@ -559,10 +589,11 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 初始化 Redis 資料庫
-     * @return Bool true:正常 false:功能禁用 die:失敗
+     * 初始化 Redis 資料庫
+     *
+     * @return bool true:正常 false:功能禁用 die:失敗
      */
-    function initRedis() {
+    function initRedis(): bool {
         if ($this->redis) return true;
         global $nlcore;
         $redisconf = $nlcore->cfg->db->redis;
@@ -587,9 +618,11 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 結束連接
+     * 關閉所有資料庫連線
+     *
+     * @return void
      */
-    function close() {
+    function close(): void {
         if ($this->conR) {
             $this->log("[CLOSE] read-only mode.");
             mysqli_close($this->conR);
@@ -608,7 +641,9 @@ class nyadbconnect {
     }
 
     /**
-     * @description: 析構，結束連接，關閉日誌文件
+     * 解構子：結束連線，關閉日誌檔案
+     *
+     * @return void
      */
     function __destruct() {
         $this->close();
@@ -617,8 +652,6 @@ class nyadbconnect {
         unset($this->redis);
         $this->con = null;
         unset($this->con);
-        $this->mode = null;
-        unset($this->mode);
         if ($this->logfile) {
             fclose($this->logfile);
             $this->logfile = null;

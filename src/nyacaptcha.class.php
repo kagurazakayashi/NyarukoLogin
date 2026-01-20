@@ -1,7 +1,11 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 圖形驗證碼的建立和驗證
+ * 圖形驗證碼的建立與驗證
+ *
+ * 提供圖形驗證碼的生成、儲存、驗證功能，支援 Redis 與 MySQL 兩種儲存後端。
+ *
  * @package NyarukoLogin
  */
 
@@ -12,19 +16,14 @@ class nyacaptcha {
     function __construct() {
     }
     /**
-     * @description: 建立驗證碼
-     * @param  bool  extnow      是否立即將資訊返回給客戶端
-     * @param  bool  showcaptcha 是否直接返回驗證碼明碼，而不是圖片
-     * @param  bool  showimage   是否直接輸出驗證碼圖片
-     * @return array 驗證碼相關資訊：
-     * code    狀態碼
-     * time    驗證碼生成時間
-     * img     驗證碼檔名（不包括副檔名和路徑）
-     * captcha 驗證碼內容
-     * file    驗證碼圖片本地儲存路徑(extnow 時不輸出)
-     * url     驗證碼圖片網址
+     * 建立圖形驗證碼
+     *
+     * @param bool $extnow      是否立即將資訊返回給客戶端
+     * @param bool $showcaptcha 是否直接返回驗證碼明碼而非圖片
+     * @param bool $showimage   是否直接輸出驗證碼圖片
+     * @return ?array 驗證碼相關資訊陣列，若 $extnow 為 true 則直接輸出並返回 null
      */
-    function getcaptcha($extnow = true, $showcaptcha = false, $showimage = false) {
+    function getcaptcha(bool $extnow = true, bool $showcaptcha = false, bool $showimage = false): ?array {
         global $nlcore;
         $debug = $nlcore->cfg->verify->debug;
         $appToken = $nlcore->sess->appToken;
@@ -91,8 +90,9 @@ class nyacaptcha {
         return null;
     }
     /**
-     * @description: 建立 Redis 鍵名
-     * @return string 鍵名
+     * 建立 Redis 鍵名
+     *
+     * @return string Redis 鍵名
      */
     function redisKeyName(): string {
         global $nlcore;
@@ -100,9 +100,10 @@ class nyacaptcha {
     }
 
     /**
-     * @description: 驗證碼驗證失敗後用此函式重新建立一個
-     * @param  string code 錯誤程式碼
-     * @return array  驗證碼相關資訊（其中code、msg會不同）
+     * 驗證碼驗證失敗後重新建立一個驗證碼
+     *
+     * @param string $code 錯誤狀態碼
+     * @return array 驗證碼相關資訊（其中 code、msg 會不同）
      */
     function verifyfailgetnew(string $code): array {
         global $nlcore;
@@ -114,10 +115,11 @@ class nyacaptcha {
     }
 
     /**
-     * @description: 驗證圖形驗證碼是否正確
-     * @param  string captchacode 驗證碼
-     * @param  string totpsecret totp加密碼
-     * @return bool   是否可以通行
+     * 驗證圖形驗證碼是否正確
+     *
+     * @param string $appToken    客戶端令牌
+     * @param string $captchacode 驗證碼
+     * @return bool 是否可以通行
      */
     function verifycaptcha(string $appToken, string $captchacode): bool {
         if (strlen($captchacode) < 4) return false;

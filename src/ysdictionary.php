@@ -1,15 +1,25 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 雅詩有序多鍵字典
+ *
+ * 支援包含多個同名鍵的字典物件，可原順序返回所有值。
+ *
+ * @package NyarukoLogin
+ */
 class YSDictionary {
-    // 雅詩字典對象，支援包含多個同名 key，原順序返回
+    // 雅詩字典物件，支援包含多個同名 key，原順序返回
 
     private $keys = array();
     private $vals = array();
 
     /**
-     * @description: 從多個對象和鍵創建字典
-     * @param Object,String vk 對象、鍵
+     * 從多個物件與鍵建立字典
+     *
+     * @param mixed ...$vk 物件與鍵的交替序列（值, 鍵, 值, 鍵, ...）
      */
-    function dictionaryWithObjectsAndKeys(...$vk):void {
+    function dictionaryWithObjectsAndKeys(mixed ...$vk): void {
         for ($i=0; $i < count($vk); $i++) {
             $n = $vk[$i];
             if ($i % 2 == 0){
@@ -20,15 +30,16 @@ class YSDictionary {
         }
         $kc = count($this->keys);
         $vc = count($this->vals);
-        if ($kc < $vc) array_push($kc,null);
-        else if ($vc < $kc) array_push($vc,null);
+        if ($kc < $vc) array_push($this->keys, null);
+        else if ($vc < $kc) array_push($this->vals, null);
     }
 
     /**
-     * @description: 從關聯數組創建字典
-     * @param Array a 關聯數組
+     * 從關聯陣列建立字典
+     *
+     * @param array $a 關聯陣列
      */
-    function dictionaryWithIndexedArray(array $a):void {
+    function dictionaryWithIndexedArray(array $a): void {
         $this->keys = array_keys($a);
         for ($i=0; $i < count($this->keys); $i++) {
             $this->vals[$i] = $a[$this->keys[$i]];
@@ -36,21 +47,23 @@ class YSDictionary {
     }
 
     /**
-     * @description: 添加對象
-     * @param Object v 對象
-     * @param String k 鍵
+     * 添加物件
+     *
+     * @param mixed  $v 物件
+     * @param string $k 鍵
      */
-    function addObjectForKey($v,string $k):void {
+    function addObjectForKey(mixed $v, string $k): void {
         array_push($this->vals,$v);
         array_push($this->keys,$k);
     }
 
     /**
-     * @description: 替換對象
-     * @param Object v 對象
-     * @param String k 鍵
+     * 替換物件
+     *
+     * @param mixed  $v 物件
+     * @param string $k 鍵
      */
-    function replaceObjectForKey($v,string $k):void {
+    function replaceObjectForKey(mixed $v, string $k): void {
         for ($i=0; $i < count($this->keys); $i++) {
             $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
@@ -60,11 +73,12 @@ class YSDictionary {
     }
 
     /**
-     * @description: 替換或添加對象
-     * @param Object v 對象
-     * @param String k 鍵
+     * 替換或添加物件
+     *
+     * @param mixed  $v 物件
+     * @param string $k 鍵
      */
-    function setObjectForKey($v,string $k):void {
+    function setObjectForKey(mixed $v, string $k): void {
         $r = false;
         for ($i=0; $i < count($this->keys); $i++) {
             $nk = $this->keys[$i];
@@ -80,10 +94,12 @@ class YSDictionary {
     }
 
     /**
-     * @description: 獲取對象
-     * @param String k 鍵
+     * 獲取物件
+     *
+     * @param string $k 鍵
+     * @return mixed 對應的第一個物件，若不存在則返回 null
      */
-    function objectForKey(string $k) {
+    function objectForKey(string $k): mixed {
         for ($i=0; $i < count($this->keys); $i++) {
             $nk = $this->keys[$i];
             if (strcmp($nk,$k) == 0) {
@@ -93,10 +109,12 @@ class YSDictionary {
     }
 
     /**
-     * @description: 獲取多個對象
-     * @param String k 鍵
+     * 獲取多個物件
+     *
+     * @param string $k 鍵
+     * @return array 所有符合該鍵的物件陣列
      */
-    function objectsForKey(string $k):array {
+    function objectsForKey(string $k): array {
         $r = [];
         for ($i=0; $i < count($this->keys); $i++) {
             $nk = $this->keys[$i];
@@ -108,10 +126,11 @@ class YSDictionary {
     }
 
     /**
-     * @description: 移除對象
-     * @param String k 鍵
+     * 移除物件
+     *
+     * @param string $k 鍵
      */
-    function removeObjectForKey(string $k):void {
+    function removeObjectForKey(string $k): void {
         $rm = function(int $i) {
             $nk = [];
             $nv = [];
@@ -132,19 +151,20 @@ class YSDictionary {
     }
 
     /**
-     * @description: 移除多個對象
-     * @param Array<String> ks 鍵數組
+     * 移除多個物件
+     *
+     * @param string[] $ks 鍵陣列
      */
-    function removeObjectsForKeys(array $ks):void {
+    function removeObjectsForKeys(array $ks): void {
         foreach ($ks as $k) {
             $this->removeObjectForKey($k);
         }
     }
 
     /**
-     * @description: 移除所有對象
+     * 移除所有物件
      */
-    function removeAllObjects():void {
+    function removeAllObjects(): void {
         $this->keys = null; unset($this->keys);
         $this->vals = null; unset($this->vals);
         $this->keys = array();
@@ -152,40 +172,44 @@ class YSDictionary {
     }
 
     /**
-     * @description: 從另一個字典創建字典
-     * @param YSDictionary dic 字典
+     * 從另一個字典複製內容
+     *
+     * @param YSDictionary $dic 來源字典
      */
-    function setDictionary(YSDictionary $dic) {
+    function setDictionary(YSDictionary $dic): void {
         $this->keys = $dic->keys;
         $this->vals = $dic->vals;
     }
 
     /**
-     * @description: 字典中的對象數量
-     * @return Int 字典中的對象數量
+     * 字典中的物件數量
+     *
+     * @return int 物件數量
      */
-    function count():int {
+    function count(): int {
         return count($this->keys);
     }
 
     /**
-     * @description: 獲取所有鍵
-     * @return Array<String> 鍵數組
+     * 獲取所有鍵
+     *
+     * @return string[] 鍵陣列
      */
-    function allKeys():array {
+    function allKeys(): array {
         return $this->keys;
     }
 
     /**
-     * @description: 獲取所有對象
-     * @return Array<Object> 對象數組
+     * 獲取所有物件
+     *
+     * @return mixed[] 物件陣列
      */
-    function allValues():array {
+    function allValues(): array {
         return $this->vals;
     }
 
     /**
-     * @description: 析構
+     * 析構子
      */
     function __destruct() {
         $this->keys = null; unset($this->keys);

@@ -1,11 +1,34 @@
 {
+    "name": "kagurazakayashi/nyaruko-login",
+    "description": "NyarukoLogin 2 - 通用使用者登入與認證系統",
+    "type": "project",
+    "license": "MIT",
     "require": {
-        "xxtea/xxtea": "^1.0",
-        "gregwar/captcha": "^1.1",
-        "phpmailer/phpmailer": "^6.1",
-        "phpgangsta/googleauthenticator": "@dev",
-        "php-ffmpeg/php-ffmpeg": "^0.14.0",
+        "php": ">=8.1",
         "ext-curl": "*",
+        "ext-mbstring": "*",
+        "ext-mysqli": "*",
+        "ext-openssl": "*",
+        "ext-redis": "*",
+        "ext-gd": "*",
+        "ext-fileinfo": "*",
+        "ext-zlib": "*",
+        "ext-imagick": "*",
+        "gregwar/captcha": "^1.1",
+        "phpmailer/phpmailer": "^6.9",
+        "php-ffmpeg/php-ffmpeg": "^1.2",
         "alibabacloud/client": "^1.5"
+    },
+    "suggest": {
+        "xxtea/xxtea": "已棄用的舊版加密方式，新專案無需安裝",
+        "phpgangsta/googleauthenticator": "已棄用的舊版 TOTP，將於未來重寫"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "scripts": {
+        "check": "find . -name '*.php' -not -path './vendor/*' -exec php -l {} \\;"
     }
 }

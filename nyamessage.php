@@ -1,5 +1,11 @@
 <?php
-// 发送或获取站内信
+declare(strict_types=1);
+/**
+ * 站內訊息端點 - 處理站內訊息的傳送、接收與狀態更新操作。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyamessage.class.php";
 // IP 檢查和解密客戶端提交的資訊

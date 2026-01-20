@@ -1,4 +1,15 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 安全與驗證工具類
+ *
+ * 提供 RSA 加密解密、雜湊函式（MD5/MD6）、隨機字串生成、
+ * 字串驗證（電子郵件、IP、電話號碼等）、密碼強度檢查、
+ * 違禁詞過濾、IP 封禁檢查、存取頻率限制等功能。
+ *
+ * @package NyarukoLogin
+ */
 class nyasafe {
     private $logfile = null; // 記錄詳細除錯資訊到檔案
     const PKBE_PRIE_B = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n";
@@ -13,7 +24,9 @@ class nyasafe {
     const PKB_PUBB_B = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8A";
     const HEADER_405 = "HTTP/1.1 405 Method Not Allowed";
     /**
-     * @description: 建構函式
+     * 建構子
+     *
+     * @return void
      */
     function __construct() {
     }
@@ -256,10 +269,11 @@ class nyasafe {
         }
     }
     /**
-     * @description: 快捷補充金鑰對首尾標記，從快取區載入和儲存
-     * @return String 金鑰對
+     * 快捷補充金鑰對首尾標記，從快取區載入和儲存
+     *
+     * @return void
      */
-    function autoRsaAddTag() {
+    function autoRsaAddTag(): void {
         global $nlcore;
         $pubKey = $nlcore->sess->publicKey;
         if (strcmp(substr($pubKey, 0, 5), "-----") != 0) {
@@ -271,19 +285,22 @@ class nyasafe {
         }
     }
     /**
-     * @description: 移除前部分資料
-     * @param String str 在 rsaRmTag 之後的資料
-     * @return String 削減後的金鑰
+     * 移除前部分資料
+     *
+     * @param string $str 在 rsaRmTag 之後的資料
+     * @return string 削減後的金鑰
      */
-    function rsaRmBCode(string $str) {
+    function rsaRmBCode(string $str): string {
         return substr($str, 32);
     }
     /**
-     * @description: 補充前部分資料
-     * @param String str 在 rsaRmBCode 之後的資料
-     * @return String 用於 rsaAddTag 的全內容金鑰
+     * 補充前部分資料
+     *
+     * @param string $str 在 rsaRmBCode 之後的資料
+     * @param bool $isPrivateKey 是否為私鑰（預設 false）
+     * @return string 用於 rsaAddTag 的全內容金鑰
      */
-    function rsaAddBCode(string $str, bool $isPrivateKey = false) {
+    function rsaAddBCode(string $str, bool $isPrivateKey = false): string {
         if ($isPrivateKey) {
             return self::PKB_PRIB_B . $str;
         } else {
@@ -291,12 +308,12 @@ class nyasafe {
         }
     }
     /**
-     * @description: 進行Base64編碼，並取代一些符號
-     * “+”改成“-”, “/”改成“_”, “=”刪除
-     * @param Data fdata 需要使用Base64編碼的資料
-     * @return Array 加密後的字串
+     * 進行 Base64 編碼，並取代一些符號（"+"→"-", "/"→"_", "=" 刪除）
+     *
+     * @param string $fdata 需要使用 Base64 編碼的資料
+     * @return string 編碼後的字串
      */
-    function urlb64encode($fdata) {
+    function urlb64encode(string $fdata): string {
         $data = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($fdata));
         return $data;
     }
@@ -334,20 +351,22 @@ class nyasafe {
         return $uncompressed;
     }
     /**
-     * @description: 是否為MD5
-     * @param String str 需要判斷的字串
-     * @return Int 是否匹配： > 0 或 != false
+     * 是否為 MD5
+     *
+     * @param string $str 需要判斷的字串
+     * @return int|false 是否匹配：> 0 或 != false
      */
-    function is_md5(string $str) {
+    function is_md5(string $str): int|false {
         return preg_match("/^[a-z0-9]{32}$/", $str);
     }
     /**
-     * @description: 是否為MD6
-     * @param String str 需要判斷的字串
-     * @param String length 預期的字串長度
-     * @return Int 是否匹配： > 0 或 != false
+     * 是否為 MD6
+     *
+     * @param string $str 需要判斷的字串
+     * @param int $length 預期的字串長度（預設 64）
+     * @return int|false 是否匹配：> 0 或 != false
      */
-    function is_md6(string $str, int $length = 64) {
+    function is_md6(string $str, int $length = 64): int|false {
         return preg_match("/^[a-z0-9]{" . $length . "}$/", $str);
     }
     /**
@@ -410,53 +429,58 @@ class nyasafe {
         return $this->randstrto(md5($str));
     }
     /**
-     * @description: 驗證是否為包含大小寫的MD5變體字串
-     * @param String str MD5變體字串
-     * @return Bool 是否匹配 > 0 || != false
+     * 驗證是否為包含大小寫的 MD5 變體字串
+     *
+     * @param string $str MD5 變體字串
+     * @return bool 是否匹配
      */
-    function is_rhash32(string $str) {
+    function is_rhash32(string $str): bool {
         return $this->is_rhash64($str,32);
     }
     /**
-     * @description: 生成一段随机文本
-     * @param Int len 生成长度
-     * @param String chars 从此字符串中抽取字符
-     * @return String 新生成的随机文本
+     * 生成一段隨機文字
+     *
+     * @param int $len 生成長度（預設 64）
+     * @param string $chars 從此字串中抽取字元（預設為英數字混合）
+     * @return string 新生成的隨機文字
      */
-    function randstr($len = 64, $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
+    function randstr(int $len = 64, string $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'): string {
         mt_srand($this->seed());
         $password = "";
         while (strlen($password) < $len) $password .= substr($chars, (mt_rand() % strlen($chars)), 1);
         return $password;
     }
     /**
-     * @description: 生成随机哈希值
-     * @param String salt 盐（可选）
-     * @param Boolean md6 使用 MD6 生成随机哈希值（64位），否则用 MD5 生成随机哈希值（32位）
-     * @param Boolean randstrto 将哈希结果随机大小写
-     * @return String 生成的字符串
+     * 生成隨機雜湊值
+     *
+     * @param string $salt 鹽（可選）
+     * @param bool $md6 使用 MD6 生成隨機雜湊值（64 位），否則用 MD5 生成（32 位）
+     * @param bool $randstrto 將雜湊結果隨機大小寫
+     * @return string 生成的雜湊字串
      */
-    function randhash($salt = "", $md6 = true, $randstrto = true) {
+    function randhash(string $salt = "", bool $md6 = true, bool $randstrto = true): string {
         $data = (float)microtime() . $salt . $this->randstr(16);
         $data = $md6 ? $this->md6($data) : md5($data);
         return $randstrto ? $this->randstrto($data) : $data;
     }
     /**
-     * @description: 生成随机数发生器种子
-     * @param String salt 盐（可选）
-     * @return String 种子
+     * 生成亂數發生器種子
+     *
+     * @param string $salt 鹽（可選）
+     * @return string 種子
      */
-    function seed($salt = "") {
+    function seed(string $salt = ""): string {
         $newsalt = (float)microtime() * 1000000 * getmypid();
         return $newsalt . $salt;
     }
     /**
-     * @description: 获得当前时间
-     * @param String timezone PHP时区代码（可选，默认为配置文件中配置的时区）
-     * @param Int settime 自定义时间戳（秒）
-     * @return Array [Datetime,String] 返回时间日期对象和时间日期字符串
+     * 獲得當前時間
+     *
+     * @param string|null $timezone PHP 時區代碼（可選，預設為配置檔中配置的時區）
+     * @param int|null $settime 自定義時間戳（秒，可選）
+     * @return array [時間戳, 時間日期字串]
      */
-    function getdatetime($timezone = null, $settime = null) {
+    function getdatetime(string|null $timezone = null, int|null $settime = null): array {
         if ($timezone) {
             $timezone_out = date_default_timezone_get();
             date_default_timezone_set($timezone);
@@ -476,9 +500,11 @@ class nyasafe {
         return date('Y-m-d H:i:s', $timestamp);
     }
     /**
-     * @description: 获得毫秒级时间戳
+     * 獲得毫秒級時間戳
+     *
+     * @return string 毫秒時間戳字串
      */
-    function millisecondtimestamp() {
+    function millisecondtimestamp(): string {
         $time = explode(" ", strval(microtime()));
         $time = $time[1] . (intval($time[0]) * 1000);
         $time2 = explode(".", $time);
@@ -486,13 +512,13 @@ class nyasafe {
         return $time;
     }
     /**
-     * @description: 检查时间戳差异是否大于配置文件中的值
-     * 差异太大直接返回错误信息到客户端
-     * @param String timestamp1 秒级时间戳1
-     * @param String timestamp2 秒级时间戳2
-     * @return Void 成功不返回，失败直接返回错误代码给客户端
+     * 檢查時間戳差異是否大於配置檔中的值
+     *
+     * @param string|int $timestamp1 秒級時間戳 1
+     * @param string|int $timestamp2 秒級時間戳 2
+     * @return void 成功不返回，失敗直接返回錯誤代碼給客戶端
      */
-    function timestampdiff($timestamp1, $timestamp2) {
+    function timestampdiff(string|int $timestamp1, string|int $timestamp2): void {
         global $nlcore;
         $timestampabs = abs($timestamp1 - $timestamp2);
         if ($timestampabs > $nlcore->cfg->app->timestamplimit) {
@@ -521,12 +547,13 @@ class nyasafe {
         }
     }
     /**
-     * @description: 從字典中抽出指定的 Key ，並生成一個新的字典。
-     * @param Array add 原始字典陣列
-     * @param String keys... 要取出的所有 Key
-     * @return Array 新建立的字典
+     * 從字典中抽出指定的 Key，並生成一個新的字典
+     *
+     * @param array $dicArr 原始字典陣列
+     * @param string ...$keys 要取出的所有 Key
+     * @return array 新建立的字典
      */
-    function dicExtract(array $dicArr, string ...$keys) {
+    function dicExtract(array $dicArr, string ...$keys): array {
         $newDic = [];
         foreach ($keys as $key) {
             if (isset($dicArr[$key])) {
@@ -536,13 +563,13 @@ class nyasafe {
         return $newDic;
     }
     /**
-     * @description: 替换字符串中某个字符的多个连续字符，转换成一个
-     * 例如： "///" -> "/"
-     * @param String str 原字符串
-     * @param String chr 要合并的字符
-     * @return String 替换后的字符
+     * 替換字串中某個字元的多個連續字元，轉換成一個
+     *
+     * @param string $str 原字串
+     * @param string $chr 要合併的字元
+     * @return string 替換後的字串
      */
-    function mergerepeatchar($str, $chr) {
+    function mergerepeatchar(string $str, string $chr): string {
         $chararr = str_split($str);
         $newchararr = [];
         $oldchar = "";
@@ -555,33 +582,34 @@ class nyasafe {
         return implode('', $newchararr);
     }
     /**
-     * @description: 转换为系统路径
-     * 将路径字符 '/' 和 '\' 统一转换为当前系统使用的路径字符
-     * @param String path 路径字符串
-     * @return String 转换后的路径字符串
+     * 轉換為系統路徑
+     *
+     * @param string $path 路徑字串
+     * @return string 轉換後的路徑字串
      */
-    function dirsep($path) {
+    function dirsep(string $path): string {
         $newpath = str_replace("\\", DIRECTORY_SEPARATOR, $path);
         $newpath = str_replace("/", DIRECTORY_SEPARATOR, $newpath);
         return $this->mergerepeatchar($newpath, DIRECTORY_SEPARATOR);
     }
     /**
-     * @description: 转换为网址路径
-     * 将路径字符 '\' 转换为 URL 用的 '/'
-     * @param String path 路径字符串
-     * @return String 转换后的路径字符串
+     * 轉換為網址路徑
+     *
+     * @param string $path 路徑字串
+     * @return string 轉換後的路徑字串
      */
-    function urlsep($path) {
+    function urlsep(string $path): string {
         $newpath = str_replace("\\", "/", $path);
         return $this->mergerepeatchar($newpath, "/");
     }
     /**
-     * @description: 自动清除路径中的文件夹字符(../)，可以在路径的任何位置。
-     * @param String path 路径字符串
-     * @param Int level 如果提供此数值，会改为手动向上父级多少级
-     * @return String 转换后的路径
+     * 自動清除路徑中的資料夾字元 (../)，可以在路徑的任何位置
+     *
+     * @param string $path 路徑字串
+     * @param int $level 如果提供此數值，會改為手動向上父級多少級（預設 -1 為自動）
+     * @return string 轉換後的路徑
      */
-    function parentfolder($path, $level = -1) {
+    function parentfolder(string $path, int $level = -1): string {
         $newpath = $this->dirsep($path);
         $endchar = substr($newpath, -1);
         if ($endchar != DIRECTORY_SEPARATOR) $endchar = "";
@@ -609,37 +637,39 @@ class nyasafe {
         return $startchar . $newpath . $endchar;
     }
     /**
-     * @description: 检查一维数组中是否都为某个值
-     * @param Object search 对象
-     * @param Array array 要检查的数组
-     * @param Bool type 使用全等进行判断
-     * @return Bool 是否都为某个值
+     * 檢查一維陣列中是否都為某個值
+     *
+     * @param mixed $search 搜尋目標值
+     * @param array $array 要檢查的陣列
+     * @param bool $type 使用全等（===）進行判斷（預設 true）
+     * @return bool 是否都為某個值
      */
-    function allinarray($search, $array, $type = true) {
+    function allinarray(mixed $search, array $array, bool $type = true): bool {
         foreach ($array as $value) {
             if (($type && $value !== $search) || (!$type && $value != $search)) return false;
         }
         return true;
     }
     /**
-     * @description: 将父文件夹字符(../)移除，并返回有多少层
-     * 例如： "/server/path/../../" -> [2,"/server/path/"]
-     * @param String path 路径字符串
-     * @return Array<Int,String> [层数,转换后的路径]
+     * 將父資料夾字元 (../) 移除，並返回有多少層
+     *
+     * @param string $path 路徑字串
+     * @return array [層數, 轉換後的路徑]
      */
-    function parentfolderlevel($path) {
+    function parentfolderlevel(string $path): array {
         $pdirstr = ".." . DIRECTORY_SEPARATOR;
         $newpath = str_replace($pdirstr, "", $path, $ri);
         return [$ri, $newpath];
     }
     /**
-     * @description: 过滤字符串中的非法字符
-     * @param String str 源字符串
-     * @param Bool errdie 如果出错则完全中断执行，返回错误信息JSON
-     * @param Bool dhtml 是否将HTML代码也视为非法字符
-     * @return String 经过过滤的字符
+     * 過濾字串中的非法字元
+     *
+     * @param string $str 源字串
+     * @param bool $errdie 如果出錯則完全中斷執行，返回錯誤資訊 JSON（預設 true）
+     * @param bool $dhtml 是否將 HTML 代碼也視為非法字元（預設 false）
+     * @return string 經過過濾的字串
      */
-    function safestr($str, $errdie = true, $dhtml = false) {
+    function safestr(string $str, bool $errdie = true, bool $dhtml = false): string {
         global $nlcore;
         $ovalue = $str;
         $str = stripslashes($str);
@@ -655,27 +685,30 @@ class nyasafe {
         return $str;
     }
     /**
-     * @description: 只保留字符串中所有的非字母和数字
-     * @param String str 源字符串
-     * @return String 经过过滤的字符
+     * 只保留字串中所有的非字母和數字
+     *
+     * @param string $str 源字串
+     * @return string 經過過濾的字串
      */
-    function retainletternumber($str) {
+    function retainletternumber(string $str): string {
         return preg_replace('/[\W]/', '', $str);
     }
     /**
-     * @description: 只保留字符串中所有的数字
-     * @param String str 源字符串
-     * @return String 经过过滤的字符
+     * 只保留字串中所有的數字
+     *
+     * @param string $str 源字串
+     * @return string 經過過濾的字串
      */
-    function retainnumber($str) {
+    function retainnumber(string $str): string {
         return preg_replace('/[^\d]/', '', $str);
     }
     /**
-     * @description: 检查是否为电子邮件地址
-     * @param String str 源字符串
-     * @return Bool 是否正确
+     * 檢查是否為有效的電子郵件地址
+     *
+     * @param string $str 源字串
+     * @return bool|null 是否正確（未提供字串時返回 null）
      */
-    function isEmail($str) {
+    function isEmail(string $str): bool|null {
         if (strlen($str) > 64) return false;
         $checkmail = "/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/";
         if (isset($str) && $str != "") {
@@ -687,36 +720,40 @@ class nyasafe {
         }
     }
     /**
-     * @description: 检查是否为 IPv4 地址
-     * @param String ip IP地址源字符串
-     * @return Bool 是否正确
+     * 檢查是否為 IPv4 地址
+     *
+     * @param string $ip IP 地址源字串
+     * @return bool 是否正確
      */
-    function isIPv4($ip) {
+    function isIPv4(string $ip): bool {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
     /**
-     * @description: 检查是否为 IPv6 地址
-     * @param String ip IP地址源字符串
-     * @return Bool 是否正确
+     * 檢查是否為 IPv6 地址
+     *
+     * @param string $ip IP 地址源字串
+     * @return bool 是否正確
      */
-    function isIPv6($ip) {
+    function isIPv6(string $ip): bool {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
     }
     /**
-     * @description: 检查是否为私有 IP 地址
-     * @param String ip IP地址源字符串
-     * @return Bool 是否正确
+     * 檢查是否為私有 IP 地址
+     *
+     * @param string $ip IP 地址源字串
+     * @return bool 是否為私有地址
      */
-    function isPubilcIP($ip) {
+    function isPubilcIP(string $ip): bool {
         if (filter_var($ip, FILTER_FLAG_NO_PRIV_RANGE) || filter_var($ip, FILTER_FLAG_NO_RES_RANGE)) return false;
         return true;
     }
     /**
-     * @description: 判断IP地址类型，输出为存入数据库的代码
-     * @param String ip IP地址源字符串
-     * @return Int 0:未知,40:v4,60:v6,+1:公共地址
+     * 判斷 IP 地址型別，輸出為存入資料庫的代碼
+     *
+     * @param string $ip IP 地址源字串
+     * @return string 型別：other, ipv4, ipv6, ipv4_local, ipv6_local
      */
-    function iptype($ip) {
+    function iptype(string $ip): string {
         $iptype = "other";
         if ($this->isIPv4($ip)) $iptype = "ipv4";
         else if ($this->isIPv6($ip)) $iptype = "ipv6";
@@ -724,11 +761,12 @@ class nyasafe {
         return $iptype;
     }
     /**
-     * @description: 检查是否为整数数字字符串
-     * @param String str 源字符串
-     * @return Bool 是否正确
+     * 檢查是否為整數數字字串
+     *
+     * @param mixed $str 源字串或數值
+     * @return bool 是否為整數
      */
-    function isInt($str) {
+    function isInt(mixed $str): bool {
         $v = is_numeric($str) ? true : false; //判断是否为数字或数字字符串
         if ($v) {
             if (strpos($str, ".")) {
@@ -741,11 +779,12 @@ class nyasafe {
         }
     }
     /**
-     * @description: 判断字符类型
-     * @param String str 源字符串
-     * @return Int 0:其他字符 1:数字 2:小写字母 3:大写字母
+     * 判斷字元型別
+     *
+     * @param string $str 源字串（單個字元）
+     * @return int 0:其他字元, 1:數字, 2:小寫字母, 3:大寫字母
      */
-    function chartype($str) {
+    function chartype(string $str): int {
         if (preg_match("/^\d*$/", $str)) {
             return 1;
         } else if (preg_match('/^[a-z]+$/', $str)) {
@@ -757,13 +796,14 @@ class nyasafe {
         }
     }
     /**
-     * @description: 检查字符串是否仅包含字母和数字并满足指定长度条件
-     * @param String str 源字符串
-     * @param Int minlen 至少需要多长（可选,默认-1不限制）
-     * @param Int maxlen 至多需要多长（可选,默认-1不限制）
-     * @return Bool 是否正确
+     * 檢查字串是否僅包含字母和數字並滿足指定長度條件
+     *
+     * @param string $str 源字串
+     * @param int $minlen 至少需要多長（可選，-1 不限制）
+     * @param int $maxlen 至多需要多長（可選，-1 不限制）
+     * @return bool 是否正確
      */
-    function isNumberOrEnglishChar($str, $minlen = -1, $maxlen = -1) {
+    function isNumberOrEnglishChar(string $str, int $minlen = -1, int $maxlen = -1): bool {
         if (preg_match("/^[A-Za-z0-9]+$/i", $str) == 0) return false;
         $len = strlen($str);
         if ($minlen != -1 && $len < $minlen) return false;
@@ -771,11 +811,12 @@ class nyasafe {
         return true;
     }
     /**
-     * @description: 检查是否为中国手机电话号码格式
-     * @param String str 源字符串
-     * @return Bool 是否正确
+     * 檢查是否為中國手機號碼格式
+     *
+     * @param string $str 源字串
+     * @return bool 是否正確
      */
-    function isPhoneNumCN($str) {
+    function isPhoneNumCN(string $str): bool {
         $checktel = "/^1[345789]\d{9}$/";
         if (isset($str) && $str != "") {
             if (preg_match($checktel, $str)) {
@@ -785,11 +826,12 @@ class nyasafe {
         return false;
     }
     /**
-     * @description: 分离手机号码中的国别码（如果没有国别码默认+86），并去除所有符号
-     * @param String telstr 电话号码字符串
-     * @return Array[String,String] 国别码字符串和电话号码字符串
+     * 分離手機號碼中的國別碼（如果沒有國別碼預設 +86），並去除所有符號
+     *
+     * @param string $telstr 電話號碼字串
+     * @return array [國別碼數字字串, 電話號碼數字字串]
      */
-    function telarea($telstr) {
+    function telarea(string $telstr): array {
         $area = "86";
         $tel = "";
         if (!preg_match("/^[\+a-z\d\-( )]*$/i", $telstr)) {
@@ -805,11 +847,12 @@ class nyasafe {
         return [$this->findNum($area), $this->findNum($tel)];
     }
     /**
-     * @description: 取出字符串中的所有数字
-     * @param String str 原字符串
-     * @return String 纯数字字符串
+     * 取出字串中的所有數字
+     *
+     * @param string $str 原字串
+     * @return string 純數字字串
      */
-    function findNum($str = '') {
+    function findNum(string $str = ''): string {
         $str = trim($str);
         if (empty($str)) return '';
         $result = '';
@@ -819,12 +862,13 @@ class nyasafe {
         return $result;
     }
     /**
-     * @description: 判断是否为Base64字符串
-     * @param String b64string Base64字符串
-     * @param Bool urlmode 是否为转换符号后的Base64字符串
-     * @return Bool 是否为Base64字符串
+     * 判斷是否為 Base64 字串
+     *
+     * @param string $b64string Base64 字串
+     * @param bool $urlmode 是否為轉換符號後的 Base64 字串
+     * @return bool 是否為 Base64 字串
      */
-    function isbase64($b64string, $urlmode = false) {
+    function isbase64(string $b64string, bool $urlmode = false): bool {
         if ($urlmode) {
             if (preg_match("/[^0-9A-Za-z\-_]/", $b64string) > 0) return false;
         } else {
@@ -833,6 +877,11 @@ class nyasafe {
         return true;
     }
 
+    /**
+     * 從資料庫載入違禁詞列表
+     *
+     * @return array 違禁詞陣列
+     */
     function wordfilterDbLoad(): array {
         global $nlcore;
         $columnArr = ["sw0", "sw1", "sw2", "sw3", "chrint"];
@@ -919,19 +968,21 @@ class nyasafe {
         return false;
     }
     /**
-     * @description: 字符串转字符数组，可以处理中文
-     * @param String str 源字符串
-     * @return Array 字符数组
+     * 字串轉字元陣列，可以處理中文
+     *
+     * @param string $str 源字串
+     * @return array<string>|false 字元陣列
      */
-    function mbStrSplit($str) {
+    function mbStrSplit(string $str): array|false {
         return preg_split('/(?<!^)(?!$)/u', $str);
     }
     /**
-     * @description: 检查 IP 地址是否处于封禁期内
-     * @param time 当前时间time()
-     * @return Array<Int> 状态码 和 IP表的id
+     * 檢查 IP 位址是否處於封禁期內
+     *
+     * @param int $time 當前時間 time()
+     * @return array [狀態碼, IP 表的 id]
      */
-    function chkip($time) {
+    function chkip(int $time): array {
         global $nlcore;
         //获取环境信息
         $ipaddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : "";
@@ -966,11 +1017,12 @@ class nyasafe {
         return [0, $ipid];
     }
     /**
-     * @description: 检查 APP 是否已经注册 appname 和 appsecret
-     * @param String appsecret 已注册的应用密钥app_id
-     * @return String 数据库中的 ID 号 或 null
+     * 檢查 APP 是否已經註冊 appkey
+     *
+     * @param string $appKey 已註冊的應用金鑰 app_id
+     * @return string|null 資料庫中的 ID 號碼或 null
      */
-    function chkAppKey($appKey) {
+    function chkAppKey(string $appKey): string|null {
         global $nlcore;
         $table = $nlcore->cfg->db->tables["app"];
         $whereDic = array(
@@ -981,10 +1033,11 @@ class nyasafe {
         return null;
     }
     /**
-     * @description: 获得真实IP
-     * @return String IP地址
+     * 獲得真實 IP
+     *
+     * @return string IP 位址
      */
-    function getip() {
+    function getip(): string {
         $ip = "";
         if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
@@ -996,15 +1049,14 @@ class nyasafe {
         return $ip;
     }
     /**
-     * @description: 檢查當前IP是否到達介面訪問頻率限制
-     * @param String module 功能名稱（$cfg->limittime），提供此項將覆蓋下面兩項
-     * @param Int interval 在多少秒內
-     * @param Int times 允許請求多少次
-     * @param Array<String,String> module 自定義次數限制參數
-     * @return Array<Int,Int> [狀態碼,第幾次請求]
-     * 如果未載入Redis則自動關閉此功能，直接返回通過，請求數返回-1
+     * 檢查當前 IP 是否到達介面存取頻率限制
+     *
+     * @param string $module 功能名稱（$cfg->limittime），提供此項將覆蓋下面兩項
+     * @param int $interval 在多少秒內
+     * @param int $times 允許請求多少次
+     * @return array [狀態碼, 第幾次請求]（如果未載入 Redis 則自動關閉，直接返回通過，請求數返回 -1）
      */
-    function frequencylimitation(string $module = "", int $interval = PHP_INT_MAX, int $times = PHP_INT_MAX) {
+    function frequencylimitation(string $module = "", int $interval = PHP_INT_MAX, int $times = PHP_INT_MAX): array {
         global $nlcore;
         if (strlen($module) > 0) {
             $conf = $nlcore->cfg->app->limittime[$module] ?? $nlcore->cfg->app->limittime["default"];
@@ -1029,11 +1081,12 @@ class nyasafe {
         return [1000000, $count];
     }
     /**
-     * @description: 检查数据提交方式是否被允许，并自动选择提交方式获取数据
-     * @param String allowmethod 允许的提交方式数组
-     * @return Array 客户端提交的数据
+     * 檢查資料提交方式是否被允許，並自動選擇提交方式獲取資料
+     *
+     * @param array $allowmethod 允許的提交方式陣列（預設 ["POST", "GET"]）
+     * @return array|null 客戶端提交的資料
      */
-    function getarg($allowmethod = ["POST", "GET"]) {
+    function getarg(array $allowmethod = ["POST", "GET"]): array|null {
         global $nlcore;
         $argvs = null;
         if (!isset($_SERVER['REQUEST_METHOD'])) die(header(self::HEADER_405));
@@ -1081,15 +1134,14 @@ class nyasafe {
         }
     }
     /**
-     * @description: 批量替换指定字符
-     * @param String string 规定被搜索的字符串
-     * @param Array<String:String> findreplace 要替换的内容字典
-     * 例如：Array("find" => "replace")
-     * @param Bool geti 是否返回替换的数量，设置为 true 会返回数组
-     * @return String 经过替换后的字符串
-     * @return String,Int 经过替换后的字符串和替换的数量
+     * 批次替換指定字元
+     *
+     * @param string $string 規定被搜尋的字串
+     * @param array $findreplace 要替換的內容字典，例如：["find" => "replace"]
+     * @param bool $geti 是否返回替換的數量，設定為 true 會返回陣列
+     * @return string|array 經過替換後的字串，或 [字串, 替換數量]
      */
-    function replacestr($string, $findreplace, $geti = false) {
+    function replacestr(string $string, array $findreplace, bool $geti = false): string|array {
         $find = array_keys($findreplace);
         $replace = array_values($findreplace);
         $newstring = str_replace($find, $replace, $string, $replacei);
@@ -1097,11 +1149,12 @@ class nyasafe {
         return $newstring;
     }
     /**
-     * @description: 密码健壮性检查（长度、特定字符长度、字符合法性）
-     * @param String 要检查的密码
-     * @return Null 有错误直接返回客户端
+     * 密碼健壯性檢查（長度、特定字元長度、字元合法性）
+     *
+     * @param string $password 要檢查的密碼
+     * @return void 有錯誤直接返回客戶端
      */
-    function strongpassword($password) {
+    function strongpassword(string $password): void {
         global $nlcore;
         $passwordchar = $this->mbStrSplit($password);
         $passwordcount = count($passwordchar);
@@ -1130,14 +1183,14 @@ class nyasafe {
         }
     }
     /**
-     * @description: 检查数组中是否包括指定的一组 key
-     * @param Array nowarray 需要被测试的数组
-     * @param Array<String> keys 需要检查是否有哪些 key 的数组
-     * @param Bool getcount 是否返回不匹配的数量，否则返回具体不匹配的 key 数组
-     * @return Array<String> 不匹配的 key 数组
-     * @return Int 不匹配的数量
+     * 檢查陣列中是否包括指定的一組 key
+     *
+     * @param array $nowarray 需要被測試的陣列
+     * @param array $keys 需要檢查是否有哪些 key 的陣列
+     * @param bool $getcount 是否返回不匹配的數量（true），否則返回具體不匹配的 key 陣列（false）
+     * @return int|array 不匹配的數量或 key 陣列
      */
-    function keyinarray($nowarray, $keys, $getcount = true) {
+    function keyinarray(array $nowarray, array $keys, bool $getcount = true): int|array {
         $novalkey = array();
         foreach ($keys as $nowkey) {
             if (!isset($nowarray[$nowkey])) {
@@ -1148,12 +1201,13 @@ class nyasafe {
         return $novalkey;
     }
     /**
-     * @description: 为数组中的所有键增加一个前缀
-     * @param Array arr 要处理的数组
-     * @param String prefix 要添加的前缀
-     * @return Array 修改后的数组
+     * 為陣列中的所有鍵增加一個前綴
+     *
+     * @param array|null $arr 要處理的陣列
+     * @param string $prefix 要添加的前綴
+     * @return array|null 修改後的陣列
      */
-    function arraykeyprefix($arr = null, $prefix = "") {
+    function arraykeyprefix(array|null $arr = null, string $prefix = ""): array|null {
         if (!isset($arr) || count($arr) == 0) return $arr;
         $newarr = [];
         foreach ($arr as $key => $value) {
@@ -1163,14 +1217,12 @@ class nyasafe {
         return $newarr;
     }
     /**
-     * @description: 将
-     * {"key1":["val1","val2"],"key2":["val1","val2"]...}
-     * 转换为
-     * [{"key1":"val1"},{"key2":"val2"}...]
-     * @param Array 需要整理的数组(根为关联数组)
-     * @return Array 转换后的数组(根为索引数组)
+     * 將 {"key1":["val1","val2"],"key2":["val1","val2"]...} 轉換為 [{"key1":"val1"},{"key2":"val2"}...]
+     *
+     * @param array $dic 需要整理的陣列（根為關聯陣列）
+     * @return array 轉換後的陣列（根為索引陣列）
      */
-    function dicvals2arrsdic($dic) {
+    function dicvals2arrsdic(array $dic): array {
         $newarr = [];
         if (!$dic || count($dic) == 0) return $newarr;
         $keys = array_keys($dic);
@@ -1185,11 +1237,12 @@ class nyasafe {
         return $newarr;
     }
     /**
-     * @description: 数组是否全都是 null
-     * @param Array nowarray 需要被测试的数组
-     * @return Bool 是否全都是 null
+     * 陣列是否全都是 null
+     *
+     * @param array|null $nowarray 需要被測試的陣列
+     * @return bool 是否全都是 null
      */
-    function allnull($nowarray) {
+    function allnull(array|null $nowarray): bool {
         if (!$nowarray || count($nowarray) == 0) return false;
         foreach ($nowarray as $key => $value) {
             if ($value != null) return false;
@@ -1201,25 +1254,21 @@ class nyasafe {
      * @param Array array 多维数组
      * @return Array array 一维数组
      */
-    function multiAarray2array($array) {
-        static $result_array = array();
-        foreach ($array as $key => $value) {
-            if (is_array($value)) {
-                $this->multiAarray2array($value);
-            } else
-                $result_array[$key] = $value;
-        }
+    function multiAarray2array(array $array): array {
+        $result_array = [];
+        array_walk_recursive($array, function ($value, $key) use (&$result_array) {
+            $result_array[$key] = $value;
+        });
         return $result_array;
     }
     /**
-     * @description: 对明文密码进行加密以便存储到数据库
-     * 原文+自定义盐+注册时间戳 的 MD6
-     * @param String password 明文密码
-     * @param Int timestamp 密码到期时间时间戳
-     * @param String timestamp 密码到期时间字符串（将自动转时间戳）
-     * @return 加密后的密码
+     * 對明文密碼進行加密以便儲存到資料庫（原文+自定義鹽+註冊時間戳 的 MD6）
+     *
+     * @param string $password 明文密碼
+     * @param int|string $timestamp 密碼到期時間時間戳或時間字串
+     * @return string 加密後的密碼
      */
-    function passwordhash($password, $timestamp) {
+    function passwordhash(string $password, int|string $timestamp): string {
         global $nlcore;
         if (!is_int($timestamp)) $timestamp = strtotime($timestamp);
         $passwordhash = $password . $nlcore->cfg->app->passwordsalt . strval($timestamp);
@@ -1227,13 +1276,12 @@ class nyasafe {
         return $passwordhash;
     }
     /**
-     * @description: 获得需要使用的语言
-     * 根据配置中设定的语言支持情况和当前浏览器语言，决定当前要使用的语言代码。
-     * 如果找不到所需语言，则采用默认语言。
-     * @param String language 指定一个语言
-     * @return String i18n 语言代码
+     * 獲得需要使用的語言代碼
+     *
+     * @param string|null $language 指定一個語言代碼（可選）
+     * @return string i18n 語言代碼
      */
-    function getlanguage($language = null) {
+    function getlanguage(string|null $language = null): string {
         global $nlcore;
         $applanguages = $nlcore->cfg->app->language;
         if ($language) {
@@ -1255,11 +1303,12 @@ class nyasafe {
         return $applanguages[0];
     }
     /**
-     * @description: 检查是否为媒体文件的命名格式
-     * @param String filename 指定一个语言
-     * @return Bool 是否为媒体文件的命名格式
+     * 檢查是否為媒體檔案的命名格式
+     *
+     * @param string $filename 檔案名稱
+     * @return bool 是否為媒體檔案的命名格式
      */
-    function ismediafilename($filename) {
+    function ismediafilename(string $filename): bool {
         return preg_match("/[\w\/]*[\d]{11}_[\w]{32}/", $filename);
     }
     /**
@@ -1356,12 +1405,13 @@ class nyasafe {
         return $saveStr;
     }
     /**
-     * @description: 將以整數儲存的顏色轉換會16進位制
-     * @param Int inColor 整數顏色程式碼（上面的函式按預設值返回的結果樣式）
-     * @param Bool alpha 是否包含 alpha 值
-     * @return String 16進位制顏色
+     * 將以整數儲存的顏色轉換回 16 進位制
+     *
+     * @param int $inColor 整數顏色代碼
+     * @param bool $alpha 是否包含 alpha 值（預設 false）
+     * @return string 16 進位顏色字串
      */
-    function dColor(int $inColor, bool $alpha = false) {
+    function dColor(int $inColor, bool $alpha = false): string {
         $fullLength = $alpha ? 12 : 9;
         $colorStr = str_pad(strval($inColor), $fullLength, '0', STR_PAD_LEFT);
         $colorArr = str_split($colorStr, 3);
@@ -1372,7 +1422,9 @@ class nyasafe {
         return strtoupper(implode('', $colorArr));
     }
     /**
-     * @description: 析構，關閉日誌檔案
+     * 解構子：關閉日誌檔案
+     *
+     * @return void
      */
     function __destruct() {
         if ($this->logfile) {

@@ -1,20 +1,17 @@
 <?php
+declare(strict_types=1);
 /**
- * @description: PNG单色色彩图生成工具
- * @param Int r 红色，取值范围 0 - 255（默认 0）
- * @param Int g 绿色，取值范围 0 - 255（默认 0）
- * @param Int b 蓝色，取值范围 0 - 255（默认 0）
- * @param Int a 透明度，取值范围 0 - 127（默认 0）
- * @param Int w 生成图像宽度，取值范围 1 - 10000（默认 100）
- * @param Int h 生成图像高度，取值范围 1 - 10000（默认 100）
- * @return Image PNG单色色彩图
+ * PNG 純色透明圖片產生工具 - 根據指定的 RGBA 參數產生單色 PNG 圖片。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
  */
-$r = isset($_GET["r"]) ? $_GET["r"] : 0; //0-255
-$g = isset($_GET["g"]) ? $_GET["g"] : 0; //0-255
-$b = isset($_GET["b"]) ? $_GET["b"] : 0; //0-255
-$a = isset($_GET["a"]) ? $_GET["a"] : 0; //0-127
-$w = isset($_GET["w"]) ? $_GET["w"] : 100;
-$h = isset($_GET["h"]) ? $_GET["h"] : 100;
+$r = isset($_GET["r"]) ? (int) $_GET["r"] : 0; //0-255
+$g = isset($_GET["g"]) ? (int) $_GET["g"] : 0; //0-255
+$b = isset($_GET["b"]) ? (int) $_GET["b"] : 0; //0-255
+$a = isset($_GET["a"]) ? (int) $_GET["a"] : 0; //0-127
+$w = isset($_GET["w"]) ? (int) $_GET["w"] : 100;
+$h = isset($_GET["h"]) ? (int) $_GET["h"] : 100;
 if (
     $r < 0 || $r > 255 ||
     $g < 0 || $g > 255 ||
@@ -23,17 +20,18 @@ if (
     $w < 1 || $w > 10000 ||
     $h < 1 || $h > 10000
 ) {
-    header('HTTP/1.0 400 Bad Request'); die();
+    http_response_code(400);
+    exit;
 }
-$block = imagecreatetruecolor($w,$h);
+$block = imagecreatetruecolor($w, $h);
 $bg = imagecolorallocatealpha($block, $r, $g, $b, $a);
-if (!$bg) {
-    header('HTTP/1.0 400 Bad Request'); die();
+if ($bg === false) {
+    http_response_code(400);
+    exit;
 }
-imagealphablending($block , false);
-imagefill($block , 0 , 0 , $bg);
-imagesavealpha($block , true);
-header("content-type:image/png");
+imagealphablending($block, false);
+imagefill($block, 0, 0, $bg);
+imagesavealpha($block, true);
+header("Content-Type: image/png");
 imagepng($block);
 imagedestroy($block);
-?>

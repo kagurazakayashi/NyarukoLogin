@@ -1,4 +1,11 @@
 <?php
+declare(strict_types=1);
+/**
+ * 檔案上傳端點 - 處理客戶端檔案上傳請求，儲存上傳的檔案並回傳檔案資訊。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyauploadfile.class.php";
 // IP 檢查和解密客戶端提交的資訊

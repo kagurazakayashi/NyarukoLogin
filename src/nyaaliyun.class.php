@@ -1,21 +1,29 @@
 <?php
+declare(strict_types=1);
 
 use AlibabaCloud\Client\AlibabaCloud;
 use AlibabaCloud\Client\Exception\ClientException;
 use AlibabaCloud\Client\Exception\ServerException;
 
+/**
+ * 阿里雲簡訊與郵件服務
+ *
+ * 封裝阿里雲 SMS 簡訊發送與 DirectMail 郵件發送 API。
+ *
+ * @package NyarukoLogin
+ */
 class nyaaliyun {
     public $resultMessage = '';
     /**
-     * @description: 建立郵件驗證碼
-     * @param String toAddress 目標地址，多個 email 地址可以用逗號分隔，最多100個地址。
-     * @param String subject 郵件主題
-     * @param String htmlBody 郵件 html 正文，限制28K。
-     * @param String textBody 郵件 text 正文，限制28K。
-     * @param String tagName 標籤
-     * @param String fromAlias 發信人暱稱，長度小於15個字元。例如:發信人暱稱設定為”小紅”，發信地址為 test@example.com，收信人看到的發信地址為"小紅"<test@example.com>。預設為應用名。
-     * @return Bool 郵件傳送是否成功
-     * 可透過 $this->resultMessage 獲取詳細資訊
+     * 發送郵件（阿里雲 DirectMail）
+     *
+     * @param string $toAddress  目標地址，多個 email 可用逗號分隔
+     * @param string $subject    郵件主題
+     * @param string $htmlBody   郵件 HTML 正文，限制 28K
+     * @param string $textBody   郵件純文字正文，限制 28K
+     * @param string $tagName    標籤
+     * @param string $fromAlias  發信人暱稱，長度小於 15 個字元
+     * @return bool 郵件發送是否成功，詳細資訊可透過 $this->resultMessage 取得
      */
     function singleSendMail(string $toAddress, string $subject, string $htmlBody, string $textBody = '', string $tagName = '', string $fromAlias = ''): bool {
         global $nlcore;
@@ -71,16 +79,11 @@ class nyaaliyun {
         }
     }
     /**
-     * @description: 建立簡訊驗證碼
-     * @param String phoneNumbers
-     * - 接收簡訊的手機號碼。格式：
-     *   - 國內簡訊：11位手機號碼，例如15951955195。
-     *   - 國際/港澳臺訊息：國際區號+號碼，例如85200000000。
-     * - 支援對多個手機號碼傳送簡訊，手機號碼之間以英文逗號（,）分隔。上限為1000個手機號碼。批次呼叫相對於單條呼叫及時性稍有延遲。
-     *   - 驗證碼簡訊建議使用單獨傳送的方式。
-     * @param Int code 6位驗證碼
-     * @return Bool 簡訊傳送是否成功
-     * 可透過 $this->resultMessage 獲取詳細資訊
+     * 發送簡訊（阿里雲 SMS）
+     *
+     * @param string $phoneNumbers 接收簡訊的手機號碼，多個以逗號分隔
+     * @param int    $code         6 位驗證碼
+     * @return bool 簡訊發送是否成功，詳細資訊可透過 $this->resultMessage 取得
      */
     function sendSms(string $phoneNumbers, int $code): bool {
         global $nlcore;

@@ -1,18 +1,26 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 裝置金鑰交換
+ *
+ * 處理客戶端與伺服器之間的金鑰交換、裝置註冊、AppToken 建立等。
+ *
+ * @package NyarukoLogin
+ */
 class nyaencryption {
     /**
-     * @description: 建立新的裝置金鑰
-     * @param Array argv 客戶端提供的資訊
-     * @param Int ipid IP 地址 ID，从 sess 获得
-     * @param Bool retention 保持密钥对缓存区中原有的密钥
-     * @return Array 執行結果陣列，可以直接 json 化返回客戶端
+     * 建立新的裝置金鑰
+     *
+     * @param array $argv 客戶端提供的資訊
+     * @param int   $ipid IP 地址 ID，從 sess 獲得
+     * @return array 執行結果陣列，可以直接 JSON 化返回客戶端
      */
-    function newDeviceKey(array $argv, int $ipid):array {
+    function newDeviceKey(array $argv, int $ipid): array {
         global $nlcore;
         $datetime = $nlcore->safe->getdatetime();
         $time = $datetime[0];
         $stime = $datetime[1];
-        $oldKey = [];
         $appKey = isset($argv["appkey"]) ? $argv["appkey"] : $nlcore->msg->stopmsg(2000101);
         // 檢查應用名稱和金鑰
         if (!$nlcore->safe->is_rhash64($appKey)) $nlcore->msg->stopmsg(2020417);
@@ -128,12 +136,7 @@ class nyaencryption {
                 }
             }
         }
-        if (count($oldKey) == 2 && strlen($oldKey[0]) > 0 && strlen($oldKey[1]) > 0) {
-            $nlcore->sess->privateKey = $oldKey[1];
-            $nlcore->sess->publicKey = $oldKey[0];
-        } else {
-            $nlcore->sess->publicKey = $clientPublicKey;
-        }
+        $nlcore->sess->publicKey = $clientPublicKey;
         return $returnClientData;
     }
 }

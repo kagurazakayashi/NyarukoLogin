@@ -1,14 +1,24 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 電子郵件驗證模板
+ *
+ * 生成郵件驗證內容並發送，用於帳號啟用等場景。
+ *
+ * @package NyarukoLogin
+ */
 class nyaverification {
     /**
-     * @description: 生成邮件内容并发送
-     * @param String userhash 用户哈希
-     * @param String nickname 用户昵称
-     * @param String mailto 收件人邮箱
-     * @param String language 使用指定语言发送邮件(可选，默认自动检测)
-     * @return Array 多个信息
+     * 生成郵件內容並發送
+     *
+     * @param string $userHash 使用者雜湊
+     * @param string $nickname 使用者暱稱
+     * @param string $mailto   收件人郵箱
+     * @param ?string $language 使用指定語言發送郵件（可選，預設自動檢測）
+     * @return array{0:string,1:string} 郵件 HTML 內容與驗證碼
      */
-    function sendmail($userHash,$nickname,$mailto,$language=null) {
+    function sendmail(string $userHash, string $nickname, string $mailto, ?string $language = null): array {
         global $nlcore;
         $language = $nlcore->safe->getlanguage($language);
         $mailtemplatefilepath = pathinfo(__FILE__)["dirname"].DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."template".DIRECTORY_SEPARATOR."signupmail.".$language.".html";
@@ -23,7 +33,7 @@ class nyaverification {
         //写验证代码
 
         //生成验证网址
-        $url = $nlcore->cfg->app->$appurl.DIRECTORY_SEPARATOR."nyaverification.php?code=".$vcode;
+        $url = $nlcore->cfg->app->appurl . DIRECTORY_SEPARATOR . "nyaverification.php?code=" . $vcode;
         $appname = $nlcore->cfg->app->appname;
         $time = $nlcore->safe->getdatetime()[1];
         //替换字符
@@ -51,4 +61,3 @@ class nyaverification {
         return [$mailhtml,$vcode];
     }
 }
-?>

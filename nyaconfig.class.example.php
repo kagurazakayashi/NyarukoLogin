@@ -1,16 +1,26 @@
 <?php
 
 /**
- * @description: 系統配置檔案
+ * 系統設定檔範本
+ *
+ * 使用前請複製為 nyaconfig.class.php 並修改設定值。
+ * 請勿將真實密碼提交至版本控制系統。
+ *
  * @package NyarukoLogin
+ * @author  KagurazakaYashi
+ * @license MIT
  */
 
-//資料庫連線設定
+/** 資料庫連線設定 */
 class nyasetting_db {
-    //MySQL编码
-    var $charset = "utf8mb4";
-    //只读库，可指定多个数据库。所需权限：SELECT
-    var $read_dbs = [
+    /** @var string MySQL 編碼 */
+    public string $charset = "utf8mb4";
+    /**
+     * 唯讀資料庫列表（可指定多個）
+     * 所需權限：SELECT
+     * @var array<int, array<string, string>>
+     */
+    public array $read_dbs = [
         [
             "db_host" => "127.0.0.1",
             "db_port" => "3306",
@@ -19,8 +29,12 @@ class nyasetting_db {
             "db_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         ]
     ];
-    //写入库，可指定多个数据库。所需权限：INSERT,UPDATE,DELETE
-    var $write_dbs = [
+    /**
+     * 寫入資料庫列表（可指定多個）
+     * 所需權限：INSERT, UPDATE, DELETE
+     * @var array<int, array<string, string>>
+     */
+    public array $write_dbs = [
         [
             "db_host" => "127.0.0.1",
             "db_port" => "3306",
@@ -29,357 +43,323 @@ class nyasetting_db {
             "db_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         ]
     ];
-    //数据库表设置
-    var $tables = [
-        "business" => "u1_business", //业务表
-        "app" => "u1_app", //外部程序表
-        "integral" => "u1_integral", //积分表
-        "ip" => "u1_ip", //IP地址表
-        "permission" => "u1_permission", //权限表
-        "protection" => "u1_protection", //密保表
-        "session" => "u1_session", //会话令牌表
-        "users" => "u1_users", //用户表
-        "info" => "u1_info", //用户信息表
-        "gender" => "u1_gender", //性别表
-        "usergroup" => "u1_usergroup", //用户组表
-        "history" => "u1_history", //日志
-        "encryption" => "u1_encryption", //加密信息表
-        "device" => "u1_device", //设备信息表
-        "stopword" => "u1_stopword", //敏感词表
-        "messages" => "u1_messages" //站內信
+    /** @var array<string, string> 資料庫表名稱對應 */
+    public array $tables = [
+        "business" => "u1_business",   // 業務表
+        "app" => "u1_app",             // 外部程式表
+        "integral" => "u1_integral",   // 積分表
+        "ip" => "u1_ip",               // IP 位址表
+        "permission" => "u1_permission", // 權限表
+        "protection" => "u1_protection", // 密保表
+        "session" => "u1_session",     // 會話令牌表
+        "users" => "u1_users",         // 使用者表
+        "info" => "u1_info",           // 使用者資訊表
+        "gender" => "u1_gender",       // 性別表
+        "usergroup" => "u1_usergroup", // 使用者組表
+        "history" => "u1_history",     // 操作歷史
+        "encryption" => "u1_encryption", // 加密資訊表
+        "device" => "u1_device",       // 裝置資訊表
+        "stopword" => "u1_stopword",   // 敏感詞表
+        "messages" => "u1_messages"    // 站內信
     ];
-    //Redis数据库设定
-    var $redis = [
+    /** @var array<string, mixed> Redis 資料庫設定 */
+    public array $redis = [
         "rdb_enable" => true,
         "rdb_host" => "127.0.0.1",
         "rdb_port" => 6379,
         "rdb_password" => "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "rdb_id" => 1
     ];
-    //Redis数据库表设置
-    var $redis_tables = [
-        "frequencylimitation" => "f_", //访问频率限制库
-        "sqldb" => "d_", //SQL数据库选择器
-        "session" => "s_", //登录状态
-        "convertimage" => "i_", //转换图片，需要和go代码同时修改
-        "convertvideo" => "v_", //转换视频，需要和go代码同时修改
-        "rsa" => "r_", //RSA密钥缓存
-        "vcode1" => "c1_", //图形验证码
-        "vcode2" => "c2_" //短信或邮件验证码
+    /** @var array<string, string> Redis 前綴對應表 */
+    public array $redis_tables = [
+        "frequencylimitation" => "f_",   // 存取頻率限制
+        "sqldb" => "d_",                 // SQL 資料庫選擇器
+        "session" => "s_",               // 登入狀態
+        "convertimage" => "i_",          // 圖片轉換（需與 Go 程式碼同步修改）
+        "convertvideo" => "v_",          // 影片轉換（需與 Go 程式碼同步修改）
+        "rsa" => "r_",                   // RSA 金鑰快取
+        "vcode1" => "c1_",               // 圖形驗證碼
+        "vcode2" => "c2_"               // 簡訊或郵件驗證碼
     ];
-    //调试用：将每条SQL语句和返回内容记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
-    var $logfile_db = "/mnt/wwwroot/zyz/log/db.log";
-    //调试用：将每条收到的数据和返回内容记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
-    var $logfile_ud = "/mnt/wwwroot/zyz/log/submit.log";
-    //调试用：将异步执行的命令行结果记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
-    var $logfile_sh = "/mnt/wwwroot/zyz/log/exec.log";
-    //调试用：将警告信息记录在日志文件中,设置日志文件路径或null(不记录)（请先创建好并设置好权限）
-    var $logfile_nl = "/mnt/wwwroot/zyz/log/nya.log";
+    /** @var string|null SQL 查詢除錯日誌檔路徑（null 為不記錄） */
+    public ?string $logfile_db = "/mnt/wwwroot/zyz/log/db.log";
+    /** @var string|null 資料收發除錯日誌檔路徑（null 為不記錄） */
+    public ?string $logfile_ud = "/mnt/wwwroot/zyz/log/submit.log";
+    /** @var string|null 非同步執行命令日誌檔路徑（null 為不記錄） */
+    public ?string $logfile_sh = "/mnt/wwwroot/zyz/log/exec.log";
+    /** @var string|null 警告資訊日誌檔路徑（null 為不記錄） */
+    public ?string $logfile_nl = "/mnt/wwwroot/zyz/log/nya.log";
 }
 
-// 通訊保護設定，詳見文件「加密通信处理流程.md」
+/** 通訊保護設定（詳見「加密通訊處理流程.md」） */
 class nyasetting_encrypt {
-    var $enable = true;
-    var $redisCacheTimeout = 3600; // Redis 快取時間（秒），0.禁用此功能 -1.不限制時間（通常不要這樣做）
-    var $pkeyConfig = [
+    /** @var bool 是否啟用 RSA 加密通訊 */
+    public bool $enable = true;
+    /** @var int Redis 快取時間（秒），0=禁用，-1=不限制 */
+    public int $redisCacheTimeout = 3600;
+    /** @var array<string, mixed> OpenSSL 金鑰設定 */
+    public array $pkeyConfig = [
         "config" => "/www/server/php/73/src/ext/openssl/tests/openssl.cnf",
         "digest_alg" => "sha512",
-        "private_key_bits" => 4096, // 位元組
-        "private_key_type" => OPENSSL_KEYTYPE_RSA // 加密型別
+        "private_key_bits" => 4096,
+        "private_key_type" => OPENSSL_KEYTYPE_RSA
     ];
-    // 為私鑰設定密碼， 設定為 null 則不加密
-    var $privateKeyPassword = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-    // 設定內建公鑰和私鑰，在本地應用還沒有和伺服器獲取金鑰對之前，使用此預共享金鑰對進行加密。與客戶端中的相對應，總計 2 個金鑰對，與伺服器分別持有對方的公鑰和私鑰。無需開頭結尾標記，無需修改 base64 內容。此處私鑰必須能夠被上邊的密碼所解密。可以為 null 。
-    var $defaultPrivateKey = <<<'EOD'
+    /** @var string|null 私鑰密碼（null 為不加密私鑰） */
+    public ?string $privateKeyPassword = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    /**
+     * 預共享私鑰（Base64 內容，不含 PEM 標記）
+     *
+     * 在用戶端尚未與伺服器交換金鑰對之前使用。
+     * 必須能被上方密碼解密。可設為 null。
+     * @var string|null
+     */
+    public ?string $defaultPrivateKey = <<<'EOD'
 xxxxxxx
 xxxxxxx
 xxxxxxx
 EOD;
+    /** @var string|null 預共享公鑰 */
+    public ?string $defaultPublicKey = null;
 }
-// 應用相關設定
+/** 應用相關設定 */
 class nyasetting_app {
-    var $debug = 1; //是否输出所有PHP错误,1显示,0禁止,其他数字:按照php.ini中的设定
-    var $app = "nyalogin_dev"; //应用名称（纯字母）（预留未实装）
-    var $appname = "择与择"; //应用描述
-    var $appurl = "http://dev.zeyuze.com/user/"; //访问网址（/结尾）
-    var $maxlen_get = 2000; //使用 get 方式提交时允许长度（字节）
-    var $maxlen_post = 1000000; //使用 post 方式提交时允许长度（字节）
-    var $timezone = "Asia/Shanghai"; //时区，留空则按照 php.ini
-    var $alwayencrypt = false; //强制进行 TOTP/XXTEA 加密
-    var $timestamplimit = 60; //允许客户端与服务端的时间差异（秒；如果客户端报告的话）
-    var $totpcompensate = 0; //TOTP 补偿，需要客户端匹配
-    var $totptimeslice = 3; //尝试用之前 x 个验证码尝试解密次数，1为当前时间（至少为1），每次回溯时间为30秒。
-    var $sessioncachemaxtime = 86400; //会话 token 缓存到 Redis 的最大时长（秒）//已弃用！
-    var $sessioncachefirst = true; //允许使用 quick 来直接访问 Redis token 缓存加速
-    var $frequency = false; //启动接口访问频率限制
-    //各功能时长设定（每个IP地址）：[多少秒内,最多允许访问多少次,简写]
-    var $limittime = [
-        "default" => [60, 30, "DF"], //默认值
-        "encrypttest" => [60, 30, "ET"], //测试接口
-        "encryption" => [60, 300, "EN"], //限制密钥对生成接口的访问频率
-        "signup" => [60, 30, "SI"], //提交用户名密码进行注册
-        "login" => [60, 30, "LI"], //用户登录
-        "captcha" => [60, 30, "CP"], //获取图形验证码
-        "vcode" => [60, 30, "VC"], //获取短信或邮件验证码
-        "session" => [60, 30, "SE"], //登录状态检查接口
-        "fastsearch" => [60, 300, "FS"], //快速模糊用户名搜索
-        "userinfo" => [60, 300, "UI"], //用户信息
-        "upload" => [60, 300, "UL"], //上传文件
+    /** @var int 除錯模式：1=顯示錯誤，0=隱藏，其他=依 php.ini */
+    public int $debug = 1;
+    /** @var string 應用名稱（純字母，預留未實裝） */
+    public string $app = "nyalogin_dev";
+    /** @var string 應用顯示名稱 */
+    public string $appname = "择与择";
+    /** @var string 存取網址（以 / 結尾） */
+    public string $appurl = "http://dev.zeyuze.com/user/";
+    /** @var int GET 提交允許最大長度（位元組） */
+    public int $maxlen_get = 2000;
+    /** @var int POST 提交允許最大長度（位元組） */
+    public int $maxlen_post = 1000000;
+    /** @var string 時區（留空則依 php.ini） */
+    public string $timezone = "Asia/Shanghai";
+    /** @var bool 強制加密傳輸（已棄用，改用 RSA 模式） */
+    public bool $alwayencrypt = false;
+    /** @var int 允許用戶端與伺服器的時間差異（秒） */
+    public int $timestamplimit = 60;
+    /** @var int TOTP 時間補償 */
+    public int $totpcompensate = 0;
+    /** @var int TOTP 時間回溯次數（1=僅當前時間，每次回溯 30 秒） */
+    public int $totptimeslice = 3;
+    /** @var int 會話快取到 Redis 的最大時長（秒，已棄用） */
+    public int $sessioncachemaxtime = 86400;
+    /** @var bool 允許使用 quick 模式直接查詢 Redis 快取 */
+    public bool $sessioncachefirst = true;
+    /** @var bool 啟用介面存取頻率限制 */
+    public bool $frequency = false;
+    /**
+     * 各功能時長設定（每個 IP 位址）
+     * 格式：[多少秒內, 最多允許存取多少次, 簡寫]
+     * @var array<string, array{0: int, 1: int, 2: string}>
+     */
+    public array $limittime = [
+        "default" => [60, 30, "DF"],
+        "encrypttest" => [60, 30, "ET"],
+        "encryption" => [60, 300, "EN"],
+        "signup" => [60, 30, "SI"],
+        "login" => [60, 30, "LI"],
+        "captcha" => [60, 30, "CP"],
+        "vcode" => [60, 30, "VC"],
+        "session" => [60, 30, "SE"],
+        "fastsearch" => [60, 300, "FS"],
+        "userinfo" => [60, 300, "UI"],
+        "upload" => [60, 300, "UL"],
     ];
-    //多语言（应和template中的文件名对应），在第一位的为默认语言
-    var $language = ["zh-cn"];
-    // 允許使用哪種方式登入，至少開其中一種[郵箱,手機號,密碼]
-    var $logintype = [true, true, true];
-    // 註冊時允許用哪種驗證碼進行驗證，至少開其中一種[郵箱,手機號,验证码]
-    var $logincaptcha = [true, true, false];
-    // 註冊時必須提供密碼
-    var $needpassword = true;
-    // 預設新使用者的：
-    var $newuser = [
-        "group" => 1, // 使用者組 (group_list 表中的 ID)
-        "subgroup" => 1, // 子賬戶使用者組
-        "nickname" => "无名氏", // 暱稱
-        "pwdexpiration" => 315360000 // 密碼有效期（秒）
+    /** @var string[] 多語言支援列表（第一位為預設語言，需與 template/ 中的檔名對應） */
+    public array $language = ["zh-cn"];
+    /** @var bool[] 允許的登入方式 [郵箱, 手機號, 密碼] */
+    public array $logintype = [true, true, true];
+    /** @var bool[] 註冊時允許的驗證碼方式 [郵箱, 手機號, 圖形驗證碼] */
+    public array $logincaptcha = [true, true, false];
+    /** @var bool 註冊時必須提供密碼 */
+    public bool $needpassword = true;
+    /** @var array<string, int|string> 預設新使用者設定 */
+    public array $newuser = [
+        "group" => 1,
+        "subgroup" => 1,
+        "nickname" => "无名氏",
+        "pwdexpiration" => 315360000 // 密碼有效期（秒，預設 10 年）
     ];
-    // 長度限制
-    var $maxLen = [
-        "name" => 30, // 暱稱
-        "email" => 50, // 電郵地址
-        "address" => 200, // 地址
-        "profile" => 100, // 签名
-        "description" => 1000, // 资料
+    /** @var array<string, int> 長度限制 */
+    public array $maxLen = [
+        "name" => 30,
+        "email" => 50,
+        "address" => 200,
+        "profile" => 100,
+        "description" => 1000,
     ];
-    // 🏳️‍⚧️ 性别列表ID  0 标准双性别 1 LGBT机构版 2 Facebook版 https://www.guokr.com/article/438003/
-    var $genderlist = 0;
-    //每个端可登录的设备数，key 和 device/session 表 type/devtype 的 enum 相对应
-    var $maxlogin = [
-        "all" => 3,
-        "phone" => 1,
-        "phone_emu" => 1,
-        "pad" => 1,
-        "pad_emu" => 1,
-        "pc" => 1,
-        "web" => 1,
-        "debug" => 255,
-        "other" => 1
+    /** @var int 性別列表 ID：0=標準雙性別，1=LGBT，2=Facebook 版 */
+    public int $genderlist = 0;
+    /** @var array<string, int> 每個裝置類型可登入的裝置數上限 */
+    public array $maxlogin = [
+        "all" => 3, "phone" => 1, "phone_emu" => 1,
+        "pad" => 1, "pad_emu" => 1, "pc" => 1,
+        "web" => 1, "debug" => 255, "other" => 1
     ];
-    //'phone','phone_emu','pad','pad_emu','pc','web','debug','other'
-    //关键词过滤设置，数据应全转换为小写，将&作为通配符的 json
-    //违禁词列表为 JSON 一维数组，每个字符串中可以加「wildcardchar」分隔以同时满足两个条件词。
-    var $wordfilter = [
-        "enable" => 0, //0:禁用, 1:从 Redis 读入, 2:从 $wordfilterjsonfile 读入
-        "rediskey" => "wordfilter", //从 Redis 读入，指定 Redis Key
-        "jsonfile" => "filter_zh_cn.json", //从文件读入，指定文件路径和名
-        "wildcardchar" => '&', //分隔符，用于同时满足多个条件词。
-        "replacechar" => '*', //如果返回和谐后的文字，已屏蔽的字符用此字符替代。
-        "maxlength" => 5, //最大分析长度，指定多个条件时，两个条件词之间间隔超过此长度则不判为违规
-        "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]" //特殊符号字符过滤器,不包括&，因为上面将&作为了通配符
+    /** @var array<string, mixed> 關鍵詞過濾設定 */
+    public array $wordfilter = [
+        "enable" => 0,         // 0=禁用，1=從 Redis 讀入，2=從檔案讀入
+        "rediskey" => "wordfilter",
+        "jsonfile" => "filter_zh_cn.json",
+        "wildcardchar" => '&', // 分隔符，用於同時滿足多個條件詞
+        "replacechar" => '*',  // 和諧後取代字元
+        "maxlength" => 5,      // 最大分析長度
+        "punctuations" => "\t\n!@#$%^*()-=_+|\\/?<>,.'\";:{}[]"
     ];
-    var $passwordsalt = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; //密码盐
-    var $upload = [
-        "tmpdir" => "../upload_tmp", //异步二压临时文件夹（先建立好文件夹设好权限）
-        "uploaddir" => "../upload", //媒体上传文件夹（先建立好文件夹设好权限）
-        "datedir" => true, //按日期创建子文件夹
-        "chmod" => 0770, //新建文件的权限
-        "maxsize" => [ //每种媒体类型的最大文件大小限制(B)
-            "all" => 314572800, //300M
-            "image" => 10485760, //10M
-            "gif" => 31457280, //30M
-            "video" => 314572800 //300M
-        ],
-        "videoduration" => 600, //视频最大时长限制（秒）
+    /** @var string 密碼鹽值 */
+    public string $passwordsalt = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    /** @var array<string, mixed> 檔案上傳設定 */
+    public array $upload = [
+        "tmpdir" => "../upload_tmp",
+        "uploaddir" => "../upload",
+        "datedir" => true,
+        "chmod" => 0770,
+        "maxsize" => ["all" => 314572800, "image" => 10485760, "gif" => 31457280, "video" => 314572800],
+        "videoduration" => 600,
     ];
-    var $mserver = "http://127.0.0.1:1081/"; //"http://127.0.0.1:1081/"; //指定后台服务地址,""的话不会主动调取转码服务
-    var $uploadtype = [ //允许上传的文件类型 和 MIME/扩展名 对应关系
-        "image" => [
-            ["image/jpeg", "jpg"],
-            ["image/png", "png"],
-            ["image/gif", "gif"],
-            ["image/webp", "webp"]
-        ],
-        "video" => [
-            ["video/mp4", "mp4"],
-            ["video/3gpp", "3gp"],
-            ["video/quicktime", "mov"]
-        ]
+    /** @var string 後台媒體轉碼服務位址（空字串則不主動呼叫） */
+    public string $mserver = "http://127.0.0.1:1081/";
+    /** @var array<string, array<int, array{string, string}>> 允許上傳的檔案類型 */
+    public array $uploadtype = [
+        "image" => [["image/jpeg", "jpg"], ["image/png", "png"], ["image/gif", "gif"], ["image/webp", "webp"]],
+        "video" => [["video/mp4", "mp4"], ["video/3gpp", "3gp"], ["video/quicktime", "mov"]]
     ];
-    //标识名=>图片压缩尺寸（宽高）和图片压缩清晰度百分比，会作为文件名.后缀
-    //清晰度百分比不支持gif。可支持多种配置。
-    //设置中宽需要大于高，如果媒体比例宽高翻转（高大于宽），计算宽高也翻转。
-    var $imageresize = [
-        "def" => [ //普通图片，默认值，自带设置不要删
-            "R" => [0, 0, 0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
-            "S" => [640, 360, 80],
-            "M" => [1280, 720, 80],
-            "L" => [1920, 1080, 80]
-        ],
-        "pfbg" => [ //个人资料背景，自带设置不要删
-            "R" => [0, 0, 0],
-            "S" => [640, 360, 80],
-            "M" => [1280, 720, 80],
-            "L" => [1920, 1080, 80]
-        ],
-        "pfimg" => [ //头像，自带设置不要删
-            "R" => [0, 0, 0],
-            "S" => [64, 64, 80],
-            "M" => [128, 128, 80],
-            "L" => [512, 512, 80]
-        ]
+    /** @var array<string, array<string, array{int, int, int}>> 圖片壓縮尺寸設定 */
+    public array $imageresize = [
+        "def" => ["R" => [0, 0, 0], "S" => [640, 360, 80], "M" => [1280, 720, 80], "L" => [1920, 1080, 80]],
+        "pfbg" => ["R" => [0, 0, 0], "S" => [640, 360, 80], "M" => [1280, 720, 80], "L" => [1920, 1080, 80]],
+        "pfimg" => ["R" => [0, 0, 0], "S" => [64, 64, 80], "M" => [128, 128, 80], "L" => [512, 512, 80]]
     ];
-    var $videoresize = [
-        "def" => [ //普通图片，默认值，自带设置不要删
-            "R" => [0, 0, 0], //尺寸为 0 则使用原始尺寸，清晰度为 0 则使用原始清晰度
-            "S" => [640, 360, 500],
-            "M" => [1280, 720, 1000],
-            "L" => [1920, 1080, 2000]
-        ]
+    /** @var array<string, array<string, array{int, int, int}>> 影片壓縮尺寸設定 */
+    public array $videoresize = [
+        "def" => ["R" => [0, 0, 0], "S" => [640, 360, 500], "M" => [1280, 720, 1000], "L" => [1920, 1080, 2000]]
     ];
-    // 向前端按顺序推荐尺寸
-    var $recommendsize = ["L", "M", "S", "R"];
-    // 向前端按顺序推荐扩展名
-    var $recommendext = ["gif", "webp", "jpg", "png", "mp4", "mov", "3gp"];
-    // 路径要求：① php.ini 的 open_basedir 中允许该路径，或拷贝执行文件到网站目录。 ② 不要出现空格和非英文。 ③ 尽量用绝对路径。
-    //ffmpeg 和 ffprobe 执行文件路径。
-    var $ffconf = [
+    /** @var string[] 向前端按順序推薦的尺寸 */
+    public array $recommendsize = ["L", "M", "S", "R"];
+    /** @var string[] 向前端按順序推薦的副檔名 */
+    public array $recommendext = ["gif", "webp", "jpg", "png", "mp4", "mov", "3gp"];
+    /** @var array<string, mixed> FFmpeg / FFprobe 執行設定 */
+    public array $ffconf = [
         "ffmpeg.binaries" => "/mnt/wwwroot/zyz/user/bin/ffmpeg/ffmpeg",
         "ffprobe.binaries" => "/mnt/wwwroot/zyz/user/bin/ffmpeg/ffprobe",
-        "timeout" => 3600, //超时
-        "ffmpeg.threads" => 12 //进程数
+        "timeout" => 3600,
+        "ffmpeg.threads" => 12
     ];
-    //设置图片视频后台转换脚本路径。
-    var $convertconf = [
+    /** @var array<string, string> 圖片/影片後台轉換指令碼路徑 */
+    public array $convertconf = [
         "image" => "/mnt/wwwroot/zyz/user/bin/convertimage",
         "video" => "/mnt/wwwroot/zyz/user/bin/convertvideo"
     ];
-    // 資訊模板
-    // 資訊中內容:  %0=接收者  %1=傳送者1  %2=傳送者2  %3=還有更多傳送者數量
-    var $messageNum = ["%1 ", "%1 和 %2 ", "%1 和 %2 等 %3 位用户"];
-    // 資訊型別和對應的提示語，三個字母。为空值时视为不合成任何文字
-    var $messageTmp = [
-        "PAT" => "在贴文中提及了你",
-        "CAT" => "在评论中提及了你",
-        "CIP" => "对你的贴文发表了评论",
-        "CIC" => "对你评论过的贴文发表了评论",
-        "PLI" => "为你的贴文点赞",
-        "CLI" => "为你的评论点赞",
-        "FOL" => "关注了你"
+    /** @var string[] 資訊模板：%1=傳送者1，%2=傳送者2，%3=更多傳送者數量 */
+    public array $messageNum = ["%1 ", "%1 和 %2 ", "%1 和 %2 等 %3 位用户"];
+    /** @var array<string, string> 資訊型別和對應的提示語 */
+    public array $messageTmp = [
+        "PAT" => "在贴文中提及了你", "CAT" => "在评论中提及了你",
+        "CIP" => "对你的贴文发表了评论", "CIC" => "对你评论过的贴文发表了评论",
+        "PLI" => "为你的贴文点赞", "CLI" => "为你的评论点赞", "FOL" => "关注了你"
     ];
-    // 功能性符號定義
-    var $separator = [
-        "namelink" => "+", //用户昵称和昵称ID的连接符，常用符號爲「#」，例如「神楽坂雅詩#5534」。
-        "mention" => "@", //提及某人，常用符號爲「@」，例如「@神楽坂雅詩」。
-        "hashtag" => "#" //話題起始符，常用符號爲「#」，例如「#猫猫」。
+    /** @var array<string, string> 功能性符號定義 */
+    public array $separator = [
+        "namelink" => "#",  // 使用者暱稱和 ID 的連接符
+        "mention" => "@",   // 提及某人起始符
+        "hashtag" => "#"   // 話題起始符
     ];
 }
 
-// 驗證碼設定
+/** 驗證碼和密碼安全設定 */
 class nyasetting_verify {
-    // DEBUG 验证码调试模式：请勿在生产环境开启：
-    var $debug = true;
-    // DEBUG 如果填写邮件地址，会强制将短信和邮件发送到此测试邮箱
-    var $debugmail = "";
-    //哪种验证码在登录失败几次后开始被需要
-    var $needcaptcha = [
-        "captcha" => 3
+    /** @var bool 驗證碼除錯模式：請勿在正式環境啟用 */
+    public bool $debug = true;
+    /** @var string 除錯郵箱（填寫後會強制將驗證訊息傳送至此郵箱以進行測試） */
+    public string $debugmail = "";
+    /** @var array<string, int> 登入失敗幾次後開始需要驗證碼 */
+    public array $needcaptcha = ["captcha" => 3];
+    /** @var array<string, mixed> 圖形驗證碼設定 */
+    public array $captcha = [
+        "captcha" => true,
+        "charset" => "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890",
+        "codelen" => 4,
+        "imgdir" => "img",
+        "imgname" => "captcha_"
     ];
-    //图形验证码设置
-    var $captcha = [
-        "captcha" => true, //进行验证码验证
-        "charset" => "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890", //可抽选字符
-        "codelen" => 4, //验证码长度
-        "imgdir" => "img", //图片缓存文件夹，可以是相对路径（从根文件夹开始）
-        "imgname" => "captcha_" //验证码图片前缀
+    /** @var array<string, int> 各種驗證碼的超時時間（秒） */
+    public array $timeout = ["captcha" => 600, "mail" => 300, "sms" => 300];
+    /** @var array<string, int> 最大嘗試次數，超過則需重新獲取 */
+    public array $maxtry = ["mail" => 3, "sms" => 3];
+    /** @var array<string, int> 重新獲取驗證碼的冷卻時間（秒） */
+    public array $cd = ["mail" => 60, "sms" => 60];
+    /** @var array<string, int> 密碼強度要求 */
+    public array $strongpassword = ["upper" => 0, "lower" => 0, "num" => 0, "symbol" => 0];
+    /** @var string 密碼允許的特殊符號 */
+    public string $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";
+    /** @var int[] 密碼長度要求 [最少, 最多] */
+    public array $passwordlength = [6, 1024];
+    /** @var int 會話令牌有效時間（秒，預設 180 天） */
+    public int $tokentimeout = 15552000;
+    /** @var int 預分配令牌有效時間（秒，預設 10 分鐘） */
+    public int $pretokentimeout = 600;
+    /** @var array<string, bool> 查詢使用者資料是否需要登入 */
+    public array $needlogin = ["userinfo" => false];
+    /** @var string 簡訊驗證碼模板（可用變數：{appname} {code} {time}） */
+    public string $vcodetext_sns = "【{appname}】驗證碼：{code}（{time}分鐘內有效）。您正在操作{appname}通行證，請勿將驗證碼告訴他人，如果不是本人進行的操作請無視。";
+    /** @var array<string, string> 郵件驗證碼模板 */
+    public array $vcodetext_mail = [
+        'Subject' => '{appname} 帳戶驗證郵件',
+        'Body' => '<!doctype html><html xmlns=http://www.w3.org/1999/xhtml><head><meta content="text/html; charset=utf-8"http-equiv=Content-Type><title>verification code</title><meta content="width=device-width,initial-scale=1"name=viewport></head><body style=text-align:center><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td width=20%><td align=left><h1>{appname}</h1><span>&emsp;&emsp;&emsp;&emsp;您好，您正在操作 {appname} 通行證。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;如果不是您本人操作，請忽略此郵件。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;您的郵件驗證碼為：</span><br><h2>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{code}</h2><span>&emsp;&emsp;&emsp;&emsp;驗證碼 {time} 分鐘內有效，</span><br><br><span>&emsp;&emsp;&emsp;&emsp;請勿將驗證碼告訴他人。</span><td width=20%></table></body></html>',
+        'AltBody' => '您好，您正在操作 {appname} 通行證。如果不是您本人操作，請忽略此郵件。您的郵件驗證碼為： {code} 。驗證碼 {time} 分鐘內有效，請勿將驗證碼告訴他人。'
     ];
-    //各种验证码的超时时间（秒）
-    var $timeout = [
-        "captcha" => 600, //图形验证码
-        "mail" => 300,
-        "sms" => 300
+    /** @var array<string, int> 傳送引擎選擇：mail: 0=PHPMailer, 1=阿里雲；sms: 1=阿里雲 */
+    public array $engine = ['mail' => 1, 'sms' => 1];
+    /** @var array<string, mixed> SMTP 郵件伺服器設定 */
+    public array $smtp = [
+        'CharSet' => 'UTF-8', 'SMTPDebug' => 0,
+        'Host' => '192.168.2.115', 'Port' => 25,
+        'SMTPAuth' => true, 'Username' => 'noreply@mail.zeyuze.com',
+        'Password' => 'server', 'SMTPSecure' => '',
+        'FromAddr' => 'server@dev.uuu.moe', 'FromName' => '應用',
+        'ReplyToAddr' => '', 'ReplyToName' => '', 'isHTML' => true
     ];
-    // 最大尝试次数，超过该次数需要重新生成
-    var $maxtry = [ // captcha 强制为 1
-        "mail" => 3,
-        "sms" => 3
-    ];
-    // 多久可以再获取下一个验证码（秒）
-    var $cd = [ // captcha 强制为 0
-        "mail" => 60,
-        "sms" => 60
-    ];
-    //密码强度设置，设置的密码必须要有 key 至少 val 个：
-    var $strongpassword = [
-        "upper" => 0,
-        "lower" => 0,
-        "num" => 0,
-        "symbol" => 0
-    ];
-    //密码只能包括以下符号
-    var $passwordsymbol = "!@#$%^&*()_+-=[]{};':\\\"<>?,./";
-    //密码长度要求，[最少,最多]多少位
-    var $passwordlength = [6, 1024];
-    //默认 token 有效时间(秒)
-    var $tokentimeout = 15552000;
-    var $pretokentimeout = 600;
-    var $needlogin = [
-        "userinfo" => false
-    ];
-    // 短信和邮件模板，可用插入变量 {appname} {code} {time}
-    var $vcodetext_sns = "【{appname}】验证码：{code}（{time}分钟内有效）。您正在操作{appname}通行证，请勿将验证码告诉他人，如果不是本人进行的操作请无视。";
-    var $vcodetext_mail = [
-        'Subject' => '{appname} 账户验证邮件',
-        'Body' => '<!doctype html><html xmlns=http://www.w3.org/1999/xhtml><head><meta content="text/html; charset=utf-8"http-equiv=Content-Type><title>verification code</title><meta content="width=device-width,initial-scale=1"name=viewport></head><body style=text-align:center><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td width=20%><td align=left><h1>{appname}</h1><span>&emsp;&emsp;&emsp;&emsp;您好，您正在操作 {appname} 通行证。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;如果不是您本人操作，请忽略此邮件。</span><br><br><span>&emsp;&emsp;&emsp;&emsp;您的邮件验证码为：</span><br><h2>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{code}</h2><span>&emsp;&emsp;&emsp;&emsp;验证码 {time} 分钟内有效，</span><br><br><span>&emsp;&emsp;&emsp;&emsp;请勿将验证码告诉他人。</span><td width=20%></table></body></html>',
-        'AltBody' => '您好，您正在操作 {appname} 通行证。如果不是您本人操作，请忽略此邮件。您的邮件验证码为： {code} 。验证码 {time} 分钟内有效，请勿将验证码告诉他人。'
-    ];
-    var $engine = [ // 選擇傳送引擎
-        'mail' => 1, // 0.PHPMailer, 1.阿里云邮件推送, 其他.关闭此验证
-        'sms' => 1 // 1.阿里云短信服务, 其他.关闭此验证
-    ];
-    var $smtp = [
-        'CharSet' => 'UTF-8',
-        'SMTPDebug' => 0,
-        'Host' => '192.168.2.115',
-        'Port' => 25, //465
-        'SMTPAuth' => true,
-        'Username' => 'noreply@mail.zeyuze.com',
-        'Password' => 'server',
-        'SMTPSecure' => '', //ssl
-        'FromAddr' => 'server@dev.uuu.moe',
-        'FromName' => '应用',
-        'ReplyToAddr' => '',
-        'ReplyToName' => '',
-        'isHTML' => true
-    ];
-    var $aliyun = [ // 阿里雲配置
+    /** @var array<string, array<string, mixed>> 阿里雲服務設定 */
+    public array $aliyun = [
         'mail' => [
-            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'], // ['<accessKeyId>', '<accessSecret>']
-            'RegionId' => 'cn-hangzhou',
-            'AddressType' => '1', // *地址型別。取值： 0：為隨機賬號 1：為發信地址
-            'ClickTrace' => '0', // 1：為開啟資料跟蹤功能 0（預設）：為關閉資料跟蹤功能。
-            // 剩余配置从 $smtp 中读取： 'Username','ReplyToAddr','ReplyToAddr'，'ReplyToName'
+            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
+            'RegionId' => 'cn-hangzhou', 'AddressType' => '1', 'ClickTrace' => '0'
         ],
         'sms' => [
-            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'], // ['<accessKeyId>', '<accessSecret>']
-            'RegionId' => 'cn-hangzhou',
-            'SignName' => '择与择', // *簡訊簽名名稱。請在控制檯簽名管理頁面簽名名稱一列檢視。必須是已新增、並透過稽核的簡訊簽名。
-            'TemplateCode' => 'SMS_203675038', // *簡訊模板ID。請在控制檯 模板管理 頁面 模板CODE 一列檢視。必須是已新增、並透過稽核的簡訊簽名；且傳送國際/港澳臺訊息時，請使用國際/港澳臺簡訊模版。
-            'SmsUpExtendCode' => '', // 上行簡訊擴充套件碼，無特殊需要此欄位的使用者請忽略此欄位。
-            'OutId' => '' // 外部流水擴充套件欄位
+            'accessKeyIdSecret' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
+            'RegionId' => 'cn-hangzhou', 'SignName' => 'ApplicationName',
+            'TemplateCode' => 'SMS_203675038', 'SmsUpExtendCode' => '', 'OutId' => ''
         ],
     ];
 }
 
-//初始化，不要修改
+/**
+ * 系統設定聚合類別
+ *
+ * 初始化所有子設定類別。請勿修改此類別結構。
+ * @package NyarukoLogin
+ */
 class nyasetting {
-    var $db;
-    var $enc;
-    var $app;
-    var $verify;
+    /** @var nyasetting_db 資料庫設定 */
+    public nyasetting_db $db;
+    /** @var nyasetting_encrypt 加密通訊設定 */
+    public nyasetting_encrypt $enc;
+    /** @var nyasetting_app 應用設定 */
+    public nyasetting_app $app;
+    /** @var nyasetting_verify 驗證和安全設定 */
+    public nyasetting_verify $verify;
+
     function __construct() {
         $this->db = new nyasetting_db();
         $this->enc = new nyasetting_encrypt();
         $this->app = new nyasetting_app();
         $this->verify = new nyasetting_verify();
     }
+
     function __destruct() {
         $this->db = null;
         unset($this->db);

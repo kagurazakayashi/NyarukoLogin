@@ -1,4 +1,13 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * RSA 金鑰輔助類別
+ *
+ * 提供 RSA 公私鑰建立、加密、解密功能。
+ *
+ * @package NyarukoLogin
+ */
 class nyarsa {
     private $config = [
         "config" => "/www/server/php/73/src/ext/openssl/tests/openssl.cnf",
@@ -12,7 +21,7 @@ class nyarsa {
     /**
      * 建立私鑰和公鑰
      */
-    public function createKey() {
+    public function createKey(): void {
         try {
             // 建立公鑰和私鑰
             $rsaRes = openssl_pkey_new($this->config);
@@ -28,10 +37,12 @@ class nyarsa {
     }
     /**
      * 加密
-     * @param String data 明文
-     * @return String 密文
+     *
+     * @param string $data         明文
+     * @param bool   $isPrivateKey 是否使用私鑰加密
+     * @return string 密文（base64url 編碼）
      */
-    public function encrypt(string $data, bool $isPrivateKey=false):string {
+    public function encrypt(string $data, bool $isPrivateKey = false): string {
         $encrypted = null;
         if ($isPrivateKey) {
             if ($this->privateKeyPassword) {
@@ -49,10 +60,12 @@ class nyarsa {
     }
     /**
      * 解密
-     * @param String data 密文
-     * @return String 明文
+     *
+     * @param string $data         密文（base64url 編碼）
+     * @param bool   $isPrivateKey 是否使用私鑰解密
+     * @return ?string 明文
      */
-    public function decrypt(string $data, bool $isPrivateKey=false) {
+    public function decrypt(string $data, bool $isPrivateKey = false): ?string {
         $decrypted = null;
         $data = str_replace(['-','_'],['+','/'],$data);
         $data = base64_decode($data);
@@ -69,4 +82,3 @@ class nyarsa {
         return $decrypted;
     }
 }
-?>

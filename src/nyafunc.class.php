@@ -1,12 +1,23 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 通用工具函式類
+ *
+ * 提供使用者登入憑據檢查、使用者存在性查詢、暱稱管理、
+ * 歷史記錄寫入、檔案路徑處理、裝置資訊查詢等功能。
+ *
+ * @package NyarukoLogin
+ */
 class nyafunc {
     private $logfile = null; //记录详细调试信息到文件
     /**
-     * @description: 检查登录凭据是邮箱还是手机号
-     * @param String loginstr 要检查的登录凭据字符串
-     * @return Int 0:直接将错误返回给客户端 0:邮箱 1:手机号
+     * 檢查登入憑據是電子郵件還是手機號碼
+     *
+     * @param string $loginstr 要檢查的登入憑據字串
+     * @return int 0: 電子郵件, 1: 手機號碼（不符則透過 stopmsg 終止執行）
      */
-    function logintype($loginstr) {
+    function logintype(string $loginstr): int {
         global $nlcore;
         $telareaarr = $nlcore->safe->telarea($loginstr);
         if ($nlcore->safe->isPhoneNumCN($telareaarr[1])) {
@@ -19,12 +30,13 @@ class nyafunc {
         }
     }
     /**
-     * @description: 检查指定信息地址是否已经存在于数据库
-     * @param Int logintype 要检查的凭据类型 0:邮箱 1:手机号 2:哈希
-     * @param String loginstr 要检查的登录凭据字符串
-     * @return Bool 是否已经存在。如果出现多个结果则直接将错误返回客户端
+     * 檢查指定資訊地址是否已經存在於資料庫
+     *
+     * @param int $logintype 要檢查的憑據型別：0: 電子郵件, 1: 手機號碼, 2: 雜湊
+     * @param string $loginstr 要檢查的登入憑據字串
+     * @return bool 是否已經存在（如果出現多個結果則透過 stopmsg 終止執行）
      */
-    function isalreadyexists($logintype, $loginstr) {
+    function isalreadyexists(int $logintype, string $loginstr): bool {
         global $nlcore;
         $logintypearr = ["mail", "tel", "hash"];
         $logintypestr = $logintypearr[$logintype];
@@ -42,12 +54,13 @@ class nyafunc {
         }
     }
     /**
-     * @description: 生成使用者暱稱四位碼
-     * @param String name 新的暱稱
-     * @param String userhash 使用者雜湊
-     * @return Int 新生成的四位數ID
+     * 生成使用者暱稱四位碼
+     *
+     * @param string $name 新的暱稱
+     * @param string $userhash 使用者雜湊
+     * @return int 新生成的四位數 ID
      */
-    function genuserid(string $name, string $userhash) {
+    function genuserid(string $name, string $userhash): int {
         global $nlcore;
         $currid = [];
         // 檢查這個暱稱所對應的所有碼
@@ -75,19 +88,19 @@ class nyafunc {
         }
         // 檢查還有沒有剩餘碼，在剩餘碼中隨機一個
         $nameidbookcount = count($nameidbook);
-        if ($nameidbookcount == 0) $this->nlcore->msg->stopmsg(2040106, $name);
+        if ($nameidbookcount == 0) $nlcore->msg->stopmsg(2040106, $name);
         $nameidi = rand(0, $nameidbookcount);
         return $nameidbook[$nameidi];
     }
     /**
-     * @description: 檢查該使用者是否已存在
-     * @param String mergename 暱稱#四位碼
-     * 或使用：
-     * @param String name 暱稱
-     * @param String nameid 四位碼
-     * @return Bool 是否有此使用者
+     * 檢查該使用者是否已存在
+     *
+     * @param string|null $mergename 暱稱#四位碼 格式（可選）
+     * @param string|null $name 暱稱（可選，若提供 mergename 則自動解析）
+     * @param string|int|null $nameid 四位碼（可選）
+     * @return bool 是否有此使用者
      */
-    function useralreadyexists($mergename = null, $name = null, $nameid = null) {
+    function useralreadyexists(string|null $mergename = null, string|null $name = null, string|int|null $nameid = null): bool {
         global $nlcore;
         if ($mergename) {
             $namearr = explode("#", $mergename);
@@ -110,13 +123,15 @@ class nyafunc {
         return false;
     }
     /**
-     * @description: 獲取所選性別資訊
-     * @param String gender 性別名稱
-     * @param String localization 本地化性別名稱
-     * @param Int list 性別列表ID
-     * @return String 性別資訊查詢結果
+     * 獲取所選性別資訊
+     *
+     * @param int $id 性別 ID（可選，-1 為不使用）
+     * @param string $gender 性別名稱（可選）
+     * @param string $localization 本地化性別名稱（可選）
+     * @param int $list 性別列表 ID（可選，-1 使用預設）
+     * @return array|null 性別資訊查詢結果
      */
-    function getgender(int $id = -1, string $gender = "", string $localization = "", int $list = -1) {
+    function getgender(int $id = -1, string $gender = "", string $localization = "", int $list = -1): array|null {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["gender"];
         $whereDic = [];
@@ -129,11 +144,12 @@ class nyafunc {
         return $result[2];
     }
     /**
-     * @description: 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
-     * @param Int 失敗次數計數
-     * @return String 需要的驗證方式
+     * 檢查是否需要輸入驗證碼，並根據配置決定顯示哪種驗證碼
+     *
+     * @param int $loginfail 失敗次數計數
+     * @return string 需要的驗證方式（空字串為不需要）
      */
-    function needcaptcha($loginfail) {
+    function needcaptcha(int $loginfail): string {
         global $nlcore;
         $needcaptcha = $nlcore->cfg->verify->needcaptcha;
         $nowmode = "";
@@ -147,14 +163,19 @@ class nyafunc {
         return $nowmode;
     }
     /**
-     * @description: 写入历史记录
-     * @param String userhash 用户哈希
-     * @param String totptoken 应用识别码
-     * @param String code 错误代码
-     * @param String process 过程记录
-     * @param String session 当前会话
+     * 寫入歷史記錄
+     *
+     * @param string $operation 操作名稱
+     * @param int $code 回傳代碼
+     * @param string $userHash 使用者雜湊
+     * @param string $totpToken 應用識別碼
+     * @param int $ipid IP 記錄 ID
+     * @param string $sender 發送者
+     * @param string|null $process 過程記錄（可選）
+     * @param string|null $session 當前會話（可選）
+     * @return void
      */
-    function writehistory($operation, $code, $userHash, $totpToken, $ipid, $sender, $process = null, $session = null) {
+    function writehistory(string $operation, int $code, string $userHash, string $totpToken, int $ipid, string $sender, string|null $process = null, string|null $session = null): void {
         global $nlcore;
         $insertDic = [
             "userhash" => $userHash,
@@ -170,12 +191,13 @@ class nyafunc {
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
     }
     /**
-     * @description: 取出密码提示问题
-     * @param String userhash 用户哈希
-     * @param Boolean all : true=顺序全部取出 false=乱序取出随机两个
-     * @return Array<String> 密码提示问题数组
+     * 取出密碼提示問題
+     *
+     * @param string $userHash 使用者雜湊
+     * @param bool $all true: 順序全部取出, false: 亂序取出隨機兩個
+     * @return array 密碼提示問題陣列
      */
-    function getquestion($userHash, $all = false) {
+    function getquestion(string $userHash, bool $all = false): array {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["protection"];
         $columnArr = ["question1", "question2", "question3"];
@@ -192,13 +214,15 @@ class nyafunc {
         return $returnarr;
     }
     /**
-     * @description: 取得使用者個性化資訊
-     * @param String userhash 使用者雜湊
-     * @param Array dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢其他自定義使用者資訊表
-     * @param Array columnArr 要查询的项目
-     * @return Array<Array> 當前使用者資訊
+     * 取得使用者個人化資訊
+     *
+     * @param string $userHash 使用者雜湊
+     * @param array $dbresult 自定義資料庫查詢返回結果輸入，用於合併查詢（可選，空陣列表示從 DB 查詢）
+     * @param bool $getfileinfo 是否查詢檔案資訊（預設 true）
+     * @param array $columnArr 要查詢的欄位
+     * @return array 當前使用者資訊
      */
-    function getuserinfo(string $userHash, array $dbresult = [], $getfileinfo = true, $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "age", "address", "profile", "description", "image", "background"]): array {
+    function getuserinfo(string $userHash, array $dbresult = [], bool $getfileinfo = true, array $columnArr = ["userhash", "belong", "infotype", "name", "nameid", "gender", "pronoun", "age", "address", "profile", "description", "image", "background"]): array {
         global $nlcore;
         $result = null;
         if ($dbresult) {
@@ -319,11 +343,15 @@ class nyafunc {
         return [false, $mainuserhash];
     }
     /**
-     * @description: 获取目的地文件夹
-     * @return Array[String] [完整绝对路径,存储区文件夹路径,日期文件夹路径] (有/结尾)
-     * 返回示例： ["/wwwroot/upload/2020/03/21/","/wwwroot/upload/","2020/03/21/"]
+     * 獲取目的地資料夾路徑
+     *
+     * @param string $confdir 設定檔中的目錄鍵名（預設 "uploaddir"）
+     * @param bool $mkdir 是否自動建立目錄（預設 true）
+     * @param string $subdir 子目錄（可選）
+     * @param int $datedir 是否使用日期目錄：-1 依設定, 0 不使用, 1 強制使用
+     * @return array [完整絕對路徑, 儲存區資料夾路徑, 日期資料夾路徑]（路徑結尾有 /）
      */
-    function savepath($confdir = "uploaddir", $mkdir = true, $subdir = "", $datedir = -1) {
+    function savepath(string $confdir = "uploaddir", bool $mkdir = true, string $subdir = "", int $datedir = -1): array {
         global $nlcore;
         $uploadconf = $nlcore->cfg->app->upload;
         $uploadpath = $uploadconf[$confdir];
@@ -351,10 +379,11 @@ class nyafunc {
         return [$uploadpath, $dirpath, $datedirstr . DIRECTORY_SEPARATOR];
     }
     /**
-     * @description: 获取上传的某张图片的所有清晰度的完整文件名
-     * @param String dirpath 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）
-     * @param Array none 找不到内容或错误时需要返回的信息
-     * @return Array<Array> 文件信息数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
+     * 獲取上傳圖片的完整檔案名稱資訊
+     *
+     * @param string $dirpath 檔案所在資料夾相對路徑（例如：2019/01/02/xxxx.jpg）
+     * @param array $none 找不到內容或錯誤時需要返回的資訊（預設 []）
+     * @return array 檔案資訊陣列，包括路徑、支援的清晰度名、支援的格式名
      */
     function imageurl(string $dirpath, array $none = []): array {
         global $nlcore;
@@ -411,10 +440,11 @@ class nyafunc {
         return $fileinfo;
     }
     /**
-     * @description: 获取上传的多张图片的所有清晰度的完整文件名
-     * @param String dirpaths 文件所在文件夹相对路径（2019/01/02/xxxx.jpg）（使用逗号分隔符）
-     * @param Array none 找不到内容或错误时需要返回的信息
-     * @return Array<Array> 文件信息二维数组，包括文件名、支持的清晰度名、支持的格式名，以便客户端合并为完整的路径。
+     * 獲取多張上傳圖片的所有清晰度的完整檔案名稱
+     *
+     * @param string $dirpaths 檔案所在資料夾相對路徑（逗號分隔）
+     * @param array $none 找不到內容或錯誤時需要返回的資訊（預設 []）
+     * @return array 檔案資訊二維陣列
      */
     function imagesurl(string $dirpaths, array $none = []): array {
         $fileinfos = [];
@@ -425,11 +455,12 @@ class nyafunc {
         return (count($fileinfos) > 0) ? $fileinfos : $none;
     }
     /**
-     * @description: 获取设备ID
-     * @param String totptoken 设备代码
-     * @return Int 此设备在设备表中的ID
+     * 獲取裝置 ID
+     *
+     * @param string $totpToken 裝置代碼
+     * @return int 此裝置在裝置表中的 ID
      */
-    function getdeviceid($totpToken) {
+    function getdeviceid(string $totpToken): int {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["encryption"];
         $columnArr = ["devid"];
@@ -439,12 +470,13 @@ class nyafunc {
         return $result[2][0]["devid"];
     }
     /**
-     * @description: 获取设备信息
-     * @param String deviceid 设备ID
-     * @param Bool onlytype 是否只返回设备类型
-     * @return Array<String> 设备信息
+     * 獲取裝置資訊
+     *
+     * @param int $deviceid 裝置 ID
+     * @param bool $onlytype 是否只返回裝置型別（預設 false）
+     * @return array|string 裝置資訊陣列或型別字串
      */
-    function getdeviceinfo($deviceid, $onlytype = false) {
+    function getdeviceinfo(int $deviceid, bool $onlytype = false): array|string {
         global $nlcore;
         $tableStr = $nlcore->cfg->db->tables["device"];
         $columnArr = ["type"];
@@ -459,12 +491,12 @@ class nyafunc {
         return $resultdev[2][0];
     }
     /**
-     * @description: 从用户[昵称#唯一码]获取用户哈希（自带安全检查）
-     * @param String/Array<String> fullnickname （已弃用）完整昵称或已经分好的[名称,ID]数组
-     * @param Array<String> namearr 已经分好的[名称,ID]数组
-     * @return Array<String> [昵称,ID,用户哈希(没查到则没有)]
+     * 從使用者 [暱稱#唯一碼] 獲取使用者雜湊（自帶安全檢查）
+     *
+     * @param array $namearr 已經分好的 [名稱,ID] 陣列
+     * @return array [暱稱, ID, 使用者雜湊（沒查到則沒有）]
      */
-    function fullnickname2userhash(array $namearr) {
+    function fullnickname2userhash(array $namearr): array {
         global $nlcore;
         // $namearr = is_array($fullnickname) ? $fullnickname : explode("#", $fullnickname);
         if (count($namearr) != 2) $nlcore->msg->stopmsg(2070005, implode(',', $namearr));
@@ -488,9 +520,10 @@ class nyafunc {
         return [$name, $nameid, $userHash];
     }
     /**
-     * @description: 從使用者雜湊獲取使用者[暱稱,唯一碼]
-     * @param String userHash 使用者雜湊
-     * @return Array [暱稱,唯一碼]
+     * 從使用者雜湊獲取使用者 [暱稱,唯一碼]
+     *
+     * @param string $userHash 使用者雜湊
+     * @return array [暱稱, 唯一碼]
      */
     function userHash2nickNameArr(string $userHash = ""): array {
         global $nlcore;
@@ -510,9 +543,10 @@ class nyafunc {
         return [$nameInfoArr["name"], $nameInfoArr["nameid"]];
     }
     /**
-     * @description: [暱稱,唯一碼]转换为"暱稱#唯一碼"
-     * @param Array fullnickname userhash2fullnickname 函式生成的陣列
-     * @return String 組裝好的暱稱ID字串
+     * [暱稱,唯一碼] 轉換為 "暱稱#唯一碼" 格式
+     *
+     * @param array $fullnickname userHash2nickNameArr 函式生成的陣列
+     * @return string 組裝好的暱稱 ID 字串
      */
     function nickNameArr2nickNameFullStr(array $fullnickname): string {
         global $nlcore;
@@ -523,9 +557,11 @@ class nyafunc {
     }
 
     /**
-     * @description: 记录运行时产生的警告信息
-     * @param String tag 主题
-     * @param String logstr 信息字符串
+     * 記錄執行時期產生的警告資訊
+     *
+     * @param string $tag 主題
+     * @param string $logstr 資訊字串
+     * @return void
      */
     function log(string $tag, string $logstr): void {
         global $nlcore;
@@ -541,7 +577,9 @@ class nyafunc {
     }
 
     /**
-     * @description: 析构，关闭日志文件
+     * 解構子：關閉日誌檔案
+     *
+     * @return void
      */
     function __destruct() {
         if ($this->logfile) {

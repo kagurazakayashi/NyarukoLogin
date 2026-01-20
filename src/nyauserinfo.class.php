@@ -1,17 +1,23 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 使用者資訊擷取
+ *
+ * 提供取得當前使用者或指定使用者之個人資料、群組與權限的功能。
+ *
+ * @package NyarukoLogin
+ */
 class userinfo {
     /**
-     * @description: 功能入口：獲取當前使用者資料
-     * @param String 使用者雜湊
+     * 功能入口：獲取當前使用者資料
+     *
+     * @param string $userHash 使用者雜湊
      * @return array 準備返回到客戶端的資訊陣列
      */
-    function getuserinfo($userHash): array {
+    function getuserinfo(string $userHash): array {
         global $nlcore;
-        $inputInformation = $nlcore->sess->decryptargv("session");
-        $argReceived = $inputInformation[0];
-        // $totpToken = $inputInformation[2];
-        // $ipid = $inputInformation[3];
-        // $appid = $inputInformation[4];
+        $argReceived = $nlcore->sess->argReceived;
         // 取得使用者個性化資訊
         $cuser = $argReceived["cuser"] ?? $userHash;
         $userinfo = $nlcore->func->getuserinfo($cuser);

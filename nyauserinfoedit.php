@@ -1,5 +1,11 @@
 <?php
-// 使用者資料修改
+declare(strict_types=1);
+/**
+ * 使用者資料編輯端點 - 處理使用者修改個人資料的請求，更新資料庫中的使用者資訊。
+ * @package NyarukoLogin
+ * @author KagurazakaYashi
+ * @license MIT
+ */
 require_once "src/nyacore.class.php";
 require_once "src/nyauserinfoedit.class.php";
 // IP檢查和解密客戶端提交的資訊

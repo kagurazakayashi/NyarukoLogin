@@ -1,5 +1,30 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * 錯誤代碼字典與訊息管理類
+ *
+ * 提供統一的錯誤代碼對應訊息查詢功能，支援回傳陣列、JSON 或加密後的 JSON。
+ * 錯誤代碼採用 ABBCCDD 編碼規則：
+ *   - A: 1 成功 / 2 失敗 / 3 警告
+ *   - BB: 模組編號
+ *   - CC: 錯誤型別
+ *   - DD: 詳細錯誤
+ *
+ * @package NyarukoLogin
+ */
 class nyainfomsg {
+    /**
+     * 錯誤代碼訊息字典
+     *
+     * 代碼格式 ABBCCDD：
+     * - A: 1 成功, 2 失敗, 3 警告
+     * - BB: 模組（如 00 通用, 01 資料庫, 02 安全, 03 驗證, 04 使用者, 05 檔案, 06 函式可用性, 07 使用者資料, 08 資訊中心）
+     * - CC: 錯誤型別
+     * - DD: 詳細錯誤編號
+     *
+     * @var array<int,string|int> 錯誤代碼對應的訊息或轉發代碼
+     */
     public $imsg = array(
         /*
         ABBCCDD
@@ -429,14 +454,14 @@ class nyainfomsg {
         3000101 => "提示：根据相关法律法规或政策，无法继续操作。",
     );
     /**
-     * @description: 创建异常信息提示JSON
-     * @param Int msgmode 错误信息输出方式：0返回数组，1返回JSON
-     * @param String msgmode 输入 totp secret 而不是数字的话，会用此 secret 加密并返回。
-     * @param Int code 错误代码
-     * @param String/Array info 附加错误信息
-     * @return String 返回由 msgmode 设置的 null / json / 加密 json
+     * 建立錯誤訊息回應陣列或 JSON
+     *
+     * @param int|string $msgmode 錯誤資訊輸出方式：0 返回陣列，1 返回 JSON，字串則以此作為 TOTP secret 加密並返回
+     * @param int $code 錯誤代碼（預設 2000000）
+     * @param string|array|null $info 附加錯誤資訊（可選）
+     * @return array|string 返回由 msgmode 設定的回應格式
      */
-    function m($msgmode = 0, $code = 2000000, $info = null) {
+    function m(int|string $msgmode = 0, int $code = 2000000, string|array|null $info = null): array|string {
         $returnarr = array(
             "code" => $code,
             "msg" => $this->imsg[$code]
@@ -453,13 +478,14 @@ class nyainfomsg {
         }
     }
     /**
-     * @description: 返回信息，或抛出403错误，结束程序
-     * @param Int code 错误代码
-     * @param String str 附加错误信息
-     * @param Bool showmsg 是否显示错误信息（否则直接403）
+     * 返回錯誤資訊或拋出 403 錯誤後結束程式
+     *
+     * @param int $code 錯誤代碼（預設 -1）
+     * @param string $str 附加錯誤資訊（可選）
+     * @param bool $showmsg 是否顯示錯誤資訊（否則直接 403）
+     * @return never 永遠不會返回，必定終止執行
      */
-    function stopmsg(int $code = -1, $str = "", $showmsg = true) {
-        $showmsg = true;
+    function stopmsg(int $code = -1, string $str = "", bool $showmsg = true): never {
         if ($code > 0 && $showmsg) {
             global $nlcore;
             $msgmode = (strlen($nlcore->sess->publicKey) > 0) ? 0 : 1;
@@ -470,6 +496,11 @@ class nyainfomsg {
         }
         die();
     }
+    /**
+     * 解構子
+     *
+     * @return void
+     */
     function __destruct() {
         $this->imsg = null;
         unset($this->imsg);

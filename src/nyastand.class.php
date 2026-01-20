@@ -1,19 +1,24 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 子賬戶註冊
+ * 子帳戶建立
+ *
+ * 處理子帳戶（附屬帳號）的註冊流程，隸屬於主帳戶。
+ *
  * @package NyarukoLogin
  */
 class stand {
     /**
-     * @description: 功能入口：子賬戶註冊
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @param String appToken 客戶端令牌
-     * @param Int ipId IP地址ID
-     * @param Array userHash 使用者雜湊
-     * @return 準備返回到客戶端的資訊陣列
+     * 功能入口：子帳戶註冊
+     *
+     * @param array  $argReceived 客戶端提交資訊陣列
+     * @param string $appToken    客戶端令牌
+     * @param int    $ipId        IP 地址 ID
+     * @param string $userHash    主帳戶使用者雜湊
+     * @return array 準備返回到客戶端的資訊陣列
      */
-    function addstand($argReceived, $appToken, $ipId, $userHash): array {
+    function addstand(array $argReceived, string $appToken, int $ipId, string $userHash): array {
         global $nlcore;
         // 檢查必須提供的參數輸入是否齊全
         $argReceivedKeys = ["token", "nickname"];

@@ -1,16 +1,21 @@
 <?php
+declare(strict_types=1);
 
 /**
- * @description: 使用者登入
+ * 使用者登入邏輯
+ *
+ * 處理使用者登入流程，包括密碼驗證、驗證碼檢查、兩步驗證、登入限制、Token 分配等。
+ *
  * @package NyarukoLogin
  */
 class nyalogin {
     /**
-     * @description: 功能入口：使用者登入
-     * @param Array argReceived 客戶端提交資訊陣列
-     * @param String appToken 客戶端令牌
-     * @param Int ipId IP地址ID
-     * @return 準備返回到客戶端的資訊陣列
+     * 功能入口：使用者登入
+     *
+     * @param array   $argReceived 客戶端提交資訊陣列
+     * @param string  $appToken    客戶端令牌
+     * @param int     $ipid        IP 地址 ID
+     * @return array  準備返回到客戶端的資訊陣列
      */
     function login(array $argReceived, string $appToken, int $ipid): array {
         global $nlcore;
@@ -193,7 +198,7 @@ class nyalogin {
         $tokentimeoutstr = $nlcore->safe->getdatetime(null, $tokentimeout)[1];
         $deviceid = $nlcore->func->getdeviceid($appToken);
         // 獲取 UA
-        $ua = (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) ? $ua = $_SERVER["HTTP_USER_AGENT"] : null;
+        $ua = (isset($_SERVER["HTTP_USER_AGENT"]) && strlen($_SERVER["HTTP_USER_AGENT"]) > 0) ? $_SERVER["HTTP_USER_AGENT"] : null;
         // 獲取裝置型別
         $devicetype = $nlcore->func->getdeviceinfo($deviceid, true);
         $insertDic = [
@@ -239,11 +244,12 @@ class nyalogin {
         return $returnClientData;
     }
     /**
-     * @description: 修改當前使用者的登入失敗計數
-     * @param Int users 資料表 ID
-     * @param Int/String fail 當前登入失敗次數，-1 則清除失敗次數
+     * 修改當前使用者的登入失敗計數
+     *
+     * @param int $id   使用者資料表 ID
+     * @param int $fail 當前登入失敗次數，-1 則清除失敗次數
      */
-    function loginfailuretimes($id, $fail = -1) {
+    function loginfailuretimes(int $id, int $fail = -1): void {
         global $nlcore;
         $f = intval($fail) + 1;
         $updateDic = ["fail" => $f];
@@ -253,9 +259,11 @@ class nyalogin {
         if ($result[0] >= 2000000) $nlcore->msg->stopmsg(2040112);
     }
     /**
-     * @description: 建立一份新的驗證碼並返回客戶端
+     * 建立一份新的驗證碼並返回客戶端
+     *
+     * @param int $code 錯誤狀態碼
      */
-    function getcaptcha($code) {
+    function getcaptcha(int $code = 2040202): void {
         global $nlcore;
         $nyacaptcha = new nyacaptcha();
         $newcaptcha = $nyacaptcha->getcaptcha(false, false, false);
@@ -265,11 +273,13 @@ class nyalogin {
         die();
     }
     /**
-     * @description: 檢查當前裝置型別和總共的同時登入數是否超出限制
-     * @param String userhash 使用者雜湊
-     * @return Array 被登出的裝置的資訊（手機型號等）
+     * 檢查當前裝置型別和總共的同時登入數是否超出限制
+     *
+     * @param string $userHash 使用者雜湊
+     * @param string $appToken 客戶端令牌
+     * @return ?array 被登出的裝置的資訊（手機型號等），未超限時返回 null
      */
-    function chkoverflowsession($userHash, $appToken) {
+    function chkoverflowsession(string $userHash, string $appToken): ?array {
         global $nlcore;
         //在 totp 表取 devid 獲得當前裝置資訊
         $tableStr = $nlcore->cfg->db->tables["encryption"];
@@ -313,20 +323,21 @@ class nyalogin {
         return null;
     }
     /**
-     * @description: 將較早的裝置登出
-     * @param Array sessionarr 使用者已有有效會話的陣列
-     * @return Array 被登出裝置的相關裝置資訊，鍵均以 logout_ 為字首
+     * 將較早的裝置登出
+     *
+     * @param array $sessionarr 使用者已有有效會話的陣列
+     * @return array 被登出裝置的相關裝置資訊
      */
-    function removeoverflowsession($sessionarr) {
+    function removeoverflowsession(array $sessionarr): array {
         global $nlcore;
         //超過總數限制，登出最早的終端。取最小的時間戳對應的id
         $ttime = PHP_INT_MAX;
         $tid = -1;
-        foreach ($sessionarr as $apptoken) {
-            $ttimen = strtotime($apptoken["time"]);
+        foreach ($sessionarr as $sessioninfo) {
+            $ttimen = strtotime($sessioninfo["time"]);
             if ($ttimen < $ttime) {
                 $ttime = $ttimen;
-                $tid = $apptoken["id"];
+                $tid = $sessioninfo["id"];
             }
         }
         if ($tid == -1) $nlcore->msg->stopmsg(2040711);
