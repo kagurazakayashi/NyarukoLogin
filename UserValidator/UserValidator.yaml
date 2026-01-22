@@ -1,0 +1,12 @@
+nats_config:
+  nats_server_host: 127.0.0.1
+  nats_server_port: 4222
+  nats_user: webapi
+  nats_password: Ohr1biolei4aeD3eu7isaeyie9di4uuf
+  nats_client_name: UserValidator
+  nats_max_reconnects: 5
+  nats_reconnect_wait: 2
+  nats_connect_timeout: 10
+  nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!"
+
+nats_subject: "ping_req"

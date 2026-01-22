@@ -2,6 +2,8 @@
 
 正在开发中，不要使用。
 
+基于 ApiNatsBridge 。
+
 ## UserManager 用户管理器
 
 ## UserValidator 登录状态验证器
