@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -46,6 +47,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 解碼 PASETO 密鑰
+	pasetoKey, err := hex.DecodeString(cfg.PasetoSecretKey)
+	if err != nil || len(pasetoKey) != 32 {
+		fmt.Fprintf(errWriter, "[錯誤] PASETO 密鑰無效: 需要 64 個十六進位字元 (32 bytes)\n")
+		os.Exit(1)
+	}
+
 	fmt.Fprintf(outWriter, "[資訊] NATS 伺服器: %s:%d\n", cfg.NatsConfig.NatsServerHost, cfg.NatsConfig.NatsServerPort)
 	fmt.Fprintf(outWriter, "[資訊] 訂閱主題: %s\n", cfg.NatsSubject)
 
@@ -75,11 +83,29 @@ func main() {
 
 		fmt.Fprintf(outWriter, "[資訊] 收到請求: %s %s 來自 %s\n", req.Method, req.Path, req.IP)
 
-		result := handlePing(&req)
+		var result *loginResponse
+		switch req.Path {
+		case "/validate":
+			result = handleLogin(&req, pasetoKey)
+		default:
+			result = notFoundResponse()
+		}
+
+		var statusCode int
+		switch {
+		case result.Success:
+			statusCode = 200
+		case result.Message == "invalid request body":
+			statusCode = 400
+		case result.Message == "invalid credentials":
+			statusCode = 401
+		default:
+			statusCode = 404
+		}
 
 		respBody, _ := json.Marshal(result)
 		resp, _ := json.Marshal(bridgeResponse{
-			StatusCode: 200,
+			StatusCode: statusCode,
 			Headers:    map[string]string{"Content-Type": "application/json; charset=utf-8"},
 			Body:       string(respBody),
 		})

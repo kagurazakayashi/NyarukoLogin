@@ -1,41 +1,59 @@
 package main
 
 import (
-	"strconv"
+	"encoding/json"
 	"time"
+
+	"github.com/o1egl/paseto"
 )
 
-// pingResponse ping 請求的回應結構（暫時使用，後續將改為登入狀態驗證結果）
-type pingResponse struct {
-	Pong       int64  `json:"pong"`
-	IP         string `json:"ip"`
-	ServerTime int64  `json:"servertime"`
+type loginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	AppKey   string `json:"appkey"`
 }
 
-// handlePing 處理 ping 請求
-// 從 params 中取得客戶端時間戳，計算與伺服器時間的差值
-func handlePing(req *bridgeRequest) *pingResponse {
-	var clientTimestampMs int64
+type loginResponse struct {
+	Success bool   `json:"success"`
+	Token   string `json:"token,omitempty"`
+	Message string `json:"message,omitempty"`
+}
 
-	if ts, ok := req.Params["timestamp"]; ok && ts != "" {
-		parsed, err := strconv.ParseInt(ts, 10, 64)
-		if err == nil {
-			clientTimestampMs = parsed
-		}
+type tokenClaims struct {
+	Username string `json:"username"`
+	AppKey   string `json:"appkey"`
+	paseto.JSONToken
+}
+
+func handleLogin(req *bridgeRequest, secretKey []byte) *loginResponse {
+	var loginReq loginRequest
+	if err := json.Unmarshal([]byte(req.Body), &loginReq); err != nil {
+		return &loginResponse{Success: false, Message: "invalid request body"}
 	}
 
-	nowMs := time.Now().UnixMilli()
-
-	var pong int64
-	if clientTimestampMs > 0 {
-		pong = nowMs - clientTimestampMs
-	} else {
-		pong = nowMs
+	if loginReq.Username != "user" || loginReq.Password != "pass" || loginReq.AppKey != "appkey" {
+		return &loginResponse{Success: false, Message: "invalid credentials"}
 	}
 
-	return &pingResponse{
-		Pong:       pong,
-		IP:         req.IP,
-		ServerTime: nowMs,
+	now := time.Now()
+	claims := tokenClaims{
+		Username: loginReq.Username,
+		AppKey:   loginReq.AppKey,
+		JSONToken: paseto.JSONToken{
+			Subject:    loginReq.Username,
+			IssuedAt:   now,
+			Expiration: now.Add(24 * time.Hour),
+		},
 	}
+
+	token, err := paseto.NewV2().Encrypt(secretKey, claims, nil)
+	if err != nil {
+		return &loginResponse{Success: false, Message: "failed to generate token"}
+	}
+
+	return &loginResponse{Success: true, Token: token}
+}
+
+func notFoundResponse() *loginResponse {
+	return &loginResponse{Success: false, Message: "not found"}
 }

@@ -9,4 +9,5 @@ nats_config:
   nats_connect_timeout: 10
   nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!"
 
-nats_subject: "ping_req"
+nats_subject: "user_valid_req"
+paseto_secret_key: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"

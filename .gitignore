@@ -7,6 +7,7 @@ l10n/app_localizations*.go
 ico/icon-hd.png
 AGENTS.md
 opencode.json
+note.txt
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,go,goland

@@ -12,8 +12,9 @@ import (
 
 // serviceConfig 服務設定結構
 type serviceConfig struct {
-	NatsConfig  nyanats.NatsConfig `json:"nats_config" yaml:"nats_config"`
-	NatsSubject string             `json:"nats_subject" yaml:"nats_subject"`
+	NatsConfig      nyanats.NatsConfig `json:"nats_config" yaml:"nats_config"`
+	NatsSubject     string             `json:"nats_subject" yaml:"nats_subject"`
+	PasetoSecretKey string             `json:"paseto_secret_key" yaml:"paseto_secret_key"`
 }
 
 // loadConfig 載入 YAML 設定檔
