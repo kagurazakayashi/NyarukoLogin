@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""UserValidator 測試腳本：發送驗證請求，解析 PASETO 令牌內容
+依賴: pip install requests
+"""
+
+import json
+import os
+import re
+import sys
+
+import requests
+from parse import parse_paseto
+
+DEFAULT_URL = "http://127.0.0.1:9080/validate"
+# PASETO v2 local 對稱密鑰預設值（與 UserValidator.yaml 一致）
+DEFAULT_SECRET_KEY_HEX = ""
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "UserValidator.yaml")
+
+
+def load_secret_key() -> str:
+    """從同目錄的 UserValidator.yaml 讀取 paseto_secret_key，失敗則回退預設值"""
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                if "paseto_secret_key" in line:
+                    m = re.search(r'"([0-9a-fA-F]+)"', line)
+                    if m:
+                        return m.group(1)
+    except OSError:
+        pass
+    return DEFAULT_SECRET_KEY_HEX
+
+
+def print_token_info(token_str: str, secret_key_hex: str | None = None) -> None:
+    """輸出令牌結構概覽與所有 claims（由 parse.py 解析）"""
+    result = parse_paseto(token_str, key=secret_key_hex)
+
+    raw = result["raw"]
+    vi = result["version_info"]
+    alg = result["algorithm"]
+    footer = result["footer"]
+    payload_info = result["payload"]
+    warnings = result.get("warnings", [])
+
+    print("=" * 60)
+    print("PASETO 令牌結構")
+    print("=" * 60)
+    print(f"  版本 (version):   {raw.get('version', '?')}")
+    print(f"  用途 (purpose):   {raw.get('purpose', '?')}")
+    print(f"  段數 (segments):  {raw.get('segment_count', '?')}")
+    print(f"  長度 (length):    {len(token_str)} chars")
+
+    if vi:
+        if vi.get("supports_implicit_assertions"):
+            print(f"  隱性斷言:         支援")
+        if vi.get("note"):
+            print(f"  版本備註:         {vi['note']}")
+
+    if alg:
+        print(f"  演算法風格:       {alg.get('style', '?')}")
+        print(f"  演算法名稱:       {alg.get('name', '?')}")
+
+    if warnings:
+        for w in warnings:
+            print(f"  [警告] {w}")
+
+    if footer.get("present"):
+        print(f"  Footer:           有")
+        parsed = footer.get("parsed")
+        if parsed is not None:
+            if isinstance(parsed, dict):
+                print(f"  Footer 內容:      {json.dumps(parsed, ensure_ascii=False)}")
+            else:
+                print(f"  Footer 內容:      {parsed}")
+        if footer.get("note"):
+            print(f"  Footer 備註:      {footer['note']}")
+    else:
+        print(f"  Footer:           無")
+
+    print()
+    print("=" * 60)
+    print("令牌宣告 (Claims)")
+    print("=" * 60)
+
+    if payload_info.get("note"):
+        print(f"  [備註] {payload_info['note']}")
+
+    standard_claims = payload_info.get("standard_claims")
+    if standard_claims:
+        print()
+        print("  標準宣告 (Standard Claims):")
+        for key, info in standard_claims.items():
+            label = info.get("label", key)
+            value = info.get("value")
+            formatted = info.get("formatted")
+            parsed_val = info.get("parsed")
+
+            if value is None and not payload_info.get("decodable"):
+                print(f"    {label}: (已加密)")
+                continue
+
+            display = str(value) if value is not None else "(無)"
+            if formatted:
+                display = f"{value} → {formatted}"
+            print(f"    {label}: {display}")
+
+            if parsed_val is not None and parsed_val != value:
+                if isinstance(parsed_val, (dict, list)):
+                    print(f"      (解析: {json.dumps(parsed_val, ensure_ascii=False)})")
+                else:
+                    print(f"      (解析: {parsed_val})")
+
+    custom_claims = payload_info.get("custom_claims")
+    if custom_claims:
+        print()
+        print("  自定義宣告 (Custom Claims):")
+        for k, v in custom_claims.items():
+            if isinstance(v, (dict, list)):
+                print(f"    {k}: {json.dumps(v, ensure_ascii=False)}")
+            else:
+                print(f"    {k}: {v}")
+
+
+def main() -> None:
+    url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
+    secret_key_hex = load_secret_key()
+
+    payload = {
+        "username": "user",
+        "password": "pass",
+        "appkey": "appkey",
+    }
+
+    print("=" * 60)
+    print("請求資訊")
+    print("=" * 60)
+    print(f"  URL:     {url}")
+    print(f"  Body:    {json.dumps(payload)}")
+    print()
+
+    try:
+        resp = requests.post(url, json=payload, timeout=10)
+    except requests.ConnectionError:
+        print(f"[錯誤] 無法連線到 {url}，請確認 UserValidator 服務已啟動")
+        sys.exit(1)
+
+    print("=" * 60)
+    print("原始回應")
+    print("=" * 60)
+    print(f"  HTTP Status: {resp.status_code} {resp.reason}")
+    print(f"  Headers:")
+    for k, v in resp.headers.items():
+        print(f"    {k}: {v}")
+    print()
+    print(resp.text)
+
+    try:
+        data = resp.json()
+        print()
+        print("=" * 60)
+        print("格式化回應 (JSON)")
+        print("=" * 60)
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+
+        token = data.get("token", "")
+        if token:
+            print()
+            print_token_info(token, secret_key_hex)
+
+    except json.JSONDecodeError:
+        print()
+        print("[備註] 回應並非 JSON 格式，略過結構化輸出")
+
+    print()
+
+
+if __name__ == "__main__":
+    main()
