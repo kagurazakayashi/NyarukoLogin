@@ -1,13 +1,101 @@
-nats_config:
-  nats_server_host: 127.0.0.1
-  nats_server_port: 4222
-  nats_user: webapi
-  nats_password: Ohr1biolei4aeD3eu7isaeyie9di4uuf
-  nats_client_name: UserValidator
-  nats_max_reconnects: 5
-  nats_reconnect_wait: 2
-  nats_connect_timeout: 10
-  nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!"
+# ============================================================
+# UserValidator 設定檔
+# 本檔案以 YAML 格式定義 NATS 連線、訂閱主題與 PASETO 令牌參數
+# ============================================================
 
+# ----------------------------------------------------------
+# NATS 伺服器連線設定 (nats_config)
+# 所有欄位皆為選填，未填寫時使用預設值
+# ----------------------------------------------------------
+nats_config:
+  # NATS 伺服器主機位址 (預設: 127.0.0.1)
+  nats_server_host: 127.0.0.1
+  # NATS 伺服器埠號 (預設: 4222)
+  nats_server_port: 4222
+  # 連線驗證使用者名稱 (預設: 空，不認證)
+  nats_user: webapi
+  # 連線驗證密碼 (預設: 空)
+  nats_password: Ohr1biolei4aeD3eu7isaeyie9di4uuf
+  # 此用戶端在 NATS 伺服器上顯示的名稱 (預設: 自動產生 UUID)
+  nats_client_name: UserValidator
+  # 連線中斷後最大重新連線次數 (預設: 5)
+  nats_max_reconnects: 5
+  # 每次重新連線之間的等待秒數 (預設: 2)
+  nats_reconnect_wait: 2
+  # 初始連線逾時秒數 (預設: 10)
+  nats_connect_timeout: 10
+  # 全域加密金鑰，長度必須為 16、24 或 32 bytes
+  # 對應 AES-128、AES-192 或 AES-256
+  nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!"
+  # 針對特定主題的獨立加密金鑰 (選填)
+  # 格式: 主題名稱: 金鑰字串
+  #   - 若匹配則優先使用，無匹配時回退至全域金鑰 (nats_encryption_key)
+  #   - 值設為空字串 "" 則該主題以明文傳輸
+  # 範例:
+  #   nats_theme_keys:
+  #     "sensitive.subject": "MySecretKey32BytesLong!123456"
+  #     "public.subject": ""
+
+# ----------------------------------------------------------
+# NATS 訂閱主題 (nats_subject)
+# UserValidator 會訂閱此主題，接收由 ApiNatsBridge 轉發的請求
+# ----------------------------------------------------------
+# 訂閱的主題名稱
 nats_subject: "user_valid_req"
+
+# ----------------------------------------------------------
+# PASETO 密鑰 (paseto_secret_key)
+# 用於對令牌進行對稱式加密 (local purpose)
+# 必須為 64 個十六進位字元，換算為 32 bytes (256-bit)
+# 產生新密鑰的指令 (PowerShell):
+#   -join ((1..32) | ForEach-Object { '{0:X2}' -f (Get-Random -Max 256) })
+# ----------------------------------------------------------
 paseto_secret_key: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
+
+# ----------------------------------------------------------
+# PASETO 令牌參數設定 (paseto_config)
+# 所有欄位皆為選填，未填寫時使用預設值
+# ----------------------------------------------------------
+paseto_config:
+  # PASETO 協定版本 (預設: "v2")
+  # 可選值:
+  #   - "v1": 相容性最佳，使用 AES-256-CTR + HMAC-SHA-384
+  #   - "v2": 推薦使用，使用 XChaCha20-Poly1305，安全性更優
+  paseto_version: "v2"
+
+  # 令牌有效時長 (預設: "24h")
+  # 格式為 Go duration 字串，範例:
+  #   - "15m"   = 15 分鐘
+  #   - "1h"    = 1 小時
+  #   - "24h"   = 24 小時 (1 天)
+  #   - "168h"  = 168 小時 (7 天)
+  #   - "720h"  = 720 小時 (30 天)
+  # 若格式無效或值小於等於零，自動回退為 "24h"
+  token_ttl: "24h"
+
+  # 令牌簽發者 (iss claim) (預設: 空，不設定)
+  # 建議填寫服務名稱以利於審計，如 "NyarukoLogin-UserValidator"
+  issuer: ""
+
+  # 令牌受眾 (aud claim) (預設: 空，不設定)
+  # 用於限制令牌使用範圍，如指定接收服務的名稱
+  audience: ""
+
+  # 令牌生效時間偏移 (預設: "0s")
+  # 控制令牌從簽發後多久才開始生效
+  # 格式為 Go duration 字串，範例:
+  #   - "0s"   = 立即生效 (不設定 NotBefore)
+  #   - "5m"   = 簽發後 5 分鐘才生效
+  #   - "1h"   = 簽發後 1 小時才生效
+  not_before: "0s"
+
+  # 是否為每個令牌產生唯一識別碼 (jti claim) (預設: false)
+  # 用途: 用於令牌撤銷、審計追蹤、防止重放攻擊
+  # 啟用後每個令牌會附加一個 UUID v4 的 jti 欄位
+  enable_jti: true
+
+  # 自訂 Footer 明文字串 (預設: 空，不附加)
+  # Footer 內容為明文（不加密），可在不解密令牌的情況下讀取
+  # 適用於存放公開中繼資料，如金鑰輪替 ID、環境標籤等
+  # 注意: Footer 驗證依賴於 PASETO 的整體完整性保護，不可單獨校驗
+  footer: ""

@@ -86,7 +86,7 @@ func main() {
 		var result *loginResponse
 		switch req.Path {
 		case "/validate":
-			result = handleLogin(&req, pasetoKey)
+			result = handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
 		default:
 			result = notFoundResponse()
 		}
