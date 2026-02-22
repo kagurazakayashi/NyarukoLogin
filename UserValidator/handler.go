@@ -93,6 +93,50 @@ func encryptToken(version string, key []byte, payload interface{}, footer interf
 	}
 }
 
+// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證
+func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *verifyResponse {
+	var verifyReq verifyRequest
+	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
+		return &verifyResponse{Success: false, Message: "invalid request body"}
+	}
+
+	if verifyReq.Token == "" {
+		return &verifyResponse{Success: false, Message: "token is required"}
+	}
+
+	// 解密令牌並還原 claims
+	var claims tokenClaims
+	if err := decryptToken(cfg.Version, secretKey, verifyReq.Token, &claims, nil); err != nil {
+		return &verifyResponse{Success: false, Message: "token verification failed: " + err.Error()}
+	}
+
+	// 驗證標準 claims（過期、尚未生效等）
+	if err := claims.Validate(); err != nil {
+		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
+	}
+
+	return &verifyResponse{
+		Success:  true,
+		Username: claims.Username,
+		AppKey:   claims.AppKey,
+		Subject:  claims.Subject,
+		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
+		Expires:  claims.Expiration.Format(time.RFC3339),
+	}
+}
+
+// decryptToken 依據指定的 PASETO 版本對令牌進行解密
+func decryptToken(version string, key []byte, token string, payload interface{}, footer interface{}) error {
+	switch version {
+	case "v1":
+		return paseto.NewV1().Decrypt(token, key, payload, footer)
+	case "v2", "":
+		return paseto.NewV2().Decrypt(token, key, payload, footer)
+	default:
+		return fmt.Errorf("unsupported PASETO version: %s", version)
+	}
+}
+
 func notFoundResponse() *loginResponse {
 	return &loginResponse{Success: false, Message: "not found"}
 }

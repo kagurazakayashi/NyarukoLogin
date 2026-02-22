@@ -83,27 +83,43 @@ func main() {
 
 		fmt.Fprintf(outWriter, "[資訊] 收到請求: %s %s 來自 %s\n", req.Method, req.Path, req.IP)
 
-		var result *loginResponse
+		var respBody []byte
+		var statusCode int
+
 		switch req.Path {
 		case "/validate":
-			result = handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
-		default:
-			result = notFoundResponse()
-		}
+			result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
+			switch {
+			case result.Success:
+				statusCode = 200
+			case result.Message == "invalid request body":
+				statusCode = 400
+			case result.Message == "invalid credentials":
+				statusCode = 401
+			default:
+				statusCode = 404
+			}
+			respBody, _ = json.Marshal(result)
 
-		var statusCode int
-		switch {
-		case result.Success:
-			statusCode = 200
-		case result.Message == "invalid request body":
-			statusCode = 400
-		case result.Message == "invalid credentials":
-			statusCode = 401
+		case "/verify":
+			result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig)
+			switch {
+			case result.Success:
+				statusCode = 200
+			case result.Message == "invalid request body",
+				result.Message == "token is required":
+				statusCode = 400
+			default:
+				statusCode = 401
+			}
+			respBody, _ = json.Marshal(result)
+
 		default:
+			result := notFoundResponse()
 			statusCode = 404
+			respBody, _ = json.Marshal(result)
 		}
 
-		respBody, _ := json.Marshal(result)
 		resp, _ := json.Marshal(bridgeResponse{
 			StatusCode: statusCode,
 			Headers:    map[string]string{"Content-Type": "application/json; charset=utf-8"},

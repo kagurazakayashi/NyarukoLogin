@@ -95,7 +95,7 @@ bridge:
     - "::1" # IPv6 本機地址
 
   # 自動為用戶端 Cookie 寫入 UUID 的鍵名（留空或不填則不啟用）
-  cookie_uuid_key: "brid" # Cookie 鍵名，首次訪問時自動生成 UUID 並寫入此 Cookie
+  cookie_uuid_key: "" # Cookie 鍵名，首次訪問時自動生成 UUID 並寫入此 Cookie
 
   # 請求欄位長度限制（全域層級，0 或省略表示不限制，可被路由層級覆蓋）
   limits:
@@ -188,5 +188,72 @@ routes:
           type: boolean # 驗證是否成功
         token:
           type: string # PASETO 令牌（僅 success=true 時存在）
+        message:
+          type: string # 錯誤訊息（僅 success=false 時存在）
+
+  - path: "/verify" # HTTP 請求路徑（令牌核實）
+    nats_subject: "user_valid_req" # 轉發至 NATS 的 Subject 名稱（與驗證共用同一主題）
+    methods: ["POST"] # 僅接受 POST 方法
+    content_type: "application/json" # 要求 JSON 請求體
+    timeout: 10 # NATS 等待微服務回應的逾時秒數，超過則回傳 504 Gateway Timeout
+    return_fields: # 轉發到 NATS 訊息中包含的欄位清單
+      - method # HTTP 請求方法
+      - path # 請求路徑
+      - headers # 請求標頭（鍵值對 map）
+      - cookies # 請求 Cookie（鍵值對 map）
+      - remote_addr # 遠端位址
+      - ip # 客戶端 IP
+      - params # URL 查詢參數（鍵值對 map）
+      - body # 請求本文（JSON 字串）
+    limits: # 此路由專用的請求限制（覆蓋全域 limits）
+      path:
+        max_length: 7 # "/verify" = 7 字元
+      body:
+        max_length: 2048 # PASETO v2 local 令牌最大長度
+      headers:
+        max_count: 16
+        max_key_length: 25
+        max_value_length: 256
+      params:
+        max_count: 0 # 不接收查詢參數
+        max_key_length: 0
+        max_value_length: 0
+      cookies:
+        max_count: 4
+        max_key_length: 8
+        max_value_length: 36
+    schema_body: # 請求本文的 JSON Schema 驗證
+      root_type: object # 根類型為物件
+      strict: true # 嚴格模式：不允許未定義欄位
+      required: # 必要欄位
+        - token # 待核實的 PASETO 令牌
+      properties: # 屬性定義
+        token:
+          type: string
+    response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
+      body:
+        max_length: 2048 # 核實回應 JSON 最大長度
+      headers:
+        max_count: 1 # Content-Type
+        max_key_length: 12
+        max_value_length: 31
+    response_schema_body: # 回應本文的 JSON Schema 驗證
+      root_type: object # 根類型為物件
+      strict: false # 非嚴格模式：success/failure 回應欄位不同
+      required: # 必要欄位
+        - success # 必須包含 success 欄位
+      properties: # 屬性定義
+        success:
+          type: boolean # 核實是否成功
+        username:
+          type: string # 令牌所屬用戶名稱（僅 success=true 時存在）
+        appkey:
+          type: string # 令牌對應的應用程式金鑰（僅 success=true 時存在）
+        sub:
+          type: string # 令牌主體（僅 success=true 時存在）
+        iat:
+          type: string # 令牌簽發時間（僅 success=true 時存在）
+        exp:
+          type: string # 令牌到期時間（僅 success=true 時存在）
         message:
           type: string # 錯誤訊息（僅 success=false 時存在）

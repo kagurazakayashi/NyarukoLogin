@@ -12,6 +12,7 @@ import requests
 from parse import parse_paseto
 
 DEFAULT_URL = "http://127.0.0.1:9080/validate"
+VERIFY_URL = "http://127.0.0.1:9080/verify"
 # PASETO v2 local 對稱密鑰預設值（與 UserValidator.yaml 一致）
 DEFAULT_SECRET_KEY_HEX = ""
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "UserValidator.yaml")
@@ -123,6 +124,7 @@ def print_token_info(token_str: str, secret_key_hex: str | None = None) -> None:
 
 def main() -> None:
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
+    verify_url = sys.argv[2] if len(sys.argv) > 2 else VERIFY_URL
     secret_key_hex = load_secret_key()
 
     payload = {
@@ -154,6 +156,7 @@ def main() -> None:
     print()
     print(resp.text)
 
+    token = None
     try:
         data = resp.json()
         print()
@@ -166,6 +169,62 @@ def main() -> None:
         if token:
             print()
             print_token_info(token, secret_key_hex)
+
+    except json.JSONDecodeError:
+        print()
+        print("[備註] 回應並非 JSON 格式，略過結構化輸出")
+
+    print()
+
+    # --------------------------------------------------------------------
+    # 令牌核實測試 (/verify)
+    # --------------------------------------------------------------------
+    if not token:
+        print("[略過] 未取得令牌，無法進行核實測試")
+        return
+
+    print("=" * 60)
+    print("令牌核實請求 (/verify)")
+    print("=" * 60)
+    print(f"  URL:     {verify_url}")
+    verify_payload = {"token": token}
+    print(f"  Body:    {json.dumps(verify_payload, ensure_ascii=False)}")
+    print()
+
+    try:
+        verify_resp = requests.post(verify_url, json=verify_payload, timeout=10)
+    except requests.ConnectionError:
+        print(f"[錯誤] 無法連線到 {verify_url}，請確認 UserValidator 服務已啟動")
+        return
+
+    print("=" * 60)
+    print("核實回應")
+    print("=" * 60)
+    print(f"  HTTP Status: {verify_resp.status_code} {verify_resp.reason}")
+    print(f"  Headers:")
+    for k, v in verify_resp.headers.items():
+        print(f"    {k}: {v}")
+    print()
+    print(verify_resp.text)
+
+    try:
+        verify_data = verify_resp.json()
+        print()
+        print("=" * 60)
+        print("格式化回應 (JSON)")
+        print("=" * 60)
+        print(json.dumps(verify_data, indent=2, ensure_ascii=False))
+
+        if verify_data.get("success"):
+            print()
+            print("令牌核實成功:")
+            print(f"  使用者名稱: {verify_data.get('username', '(無)')}")
+            print(f"  APPKEY:     {verify_data.get('appkey', '(無)')}")
+            print(f"  簽發時間:   {verify_data.get('iat', '(無)')}")
+            print(f"  到期時間:   {verify_data.get('exp', '(無)')}")
+        else:
+            print()
+            print(f"令牌核實失敗: {verify_data.get('message', '(無)')}")
 
     except json.JSONDecodeError:
         print()

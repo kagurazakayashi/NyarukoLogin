@@ -66,6 +66,15 @@ Yashi PASETO 令牌解析庫
 - 金鑰須為 32 位元組（256 位）的對稱金鑰，所有版本共用同一金鑰。
 - v3/v4 的隱性斷言（implicit_assertion）須在呼叫時透過引數傳入。
 - 本庫不執行 public 令牌的簽名驗證（需要非對稱公鑰，不在 scope 內）。
+
+依賴安裝
+--------
+
+僅做結構解析（public 令牌 + local 後設資料）**無需**安裝任何額外包。
+如需解密 local 令牌，按需安裝以下可選庫：:
+
+    pip install cryptography   # v1 / v3 local 解密（AES-256-CTR + HMAC-SHA384 + HKDF）
+    pip install pynacl         # v2 / v4 local 解密（XChaCha20-Poly1305）
 """
 
 import base64
