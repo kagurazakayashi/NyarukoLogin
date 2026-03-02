@@ -13,8 +13,8 @@ ApiNatsBridge (HTTP → NATS 橋接，預設埠 9080)
     │  NATS Request-Reply (主題: user_valid_req)
     ▼
 UserValidator (本服務)
-    │  路由分發: /validate → 簽發令牌
-    │            /verify   → 核實令牌
+    │  路由分發: /auth/login  → 簽發令牌
+    │            /auth/verify → 核實令牌
     ▼
 ApiNatsBridge ← 回應 JSON
     │
@@ -130,7 +130,7 @@ go build .
 本服務透過 NATS 主題 `user_valid_req` 接收請求，
 ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
 
-### `POST /validate` — 登入驗證
+### `POST /auth/login` — 登入驗證
 
 驗證使用者名稱、密碼與 APPKEY，成功時簽發 PASETO 令牌。
 
@@ -182,7 +182,7 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
 
 ---
 
-### `POST /verify` — 令牌核實
+### `POST /auth/verify` — 令牌核實
 
 解密並驗證 PASETO 令牌的有效性（時效、完整性），回傳令牌內含的身分資訊。
 
@@ -275,7 +275,7 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
 
 ## 所有可能的回應彙總
 
-### `/validate`
+### `/auth/login`
 
 | HTTP 狀態碼 | success | message | token |
 |-------------|---------|---------|-------|
@@ -284,7 +284,7 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
 | 401 | `false` | `invalid credentials` | (無) |
 | 404 | `false` | `failed to generate token: ...` | (無) |
 
-### `/verify`
+### `/auth/verify`
 
 | HTTP 狀態碼 | success | message | 其他欄位 |
 |-------------|---------|---------|----------|
@@ -320,18 +320,18 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
 # 安裝依賴
 pip install requests
 
-# 執行完整測試（先 /validate 取得令牌，再 /verify 核實）
+# 執行完整測試（先 /auth/login 取得令牌，再 /auth/verify 核實）
 cd UserValidator
 python test/validate.py
 
 # 自訂驗證端點
-python test/validate.py "http://127.0.0.1:9080/validate"
+python test/validate.py "http://127.0.0.1:9080/auth/login"
 ```
 
 測試腳本會依序執行：
 
-1. **`POST /validate`** — 發送測試憑證，取得 PASETO 令牌
-2. **`POST /verify`** — 將取得的令牌送回核實端點，確認令牌有效
+1. **`POST /auth/login`** — 發送測試憑證，取得 PASETO 令牌
+2. **`POST /auth/verify`** — 將取得的令牌送回核實端點，確認令牌有效
 3. **令牌結構解析** — 使用 `parse.py` 解析令牌的版本、演算法、claims 等結構資訊
 
 輸出範例：
@@ -340,7 +340,7 @@ python test/validate.py "http://127.0.0.1:9080/validate"
 ============================================================
 請求資訊
 ============================================================
-  URL:     http://127.0.0.1:9080/validate
+  URL:     http://127.0.0.1:9080/auth/login
   Body:    {"username": "user", "password": "pass", "appkey": "appkey"}
 
 ============================================================
@@ -350,9 +350,9 @@ python test/validate.py "http://127.0.0.1:9080/validate"
   ...
 
 ============================================================
-令牌核實請求 (/verify)
+令牌核實請求 (/auth/verify)
 ============================================================
-  URL:     http://127.0.0.1:9080/verify
+  URL:     http://127.0.0.1:9080/auth/verify
   Body:    {"token": "v2.local...."}
 
 ============================================================
@@ -372,12 +372,12 @@ python test/validate.py "http://127.0.0.1:9080/validate"
 
 ```bash
 # 取得令牌
-curl -X POST http://127.0.0.1:9080/validate \
+curl -X POST http://127.0.0.1:9080/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"user","password":"pass","appkey":"appkey"}'
 
 # 核實令牌（將 <token> 替換為上一步取得的令牌）
-curl -X POST http://127.0.0.1:9080/verify \
+curl -X POST http://127.0.0.1:9080/auth/verify \
   -H "Content-Type: application/json" \
   -d '{"token":"<token>"}'
 ```
@@ -407,4 +407,4 @@ v2.local.<payload_base64url>
 | 服務 | 設定檔 | 說明 |
 |------|--------|------|
 | NATS Server | `ExampleConfiguration/nats-server.conf` | 需在 `authorization.users[0].permissions` 中包含 `user_valid_req` 的 publish/subscribe 權限 |
-| ApiNatsBridge | `ExampleConfiguration/ApiNatsBridgeConfig.yaml` | 需在 `routes` 中為 `/validate` 與 `/verify` 設定路由規則 |
+| ApiNatsBridge | `ExampleConfiguration/ApiNatsBridgeConfig.yaml` | 需在 `routes` 中為 `/auth/login` 與 `/auth/verify` 設定路由規則 |

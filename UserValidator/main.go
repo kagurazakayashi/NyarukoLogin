@@ -55,7 +55,15 @@ func main() {
 	}
 
 	fmt.Fprintf(outWriter, "[資訊] NATS 伺服器: %s:%d\n", cfg.NatsConfig.NatsServerHost, cfg.NatsConfig.NatsServerPort)
-	fmt.Fprintf(outWriter, "[資訊] 訂閱主題: %s\n", cfg.NatsSubject)
+
+	subjects := cfg.getSubjects()
+	if len(subjects) == 0 {
+		fmt.Fprintf(errWriter, "[錯誤] 未設定任何 NATS 訂閱主題\n")
+		os.Exit(1)
+	}
+	for _, s := range subjects {
+		fmt.Fprintf(outWriter, "[資訊] 訂閱主題: %s\n", s)
+	}
 
 	// 建立 NATS 連線
 	natsLogger := log.New(outWriter, "[NATS] ", 0)
@@ -66,71 +74,75 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 訂閱主題並設定回應處理函式
-	err = natsClient.Subscribe(cfg.NatsSubject, func(m string) string {
-		var req bridgeRequest
+	// 為每個主題建立獨立訂閱，主題名稱即為路由路徑
+	for _, subject := range subjects {
+		subj := subject // 閉包捕獲
+		err := natsClient.Subscribe(subj, func(m string) string {
+			var req bridgeRequest
 
-		if err := json.Unmarshal([]byte(m), &req); err != nil {
-			fmt.Fprintf(errWriter, "[錯誤] 無法解析請求: %v\n", err)
+			if err := json.Unmarshal([]byte(m), &req); err != nil {
+				fmt.Fprintf(errWriter, "[錯誤] 無法解析請求: %v\n", err)
+
+				resp, _ := json.Marshal(bridgeResponse{
+					StatusCode: 400,
+					Headers:    map[string]string{"Content-Type": "application/json; charset=utf-8"},
+					Body:       `{"error":"invalid request"}`,
+				})
+				return string(resp)
+			}
+
+			fmt.Fprintf(outWriter, "[資訊] 收到請求: %s 來自 %s\n", subj, req.IP)
+
+			var respBody []byte
+			var statusCode int
+
+			// 按訂閱的主题名直接路由（主题名即等於 HTTP 路徑）
+			switch subj {
+			case "/auth/login":
+				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
+				switch {
+				case result.Success:
+					statusCode = 200
+				case result.Message == "invalid request body":
+					statusCode = 400
+				case result.Message == "invalid credentials":
+					statusCode = 401
+				default:
+					statusCode = 404
+				}
+				respBody, _ = json.Marshal(result)
+
+			case "/auth/verify":
+				result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig)
+				switch {
+				case result.Success:
+					statusCode = 200
+				case result.Message == "invalid request body",
+					result.Message == "token is required":
+					statusCode = 400
+				default:
+					statusCode = 401
+				}
+				respBody, _ = json.Marshal(result)
+
+			default:
+				result := notFoundResponse()
+				statusCode = 404
+				respBody, _ = json.Marshal(result)
+			}
 
 			resp, _ := json.Marshal(bridgeResponse{
-				StatusCode: 400,
+				StatusCode: statusCode,
 				Headers:    map[string]string{"Content-Type": "application/json; charset=utf-8"},
-				Body:       `{"error":"invalid request"}`,
+				Body:       string(respBody),
 			})
 			return string(resp)
-		}
-
-		fmt.Fprintf(outWriter, "[資訊] 收到請求: %s %s 來自 %s\n", req.Method, req.Path, req.IP)
-
-		var respBody []byte
-		var statusCode int
-
-		switch req.Path {
-		case "/validate":
-			result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
-			switch {
-			case result.Success:
-				statusCode = 200
-			case result.Message == "invalid request body":
-				statusCode = 400
-			case result.Message == "invalid credentials":
-				statusCode = 401
-			default:
-				statusCode = 404
-			}
-			respBody, _ = json.Marshal(result)
-
-		case "/verify":
-			result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig)
-			switch {
-			case result.Success:
-				statusCode = 200
-			case result.Message == "invalid request body",
-				result.Message == "token is required":
-				statusCode = 400
-			default:
-				statusCode = 401
-			}
-			respBody, _ = json.Marshal(result)
-
-		default:
-			result := notFoundResponse()
-			statusCode = 404
-			respBody, _ = json.Marshal(result)
-		}
-
-		resp, _ := json.Marshal(bridgeResponse{
-			StatusCode: statusCode,
-			Headers:    map[string]string{"Content-Type": "application/json; charset=utf-8"},
-			Body:       string(respBody),
 		})
-		return string(resp)
-	})
 
-	if err != nil {
-		fmt.Fprintf(errWriter, "[錯誤] 訂閱失敗: %v\n", err)
-		os.Exit(1)
+		if err != nil {
+			fmt.Fprintf(errWriter, "[錯誤] 訂閱主題 %s 失敗: %v\n", subj, err)
+			os.Exit(1)
+		}
 	}
 
 	fmt.Fprintf(outWriter, "[資訊] 服務已啟動，等待請求中... (Ctrl+C 結束)\n")

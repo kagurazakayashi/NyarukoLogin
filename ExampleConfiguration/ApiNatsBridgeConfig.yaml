@@ -126,7 +126,7 @@ bridge:
 # --- 路由轉發規則 ---
 # 每條路由定義一個 HTTP 路徑如何被驗證並轉發到 NATS Subject
 routes:
-  - path: "/validate" # HTTP 請求路徑（登入驗證）
+  - path: "/auth/login" # HTTP 請求路徑（登入驗證）
     nats_subject: "user_valid_req" # 轉發至 NATS 的 Subject 名稱
     methods: ["POST"] # 僅接受 POST 方法
     content_type: "application/json" # 要求 JSON 請求體
@@ -142,7 +142,7 @@ routes:
       - body # 請求本文（JSON 字串）
     limits: # 此路由專用的請求限制（覆蓋全域 limits）
       path:
-        max_length: 9 # "/validate" = 9 字元
+        max_length: 11 # "/auth/login" = 11 字元
       body:
         max_length: 256 # 登入憑證 JSON 最大長度（username + password + appkey）
       headers:
@@ -191,7 +191,7 @@ routes:
         message:
           type: string # 錯誤訊息（僅 success=false 時存在）
 
-  - path: "/verify" # HTTP 請求路徑（令牌核實）
+  - path: "/auth/verify" # HTTP 請求路徑（令牌核實）
     nats_subject: "user_valid_req" # 轉發至 NATS 的 Subject 名稱（與驗證共用同一主題）
     methods: ["POST"] # 僅接受 POST 方法
     content_type: "application/json" # 要求 JSON 請求體
@@ -207,7 +207,7 @@ routes:
       - body # 請求本文（JSON 字串）
     limits: # 此路由專用的請求限制（覆蓋全域 limits）
       path:
-        max_length: 7 # "/verify" = 7 字元
+        max_length: 12 # "/auth/verify" = 12 字元
       body:
         max_length: 2048 # PASETO v2 local 令牌最大長度
       headers:

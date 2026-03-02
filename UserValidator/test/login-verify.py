@@ -11,8 +11,8 @@ import sys
 import requests
 from parse import parse_paseto
 
-DEFAULT_URL = "http://127.0.0.1:9080/validate"
-VERIFY_URL = "http://127.0.0.1:9080/verify"
+DEFAULT_URL = "http://192.168.1.48:9080/auth/login"
+VERIFY_URL = "http://192.168.1.48:9080/auth/verify"
 # PASETO v2 local 對稱密鑰預設值（與 UserValidator.yaml 一致）
 DEFAULT_SECRET_KEY_HEX = ""
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "UserValidator.yaml")
@@ -177,14 +177,14 @@ def main() -> None:
     print()
 
     # --------------------------------------------------------------------
-    # 令牌核實測試 (/verify)
+    # 令牌核實測試 (/auth/verify)
     # --------------------------------------------------------------------
     if not token:
         print("[略過] 未取得令牌，無法進行核實測試")
         return
 
     print("=" * 60)
-    print("令牌核實請求 (/verify)")
+    print("令牌核實請求 (/auth/verify)")
     print("=" * 60)
     print(f"  URL:     {verify_url}")
     verify_payload = {"token": token}

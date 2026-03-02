@@ -13,9 +13,21 @@ import (
 // serviceConfig 服務設定結構
 type serviceConfig struct {
 	NatsConfig      nyanats.NatsConfig `json:"nats_config" yaml:"nats_config"`
-	NatsSubject     string             `json:"nats_subject" yaml:"nats_subject"`
+	NatsSubjects    []string           `json:"nats_subjects" yaml:"nats_subjects"` // NATS 訂閱主题列表（每個主题對應一個 HTTP 路徑）
+	NatsSubject     string             `json:"nats_subject" yaml:"nats_subject"`   // 單一訂閱主题（向後相容，已棄用）
 	PasetoSecretKey string             `json:"paseto_secret_key" yaml:"paseto_secret_key"`
 	PasetoConfig    pasetoConfig       `json:"paseto_config" yaml:"paseto_config"`
+}
+
+// getSubjects 合併 nats_subjects 與 nats_subject，回傳完整的主題列表
+func (c *serviceConfig) getSubjects() []string {
+	if len(c.NatsSubjects) > 0 {
+		return c.NatsSubjects
+	}
+	if c.NatsSubject != "" {
+		return []string{c.NatsSubject}
+	}
+	return nil
 }
 
 // pasetoConfig PASETO 令牌參數設定

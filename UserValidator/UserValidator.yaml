@@ -13,9 +13,9 @@ nats_config:
   # NATS 伺服器埠號 (預設: 4222)
   nats_server_port: 4222
   # 連線驗證使用者名稱 (預設: 空，不認證)
-  nats_user: webapi
+  nats_user: userauth
   # 連線驗證密碼 (預設: 空)
-  nats_password: Ohr1biolei4aeD3eu7isaeyie9di4uuf
+  nats_password: 
   # 此用戶端在 NATS 伺服器上顯示的名稱 (預設: 自動產生 UUID)
   nats_client_name: UserValidator
   # 連線中斷後最大重新連線次數 (預設: 5)
@@ -26,22 +26,22 @@ nats_config:
   nats_connect_timeout: 10
   # 全域加密金鑰，長度必須為 16、24 或 32 bytes
   # 對應 AES-128、AES-192 或 AES-256
-  nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!"
-  # 針對特定主題的獨立加密金鑰 (選填)
+  nats_encryption_key: ""
+  # 針對特定主題的獨立加密金鑰
   # 格式: 主題名稱: 金鑰字串
   #   - 若匹配則優先使用，無匹配時回退至全域金鑰 (nats_encryption_key)
   #   - 值設為空字串 "" 則該主題以明文傳輸
-  # 範例:
-  #   nats_theme_keys:
-  #     "sensitive.subject": "MySecretKey32BytesLong!123456"
-  #     "public.subject": ""
+  nats_theme_keys:
+    "/auth/login": ""
+    "/auth/verify": ""
 
 # ----------------------------------------------------------
-# NATS 訂閱主題 (nats_subject)
-# UserValidator 會訂閱此主題，接收由 ApiNatsBridge 轉發的請求
+# NATS 訂閱主題列表 (nats_subjects)
+# UserValidator 會為每個主題建立獨立訂閱，主题名即等於路由路徑
 # ----------------------------------------------------------
-# 訂閱的主題名稱
-nats_subject: "user_valid_req"
+nats_subjects:
+  - "/auth/login"
+  - "/auth/verify"
 
 # ----------------------------------------------------------
 # PASETO 密鑰 (paseto_secret_key)
