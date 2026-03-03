@@ -1,5 +1,7 @@
 package main
 
+import "encoding/json"
+
 // bridgeRequest ApiNatsBridge 轉發的 HTTP 請求結構
 type bridgeRequest struct {
 	Method     string            `json:"method"`
@@ -34,3 +36,34 @@ type verifyResponse struct {
 	Expires  string `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
 	Message  string `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
 }
+
+// dbGatewayRequest 發送給 gateway-db 資料控制微服務的請求結構
+type dbGatewayRequest struct {
+	Method string      `json:"method"` // 操作方法，如 "user.login"
+	Data   interface{} `json:"data"`   // 請求資料承載
+}
+
+// dbGatewayResponse gateway-db 回應的標準包裹格式
+// 成功：{"success":true,"data":{"id":1,"username":"admin",...}}
+// 失敗（包裹）：{"success":false,"error":"[120000] invalid username or password"}
+// 失敗（原始）：{"err":"invalid username or password","errcode":"120000"}
+type dbGatewayResponse struct {
+	Success bool            `json:"success"` // 操作是否成功（包裹格式）
+	Data    json.RawMessage `json:"data"`    // 回應資料承載（成功時）
+	Error   string          `json:"error"`   // 錯誤訊息（包裹格式，失敗時）
+	Err     string          `json:"err"`     // 錯誤訊息（原始格式，失敗時）
+}
+
+// dbGatewayUserData 由 gateway-db user.login 成功時回傳的使用者資料
+// 此資料位於 dbGatewayResponse.Data 內部，非頂層回應
+type dbGatewayUserData struct {
+	ID          int           `json:"id"`          // 使用者內部 ID
+	Username    string        `json:"username"`    // 使用者名稱
+	Nickname    string        `json:"nickname"`    // 顯示暱稱
+	Group       interface{}   `json:"group"`       // 所屬群組資訊
+	Permissions []interface{} `json:"permissions"` // 權限列表
+	CreatedAt   string        `json:"created_at"`  // 建立時間
+	UpdatedAt   string        `json:"updated_at"`  // 最後更新時間
+}
+
+

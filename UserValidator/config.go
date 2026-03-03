@@ -10,6 +10,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// natsPublishConfig 對外發布訊息的設定（發送給 gateway-db 等微服務）
+type natsPublishConfig struct {
+	DBRequestSubject string `json:"db_request_subject" yaml:"db_request_subject"` // 資料庫請求的 NATS 主题
+	DBRequestTimeout string `json:"db_request_timeout" yaml:"db_request_timeout"` // 資料庫請求逾時時間，格式如 "5s"
+}
+
 // serviceConfig 服務設定結構
 type serviceConfig struct {
 	NatsConfig      nyanats.NatsConfig `json:"nats_config" yaml:"nats_config"`
@@ -17,6 +23,7 @@ type serviceConfig struct {
 	NatsSubject     string             `json:"nats_subject" yaml:"nats_subject"`   // 單一訂閱主题（向後相容，已棄用）
 	PasetoSecretKey string             `json:"paseto_secret_key" yaml:"paseto_secret_key"`
 	PasetoConfig    pasetoConfig       `json:"paseto_config" yaml:"paseto_config"`
+	NatsPublish     natsPublishConfig  `json:"nats_publish" yaml:"nats_publish"`   // 對外發布訊息設定
 }
 
 // getSubjects 合併 nats_subjects 與 nats_subject，回傳完整的主題列表

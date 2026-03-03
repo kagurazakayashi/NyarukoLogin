@@ -3,11 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/o1egl/paseto"
 )
+
+// natsRequester NATS 請求函式型態，用於向其他微服務發送 Request/Reply 訊息
+type natsRequester func(subject string, message string, timeout time.Duration) (string, error)
 
 type loginRequest struct {
 	Username string `json:"username"`
@@ -21,20 +25,57 @@ type loginResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
-type tokenClaims struct {
-	Username string `json:"username"`
-	AppKey   string `json:"appkey"`
-	paseto.JSONToken
-}
-
-func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *loginResponse {
+func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
 	var loginReq loginRequest
 	if err := json.Unmarshal([]byte(req.Body), &loginReq); err != nil {
 		return &loginResponse{Success: false, Message: "invalid request body"}
 	}
 
-	if loginReq.Username != "user" || loginReq.Password != "pass" || loginReq.AppKey != "appkey" {
-		return &loginResponse{Success: false, Message: "invalid credentials"}
+	// 向 gateway-db 資料控制微服務發送驗證請求
+	dbReq := dbGatewayRequest{
+		Method: "user.login",
+		Data: map[string]string{
+			"username": loginReq.Username,
+			"password": loginReq.Password,
+		},
+	}
+	dbReqJSON, err := json.Marshal(dbReq)
+	if err != nil {
+		return &loginResponse{Success: false, Message: "failed to marshal db request"}
+	}
+
+	dbRespStr, err := natsReq(dbSubject, string(dbReqJSON), dbTimeout)
+	if err != nil {
+		log.Printf("[NATS] db_request failed for user=%s: %v", loginReq.Username, err)
+		return &loginResponse{Success: false, Message: "db request failed: " + err.Error()}
+	}
+
+	log.Printf("[NATS] db_request raw response: %s", dbRespStr)
+
+	// 解析 gateway-db 標準回應包裹格式 {"success":bool,"data":...,"error":"..."}
+	var dbResp dbGatewayResponse
+	if err := json.Unmarshal([]byte(dbRespStr), &dbResp); err != nil {
+		log.Printf("[NATS] db_request unmarshal error for user=%s: %v", loginReq.Username, err)
+		return &loginResponse{Success: false, Message: "invalid db response format"}
+	}
+
+	// 原始錯誤格式：{"err":"...","errcode":"..."}，直接將 err 傳回前端
+	if dbResp.Err != "" {
+		return &loginResponse{Success: false, Message: dbResp.Err}
+	}
+	if !dbResp.Success {
+		return &loginResponse{Success: false, Message: dbResp.Error}
+	}
+
+	var userData dbGatewayUserData
+	if err := json.Unmarshal(dbResp.Data, &userData); err != nil {
+		log.Printf("[NATS] db_request data unmarshal error for user=%s: %v", loginReq.Username, err)
+		return &loginResponse{Success: false, Message: "invalid db response data"}
+	}
+
+	// 確認回應中包含必要的使用者名稱
+	if userData.Username == "" {
+		return &loginResponse{Success: false, Message: "invalid db response: missing username"}
 	}
 
 	ttl, err := time.ParseDuration(cfg.TokenTTL)
@@ -43,15 +84,13 @@ func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *login
 	}
 
 	now := time.Now()
-	claims := tokenClaims{
-		Username: loginReq.Username,
-		AppKey:   loginReq.AppKey,
-		JSONToken: paseto.JSONToken{
-			Subject:    loginReq.Username,
-			IssuedAt:   now,
-			Expiration: now.Add(ttl),
-		},
+	claims := paseto.JSONToken{
+		Subject:    loginReq.Username,
+		IssuedAt:   now,
+		Expiration: now.Add(ttl),
 	}
+	claims.Set("username", loginReq.Username)
+	claims.Set("appkey", loginReq.AppKey)
 
 	if cfg.Issuer != "" {
 		claims.Issuer = cfg.Issuer
@@ -105,7 +144,7 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *veri
 	}
 
 	// 解密令牌並還原 claims
-	var claims tokenClaims
+	var claims paseto.JSONToken
 	if err := decryptToken(cfg.Version, secretKey, verifyReq.Token, &claims, nil); err != nil {
 		return &verifyResponse{Success: false, Message: "token verification failed: " + err.Error()}
 	}
@@ -117,8 +156,8 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *veri
 
 	return &verifyResponse{
 		Success:  true,
-		Username: claims.Username,
-		AppKey:   claims.AppKey,
+		Username: claims.Get("username"),
+		AppKey:   claims.Get("appkey"),
 		Subject:  claims.Subject,
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),

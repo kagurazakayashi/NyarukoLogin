@@ -44,6 +44,17 @@ nats_subjects:
   - "/auth/verify"
 
 # ----------------------------------------------------------
+# 對外發布訊息設定 (nats_publish)
+# 用於向 gateway-db 資料控制微服務發送請求
+# UserValidator 會透過 NATS Request/Reply 模式發送 user.login 請求
+# ----------------------------------------------------------
+nats_publish:
+  # NATS 主题名稱，對應 gateway-db 的 nats_publish 設定 (預設: "db_request")
+  db_request_subject: "db_request"
+  # 資料庫請求逾時時間，格式為 Go duration 字串 (預設: "5s")
+  db_request_timeout: "5s"
+
+# ----------------------------------------------------------
 # PASETO 密鑰 (paseto_secret_key)
 # 用於對令牌進行對稱式加密 (local purpose)
 # 必須為 64 個十六進位字元，換算為 32 bytes (256-bit)

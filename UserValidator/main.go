@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/kagurazakayashi/libNyaruko_Go/nyanats"
 )
@@ -54,7 +55,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(outWriter, "[資訊] NATS 伺服器: %s:%d\n", cfg.NatsConfig.NatsServerHost, cfg.NatsConfig.NatsServerPort)
+	// 解析資料庫請求設定
+	dbSubject := cfg.NatsPublish.DBRequestSubject
+	if dbSubject == "" {
+		dbSubject = "db_request"
+	}
+
+	dbTimeout, err := time.ParseDuration(cfg.NatsPublish.DBRequestTimeout)
+	if err != nil || dbTimeout <= 0 {
+		dbTimeout = 5 * time.Second
+	}
+
+	fmt.Fprintf(outWriter, "[INFO] 資料庫請求主题: %s (逾時: %s)\n", dbSubject, dbTimeout)
+
+	fmt.Fprintf(outWriter, "[INFO] NATS 伺服器: %s:%d\n", cfg.NatsConfig.NatsServerHost, cfg.NatsConfig.NatsServerPort)
 
 	subjects := cfg.getSubjects()
 	if len(subjects) == 0 {
@@ -62,7 +76,7 @@ func main() {
 		os.Exit(1)
 	}
 	for _, s := range subjects {
-		fmt.Fprintf(outWriter, "[資訊] 訂閱主題: %s\n", s)
+		fmt.Fprintf(outWriter, "[INFO] 訂閱主題: %s\n", s)
 	}
 
 	// 建立 NATS 連線
@@ -91,7 +105,7 @@ func main() {
 				return string(resp)
 			}
 
-			fmt.Fprintf(outWriter, "[資訊] 收到請求: %s 來自 %s\n", subj, req.IP)
+			fmt.Fprintf(outWriter, "[INFO] 收到請求: %s 來自 %s\n", subj, req.IP)
 
 			var respBody []byte
 			var statusCode int
@@ -99,7 +113,7 @@ func main() {
 			// 按訂閱的主题名直接路由（主题名即等於 HTTP 路徑）
 			switch subj {
 			case "/auth/login":
-				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig)
+				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig, natsClient.Request, dbSubject, dbTimeout)
 				switch {
 				case result.Success:
 					statusCode = 200
@@ -145,18 +159,18 @@ func main() {
 		}
 	}
 
-	fmt.Fprintf(outWriter, "[資訊] 服務已啟動，等待請求中... (Ctrl+C 結束)\n")
+	fmt.Fprintf(outWriter, "[INFO] 服務已啟動，等待請求中... (Ctrl+C 結束)\n")
 
 	// 優雅關閉：等待系統訊號
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	fmt.Fprintf(outWriter, "[資訊] 正在關閉...\n")
+	fmt.Fprintf(outWriter, "[INFO] 正在關閉...\n")
 	if err := natsClient.UnsubscribeAll(); err != nil {
 		fmt.Fprintf(errWriter, "[錯誤] 取消訂閱失敗: %v\n", err)
 	}
 
 	natsClient.Close()
-	fmt.Fprintf(outWriter, "[資訊] 關閉完成\n")
+	fmt.Fprintf(outWriter, "[INFO] 關閉完成\n")
 }

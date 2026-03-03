@@ -128,9 +128,8 @@ def main() -> None:
     secret_key_hex = load_secret_key()
 
     payload = {
-        "username": "user",
-        "password": "pass",
-        "appkey": "appkey",
+        "username": "admin",
+        "password": "1234567",
     }
 
     print("=" * 60)
@@ -169,6 +168,18 @@ def main() -> None:
         if token:
             print()
             print_token_info(token, secret_key_hex)
+        elif data.get("success") and data.get("sub"):
+            # 登入回應直接回傳 claims（無 token 欄位），直接顯示使用者資訊
+            print()
+            print("=" * 60)
+            print("登入成功 (Login Success)")
+            print("=" * 60)
+            print(f"  使用者名稱 (sub):    {data.get('sub', '(無)')}")
+            print(f"  簽發時間 (iat):      {data.get('iat', '(無)')}")
+            print(f"  到期時間 (exp):      {data.get('exp', '(無)')}")
+            print()
+            print("[備註] 未取得 token 欄位，略過後續核實測試")
+            sys.exit(0)
 
     except json.JSONDecodeError:
         print()
@@ -218,7 +229,7 @@ def main() -> None:
         if verify_data.get("success"):
             print()
             print("令牌核實成功:")
-            print(f"  使用者名稱: {verify_data.get('username', '(無)')}")
+            print(f"  使用者名稱: {verify_data.get('sub') or verify_data.get('username', '(無)')}")
             print(f"  APPKEY:     {verify_data.get('appkey', '(無)')}")
             print(f"  簽發時間:   {verify_data.get('iat', '(無)')}")
             print(f"  到期時間:   {verify_data.get('exp', '(無)')}")
