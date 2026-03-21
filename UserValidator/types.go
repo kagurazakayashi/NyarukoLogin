@@ -26,15 +26,16 @@ type verifyRequest struct {
 	Token string `json:"token"` // 待核實的 PASETO 令牌字串
 }
 
-// verifyResponse 令牌核實回應結構，回傳核實結果與令牌內容
+// verifyResponse 令牌核實回應結構，回傳核實結果、令牌內容與使用者資訊
 type verifyResponse struct {
-	Success  bool   `json:"success"`            // 核實是否成功
-	Username string `json:"username,omitempty"` // 令牌所屬用戶名稱
-	AppKey   string `json:"appkey,omitempty"`   // 令牌對應的應用程式金鑰
-	Subject  string `json:"sub,omitempty"`      // 令牌主體 (subject)
-	IssuedAt string `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
-	Expires  string `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
-	Message  string `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
+	Success  bool      `json:"success"`            // 核實是否成功
+	Username string    `json:"username,omitempty"` // 令牌所屬用戶名稱
+	AppKey   string    `json:"appkey,omitempty"`   // 令牌對應的應用程式金鑰
+	Subject  string    `json:"sub,omitempty"`      // 令牌主體 (subject)
+	IssuedAt string    `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
+	Expires  string    `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
+	Message  string    `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
+	User     *userInfo `json:"user,omitempty"`     // 使用者資訊（核實成功時）
 }
 
 // dbGatewayRequest 發送給 gateway-db 資料控制微服務的請求結構
@@ -43,13 +44,14 @@ type dbGatewayRequest struct {
 	Data   interface{} `json:"data"`   // 請求資料承載
 }
 
-// dbGatewayResponse gateway-db 回應的標準包裹格式
-// 成功：{"success":true,"data":{"id":1,"username":"admin",...}}
-// 失敗（包裹）：{"success":false,"error":"[120000] invalid username or password"}
-// 失敗（原始）：{"err":"invalid username or password","errcode":"120000"}
+// dbGatewayResponse gateway-db 回應識別（同時相容包裹與原始格式）
+// 包裹成功：{"success":true,"data":{"id":1,"username":"admin",...}}
+// 包裹失敗：{"success":false,"error":"..."}
+// 原始成功：{"id":1,"username":"admin",...}
+// 原始失敗：{"err":"invalid username or password","errcode":"120000"}
 type dbGatewayResponse struct {
 	Success bool            `json:"success"` // 操作是否成功（包裹格式）
-	Data    json.RawMessage `json:"data"`    // 回應資料承載（成功時）
+	Data    json.RawMessage `json:"data"`    // 回應資料承載（包裹格式，成功時）
 	Error   string          `json:"error"`   // 錯誤訊息（包裹格式，失敗時）
 	Err     string          `json:"err"`     // 錯誤訊息（原始格式，失敗時）
 }
@@ -64,6 +66,17 @@ type dbGatewayUserData struct {
 	Permissions []interface{} `json:"permissions"` // 權限列表
 	CreatedAt   string        `json:"created_at"`  // 建立時間
 	UpdatedAt   string        `json:"updated_at"`  // 最後更新時間
+}
+
+// userInfo 提供給前端的使用者資訊，含群組與權限
+type userInfo struct {
+	ID          int           `json:"id"`                    // 使用者內部 ID
+	Username    string        `json:"username"`              // 使用者名稱
+	Nickname    string        `json:"nickname,omitempty"`    // 顯示暱稱
+	Group       interface{}   `json:"group,omitempty"`       // 所屬群組資訊
+	Permissions []interface{} `json:"permissions,omitempty"` // 權限列表
+	CreatedAt   string        `json:"created_at,omitempty"`  // 建立時間
+	UpdatedAt   string        `json:"updated_at,omitempty"`  // 最後更新時間
 }
 
 

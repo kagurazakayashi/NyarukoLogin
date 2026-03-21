@@ -127,7 +127,7 @@ func main() {
 				respBody, _ = json.Marshal(result)
 
 			case "/auth/verify":
-				result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig)
+				result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig, natsClient.Request, dbSubject, dbTimeout)
 				switch {
 				case result.Success:
 					statusCode = 200

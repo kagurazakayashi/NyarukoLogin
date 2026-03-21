@@ -20,9 +20,10 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Success bool   `json:"success"`
-	Token   string `json:"token,omitempty"`
-	Message string `json:"message,omitempty"`
+	Success bool      `json:"success"`
+	Token   string    `json:"token,omitempty"`
+	Message string    `json:"message,omitempty"`
+	User    *userInfo `json:"user,omitempty"`
 }
 
 func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
@@ -52,26 +53,40 @@ func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsRe
 
 	log.Printf("[NATS] db_request raw response: %s", dbRespStr)
 
-	// 解析 gateway-db 標準回應包裹格式 {"success":bool,"data":...,"error":"..."}
+	// 解析 gateway-db 回應，自動偵測格式：
+	//   包裹成功：{"success":true,"data":{...}}
+	//   包裹失敗：{"success":false,"error":"..."}
+	//   原始失敗：{"err":"...","errcode":"..."}
+	//   原始成功：{"id":1,"username":"admin",...}
 	var dbResp dbGatewayResponse
 	if err := json.Unmarshal([]byte(dbRespStr), &dbResp); err != nil {
 		log.Printf("[NATS] db_request unmarshal error for user=%s: %v", loginReq.Username, err)
 		return &loginResponse{Success: false, Message: "invalid db response format"}
 	}
 
-	// 原始錯誤格式：{"err":"...","errcode":"..."}，直接將 err 傳回前端
+	// 原始錯誤格式
 	if dbResp.Err != "" {
 		return &loginResponse{Success: false, Message: dbResp.Err}
 	}
-	if !dbResp.Success {
-		return &loginResponse{Success: false, Message: dbResp.Error}
-	}
 
 	var userData dbGatewayUserData
-	if err := json.Unmarshal(dbResp.Data, &userData); err != nil {
-		log.Printf("[NATS] db_request data unmarshal error for user=%s: %v", loginReq.Username, err)
-		return &loginResponse{Success: false, Message: "invalid db response data"}
+	if dbResp.Data != nil || dbResp.Error != "" {
+		// 包裹格式
+		if !dbResp.Success {
+			return &loginResponse{Success: false, Message: dbResp.Error}
+		}
+		if err := json.Unmarshal(dbResp.Data, &userData); err != nil {
+			log.Printf("[NATS] db_request data unmarshal error for user=%s: %v", loginReq.Username, err)
+			return &loginResponse{Success: false, Message: "invalid db response data"}
+		}
+	} else {
+		// 原始成功格式
+		if err := json.Unmarshal([]byte(dbRespStr), &userData); err != nil {
+			log.Printf("[NATS] db_request unmarshal error for user=%s: %v", loginReq.Username, err)
+			return &loginResponse{Success: false, Message: "invalid db response"}
+		}
 	}
+
 
 	// 確認回應中包含必要的使用者名稱
 	if userData.Username == "" {
@@ -117,7 +132,19 @@ func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsRe
 		return &loginResponse{Success: false, Message: "failed to generate token: " + err.Error()}
 	}
 
-	return &loginResponse{Success: true, Token: token}
+	return &loginResponse{
+		Success: true,
+		Token:   token,
+		User: &userInfo{
+			ID:          userData.ID,
+			Username:    userData.Username,
+			Nickname:    userData.Nickname,
+			Group:       userData.Group,
+			Permissions: userData.Permissions,
+			CreatedAt:   userData.CreatedAt,
+			UpdatedAt:   userData.UpdatedAt,
+		},
+	}
 }
 
 // encryptToken 依據指定的 PASETO 版本對 claims 進行加密簽發
@@ -132,8 +159,9 @@ func encryptToken(version string, key []byte, payload interface{}, footer interf
 	}
 }
 
-// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證
-func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *verifyResponse {
+// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證，
+// 成功時向 gateway-db 查詢使用者資訊（含權限）一併回傳
+func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *verifyResponse {
 	var verifyReq verifyRequest
 	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
 		return &verifyResponse{Success: false, Message: "invalid request body"}
@@ -154,14 +182,23 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *veri
 		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
 	}
 
-	return &verifyResponse{
+	username := claims.Get("username")
+	resp := &verifyResponse{
 		Success:  true,
-		Username: claims.Get("username"),
+		Username: username,
 		AppKey:   claims.Get("appkey"),
 		Subject:  claims.Subject,
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),
 	}
+
+	// 向 gateway-db 查詢使用者資訊
+	ui := fetchUserInfo(username, natsReq, dbSubject, dbTimeout)
+	if ui != nil {
+		resp.User = ui
+	}
+
+	return resp
 }
 
 // decryptToken 依據指定的 PASETO 版本對令牌進行解密
@@ -178,4 +215,60 @@ func decryptToken(version string, key []byte, token string, payload interface{},
 
 func notFoundResponse() *loginResponse {
 	return &loginResponse{Success: false, Message: "not found"}
+}
+
+// fetchUserInfo 向 gateway-db 查詢使用者資訊（含權限），用於 /auth/verify 成功時補充回傳
+func fetchUserInfo(username string, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *userInfo {
+	// 呼叫 user.get 取得基本資訊
+	userReq, _ := json.Marshal(dbGatewayRequest{
+		Method: "user.get",
+		Data:   map[string]string{"username": username},
+	})
+	userRespStr, err := natsReq(dbSubject, string(userReq), dbTimeout)
+	if err != nil {
+		log.Printf("[NATS] user.get failed for %s: %v", username, err)
+		return nil
+	}
+
+	var ui userInfo
+	if !parseGatewayData(userRespStr, &ui) {
+		return nil
+	}
+	ui.Username = username
+
+	// 呼叫 permission.user.get 取得權限
+	permReq, _ := json.Marshal(dbGatewayRequest{
+		Method: "permission.user.get",
+		Data:   map[string]int64{"user_id": int64(ui.ID)},
+	})
+	permRespStr, err := natsReq(dbSubject, string(permReq), dbTimeout)
+	if err != nil {
+		log.Printf("[NATS] permission.user.get failed for %s: %v", username, err)
+		// 權限查詢失敗不影響核實結果，仍回傳基本資訊
+		return &ui
+	}
+
+	var permData struct {
+		Permissions []interface{} `json:"permissions"`
+	}
+	if parseGatewayData(permRespStr, &permData) {
+		ui.Permissions = permData.Permissions
+	}
+
+	return &ui
+}
+
+// parseGatewayData 解析 gateway-db 回應（自動相容包裹與原始格式），將資料填入 target
+func parseGatewayData(respStr string, target interface{}) bool {
+	var dbResp dbGatewayResponse
+	if err := json.Unmarshal([]byte(respStr), &dbResp); err != nil {
+		return false
+	}
+	if dbResp.Data != nil || dbResp.Error != "" {
+		if dbResp.Data == nil {
+			return false
+		}
+		return json.Unmarshal(dbResp.Data, target) == nil
+	}
+	return json.Unmarshal([]byte(respStr), target) == nil
 }
