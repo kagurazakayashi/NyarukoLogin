@@ -45,6 +45,11 @@ nats_config:
   # 個別主題專用金鑰（優先於全域金鑰）
   # 設為 "" 表示該主題明文傳輸
   nats_theme_keys:
+    # 與 UserValidator 通訊的主題，需與 UserValidator 設定保持一致
+    # UserValidator 當前設定為明文傳輸（nats_encryption_key 為空），故此處也設為明文
+    "/auth/login": "" # 登入驗證主題：明文傳輸
+    "/auth/verify": "" # 令牌核實主題：明文傳輸
+    # 其他範例主題
     "theme.dedicated": "DEDICATED_SECRETKEY_32_CHAR_LONG" # 主題 theme.dedicated 使用的專用加密金鑰
     "theme.plain": "" # 主題 theme.plain 強制使用明文傳輸（不加密）
 
@@ -127,10 +132,10 @@ bridge:
 # 每條路由定義一個 HTTP 路徑如何被驗證並轉發到 NATS Subject
 routes:
   - path: "/auth/login" # HTTP 請求路徑（登入驗證）
-    nats_subject: "user_valid_req" # 轉發至 NATS 的 Subject 名稱
+    nats_subject: "/auth/login" # 轉發至 NATS 的 Subject 名稱（與 UserValidator 訂閱的主題一致）
     methods: ["POST"] # 僅接受 POST 方法
     content_type: "application/json" # 要求 JSON 請求體
-    timeout: 10 # NATS 等待微服務回應的逾時秒數，超過則回傳 504 Gateway Timeout
+    timeout: 10 # NATS 等待微服務回應的逾時秒數，UserValidator 內部含 database-db 查詢（逾時 5s）+ 令牌簽發，故設 10s
     return_fields: # 轉發到 NATS 訊息中包含的欄位清單
       - method # HTTP 請求方法
       - path # 請求路徑
@@ -144,7 +149,7 @@ routes:
       path:
         max_length: 11 # "/auth/login" = 11 字元
       body:
-        max_length: 256 # 登入憑證 JSON 最大長度（username + password + appkey）
+        max_length: 256 # 登入憑證 JSON 最大長度（username + password + appkey，約 60-80 位元組）
       headers:
         max_count: 16
         max_key_length: 25
@@ -156,7 +161,7 @@ routes:
       cookies:
         max_count: 4
         max_key_length: 8
-        max_value_length: 36
+        max_value_length: 36 # UUID 長度
     schema_body: # 請求本文的 JSON Schema 驗證
       root_type: object # 根類型為物件
       strict: true # 嚴格模式：不允許未定義欄位
@@ -173,7 +178,7 @@ routes:
           type: string
     response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
       body:
-        max_length: 2048 # PASETO v2 local 令牌最大長度
+        max_length: 4096 # 成功回應含 PASETO 令牌 + 使用者資訊（id、username、nickname、group、permissions 等）
       headers:
         max_count: 1 # Content-Type
         max_key_length: 12
@@ -188,14 +193,16 @@ routes:
           type: boolean # 驗證是否成功
         token:
           type: string # PASETO 令牌（僅 success=true 時存在）
+        user:
+          type: object # 使用者資訊（僅 success=true 時存在，含 id、username、nickname、group、permissions 等）
         message:
           type: string # 錯誤訊息（僅 success=false 時存在）
 
   - path: "/auth/verify" # HTTP 請求路徑（令牌核實）
-    nats_subject: "user_valid_req" # 轉發至 NATS 的 Subject 名稱（與驗證共用同一主題）
+    nats_subject: "/auth/verify" # 轉發至 NATS 的 Subject 名稱（與 UserValidator 訂閱的主題一致，獨立主題）
     methods: ["POST"] # 僅接受 POST 方法
     content_type: "application/json" # 要求 JSON 請求體
-    timeout: 10 # NATS 等待微服務回應的逾時秒數，超過則回傳 504 Gateway Timeout
+    timeout: 5 # NATS 等待微服務回應的逾時秒數，核實僅做本地令牌解密與時效驗證，無外部查詢，設 5s 即可
     return_fields: # 轉發到 NATS 訊息中包含的欄位清單
       - method # HTTP 請求方法
       - path # 請求路徑
@@ -209,7 +216,7 @@ routes:
       path:
         max_length: 12 # "/auth/verify" = 12 字元
       body:
-        max_length: 2048 # PASETO v2 local 令牌最大長度
+        max_length: 512 # PASETO v2 local 令牌約 150-250 位元組，設 512 留有餘量
       headers:
         max_count: 16
         max_key_length: 25
@@ -221,7 +228,7 @@ routes:
       cookies:
         max_count: 4
         max_key_length: 8
-        max_value_length: 36
+        max_value_length: 36 # UUID 長度
     schema_body: # 請求本文的 JSON Schema 驗證
       root_type: object # 根類型為物件
       strict: true # 嚴格模式：不允許未定義欄位
@@ -232,7 +239,7 @@ routes:
           type: string
     response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
       body:
-        max_length: 2048 # 核實回應 JSON 最大長度
+        max_length: 1024 # 核實回應僅含 claims（username、appkey、sub、iat、exp），不查詢資料庫，約 200 位元組內
       headers:
         max_count: 1 # Content-Type
         max_key_length: 12

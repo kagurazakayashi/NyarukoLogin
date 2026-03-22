@@ -10,11 +10,11 @@ NyarukoLogin 3 的登入狀態驗證服務模組。透過 NATS 接收由 ApiNats
     │
     ▼
 ApiNatsBridge (HTTP → NATS 橋接，預設埠 9080)
-    │  NATS Request-Reply (主題: user_valid_req)
+    │  NATS Publish（主題: /auth/login 或 /auth/verify，按路徑路由）
     ▼
 UserValidator (本服務)
-    │  路由分發: /auth/login  → 簽發令牌
-    │            /auth/verify → 核實令牌
+    │  按主題名路由: /auth/login  → 簽發令牌
+    │              /auth/verify → 核實令牌
     ▼
 ApiNatsBridge ← 回應 JSON
     │
@@ -24,6 +24,181 @@ ApiNatsBridge ← 回應 JSON
 
 UserValidator 不直接監聽 HTTP 埠，而是作為 NATS 微服務執行。
 對外 HTTP 存取由 ApiNatsBridge 統一代理，本服務僅需訂閱 NATS 主題即可。
+
+## NATS 通訊交互示例
+
+以下展示各端點完整的 NATS 訊息交換流程。
+
+### 訊息封裝格式
+
+ApiNatsBridge 與 UserValidator 之間的請求/回應採用固定 JSON 結構傳輸。
+
+**ApiNatsBridge → UserValidator（bridgeRequest）**
+
+```json
+{
+  "body": "{...}",
+  "ip": "192.168.1.45",
+  "path": "/auth/login",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "remote_addr": "192.168.1.45:54321"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `body` | HTTP 請求主體的原始字串，由本服務自行解析 |
+| `ip` | 用戶端 IP 位址 |
+| `path` | 請求路徑，用於路由分發 |
+| `method` | HTTP 方法 |
+| `headers` | HTTP 請求標頭 |
+| `remote_addr` | 用戶端完整位址（含埠號） |
+
+**UserValidator → ApiNatsBridge（bridgeResponse）**
+
+```json
+{
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json; charset=utf-8"
+  },
+  "body": "{\"success\":true,\"token\":\"v2.local....\"}"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `status_code` | HTTP 狀態碼，由 ApiNatsBridge 直接回傳給用戶端 |
+| `headers` | HTTP 回應標頭 |
+| `body` | HTTP 回應主體（JSON 字串） |
+
+---
+
+### `/auth/login` 完整交互流程
+
+```
+用戶端                     ApiNatsBridge               UserValidator              gateway-db
+  │                             │                           │                         │
+  │  POST /auth/login           │                           │                         │
+  │  {"username":"user",        │                           │                         │
+  │   "password":"pass",        │                           │                         │
+  │   "appkey":"appkey"}        │                           │                         │
+  │────────────────────────────►│                           │                         │
+  │                             │  NATS Publish             │                         │
+  │                             │  subject: /auth/login     │                         │
+  │                             │  bridgeRequest            │                         │
+  │                             │──────────────────────────►│                         │
+  │                             │                           │                         │
+  │                             │                           │  NATS Request           │
+  │                             │                           │  subject: db_request    │
+  │                             │                           │  {"method":"user.login",│
+  │                             │                           │   "data":{              │
+  │                             │                           │    "username":"user",   │
+  │                             │                           │    "password":"pass"}}  │
+  │                             │                           │────────────────────────►│
+  │                             │                           │                         │
+  │                             │                           │  NATS Reply             │
+  │                             │                           │  {"success":true,       │
+  │                             │                           │   "data":{              │
+  │                             │                           │    "id":1,              │
+  │                             │                           │    "username":"user",   │
+  │                             │                           │    "nickname":"User"}}  │
+  │                             │                           │◄────────────────────────│
+  │                             │                           │                         │
+  │                             │                           │  簽發 PASETO 令牌        │
+  │                             │                           │                         │
+  │                             │  NATS Reply               │                         │
+  │                             │  bridgeResponse           │                         │
+  │                             │  status_code: 200         │                         │
+  │                             │  body: {"success":true,   │                         │
+  │                             │    "token":"v2.local...", │                         │
+  │                             │    "user":{...}}          │                         │
+  │                             │◄──────────────────────────│                         │
+  │                             │                           │                         │
+  │  HTTP 200                  │                           │                         │
+  │  {"success":true,          │                           │                         │
+  │   "token":"v2.local....",  │                           │                         │
+  │   "user":{...}}            │                           │                         │
+  │◄────────────────────────────│                           │                         │
+```
+
+**步驟說明：**
+
+1. 用戶端發送 `POST /auth/login` 至 ApiNatsBridge（埠 9080）
+2. ApiNatsBridge 將 HTTP 請求封裝為 `bridgeRequest`，發布至 NATS 主題 `/auth/login`
+3. UserValidator 解析 `body` 欄位取得 `username`、`password`、`appkey`
+4. UserValidator 透過 NATS `Request()` 向 `db_request` 主題發送 `user.login` 請求
+5. gateway-db 驗證憑證後回傳使用者資料
+6. UserValidator 驗證成功後簽發 PASETO v2 令牌
+7. UserValidator 回傳 `bridgeResponse` 給 ApiNatsBridge
+8. ApiNatsBridge 根據 `status_code` 將回應轉發回用戶端
+
+**gateway-db 請求範例：**
+
+```json
+{"method":"user.login","data":{"username":"admin","password":"123"}}
+```
+
+**gateway-db 回應範例（包裹成功）：**
+
+```json
+{"success":true,"data":{"id":1,"username":"admin","nickname":"管理員","group":null,"permissions":[],"created_at":"2026-01-01","updated_at":"2026-01-01"}}
+```
+
+**gateway-db 回應範例（包裹失敗）：**
+
+```json
+{"success":false,"error":"[120000] invalid username or password"}
+```
+
+---
+
+### `/auth/verify` 完整交互流程
+
+```
+用戶端                     ApiNatsBridge               UserValidator
+  │                             │                           │
+  │  POST /auth/verify         │                           │
+  │  {"token":"v2.local...."}  │                           │
+  │────────────────────────────►│                           │
+  │                             │  NATS Publish             │
+  │                             │  subject: /auth/verify    │
+  │                             │  bridgeRequest            │
+  │                             │──────────────────────────►│
+  │                             │                           │
+  │                             │                           │  解密並驗證令牌
+  │                             │                           │  （不查詢資料庫）
+  │                             │                           │
+  │                             │  NATS Reply               │
+  │                             │  bridgeResponse           │
+  │                             │  status_code: 200         │
+  │                             │  body: {"success":true,   │
+  │                             │    "username":"user",     │
+  │                             │    "appkey":"appkey",     │
+  │                             │    "sub":"user",          │
+  │                             │    "iat":"...",           │
+  │                             │    "exp":"..."}           │
+  │                             │◄──────────────────────────│
+  │                             │                           │
+  │  HTTP 200                  │                           │
+  │  {"success":true,          │                           │
+  │   "username":"user",       │                           │
+  │   "appkey":"appkey", ...}  │                           │
+  │◄────────────────────────────│                           │
+```
+
+**步驟說明：**
+
+1. 用戶端發送 `POST /auth/verify` 至 ApiNatsBridge
+2. ApiNatsBridge 將請求封裝為 `bridgeRequest`，發布至 NATS 主題 `/auth/verify`
+3. UserValidator 解密令牌並驗證時效（過期、尚未生效等）
+4. 驗證成功後直接回傳令牌內含的 claims，**不進行任何資料庫查詢**
+5. ApiNatsBridge 將回應轉發回用戶端
+
+---
 
 ## 專案結構
 
@@ -101,7 +276,8 @@ go build .
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| `nats_subject` | string | 本服務訂閱的 NATS 主題名稱，預設 `user_valid_req` |
+| `nats_subject` | string | 本服務訂閱的 NATS 主題名稱，預設 `user_valid_req`（已棄用，改用 `nats_subjects`） |
+| `nats_subjects` | []string | 本服務訂閱的 NATS 主題列表，主題名稱即為路由路徑，如 `["/auth/login", "/auth/verify"]` |
 
 ### `paseto_secret_key` — PASETO 對稱金鑰
 
@@ -127,8 +303,8 @@ go build .
 
 ## API 介面
 
-本服務透過 NATS 主題 `user_valid_req` 接收請求，
-ApiNatsBridge 依 `path` 欄位將 HTTP 請求路由至對應處理函式。
+本服務透過 NATS 主題清單 `nats_subjects` 接收請求，每個主題名稱即對應一個 HTTP 路徑。
+ApiNatsBridge 依 `path` 欄位將 HTTP 請求發布至對應主題，本服務按主題名稱路由。
 
 ### `POST /auth/login` — 登入驗證
 
@@ -406,5 +582,5 @@ v2.local.<payload_base64url>
 
 | 服務 | 設定檔 | 說明 |
 |------|--------|------|
-| NATS Server | `ExampleConfiguration/nats-server.conf` | 需在 `authorization.users[0].permissions` 中包含 `user_valid_req` 的 publish/subscribe 權限 |
-| ApiNatsBridge | `ExampleConfiguration/ApiNatsBridgeConfig.yaml` | 需在 `routes` 中為 `/auth/login` 與 `/auth/verify` 設定路由規則 |
+| NATS Server | `ExampleConfiguration/nats-server.conf` | 需為 `webapi` 使用者（ApiNatsBridge）設定 `/auth/login`、`/auth/verify` 的 publish 權限，並為 `userauth` 使用者（UserValidator）設定對應的 subscribe 權限 |
+| ApiNatsBridge | `ExampleConfiguration/ApiNatsBridgeConfig.yaml` | 需在 `routes` 中為 `/auth/login` 與 `/auth/verify` 設定路由規則，`nats_subject` 應與本服務訂閱的主題名稱一致 |

@@ -159,9 +159,8 @@ func encryptToken(version string, key []byte, payload interface{}, footer interf
 	}
 }
 
-// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證，
-// 成功時向 gateway-db 查詢使用者資訊（含權限）一併回傳
-func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *verifyResponse {
+// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證，不回傳使用者資訊（不再查詢資料庫）
+func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *verifyResponse {
 	var verifyReq verifyRequest
 	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
 		return &verifyResponse{Success: false, Message: "invalid request body"}
@@ -182,23 +181,14 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsR
 		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
 	}
 
-	username := claims.Get("username")
-	resp := &verifyResponse{
+	return &verifyResponse{
 		Success:  true,
-		Username: username,
+		Username: claims.Get("username"),
 		AppKey:   claims.Get("appkey"),
 		Subject:  claims.Subject,
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),
 	}
-
-	// 向 gateway-db 查詢使用者資訊
-	ui := fetchUserInfo(username, natsReq, dbSubject, dbTimeout)
-	if ui != nil {
-		resp.User = ui
-	}
-
-	return resp
 }
 
 // decryptToken 依據指定的 PASETO 版本對令牌進行解密
@@ -217,58 +207,4 @@ func notFoundResponse() *loginResponse {
 	return &loginResponse{Success: false, Message: "not found"}
 }
 
-// fetchUserInfo 向 gateway-db 查詢使用者資訊（含權限），用於 /auth/verify 成功時補充回傳
-func fetchUserInfo(username string, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *userInfo {
-	// 呼叫 user.get 取得基本資訊
-	userReq, _ := json.Marshal(dbGatewayRequest{
-		Method: "user.get",
-		Data:   map[string]string{"username": username},
-	})
-	userRespStr, err := natsReq(dbSubject, string(userReq), dbTimeout)
-	if err != nil {
-		log.Printf("[NATS] user.get failed for %s: %v", username, err)
-		return nil
-	}
 
-	var ui userInfo
-	if !parseGatewayData(userRespStr, &ui) {
-		return nil
-	}
-	ui.Username = username
-
-	// 呼叫 permission.user.get 取得權限
-	permReq, _ := json.Marshal(dbGatewayRequest{
-		Method: "permission.user.get",
-		Data:   map[string]int64{"user_id": int64(ui.ID)},
-	})
-	permRespStr, err := natsReq(dbSubject, string(permReq), dbTimeout)
-	if err != nil {
-		log.Printf("[NATS] permission.user.get failed for %s: %v", username, err)
-		// 權限查詢失敗不影響核實結果，仍回傳基本資訊
-		return &ui
-	}
-
-	var permData struct {
-		Permissions []interface{} `json:"permissions"`
-	}
-	if parseGatewayData(permRespStr, &permData) {
-		ui.Permissions = permData.Permissions
-	}
-
-	return &ui
-}
-
-// parseGatewayData 解析 gateway-db 回應（自動相容包裹與原始格式），將資料填入 target
-func parseGatewayData(respStr string, target interface{}) bool {
-	var dbResp dbGatewayResponse
-	if err := json.Unmarshal([]byte(respStr), &dbResp); err != nil {
-		return false
-	}
-	if dbResp.Data != nil || dbResp.Error != "" {
-		if dbResp.Data == nil {
-			return false
-		}
-		return json.Unmarshal(dbResp.Data, target) == nil
-	}
-	return json.Unmarshal([]byte(respStr), target) == nil
-}
