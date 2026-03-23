@@ -149,7 +149,7 @@ routes:
       path:
         max_length: 11 # "/auth/login" = 11 字元
       body:
-        max_length: 256 # 登入憑證 JSON 最大長度（username + password + appkey，約 60-80 位元組）
+        max_length: 300 # 登入憑證 JSON 最大長度（username + password + app + expires，約 80-120 位元組）
       headers:
         max_count: 16
         max_key_length: 25
@@ -168,14 +168,16 @@ routes:
       required: # 必要欄位
         - username # 用戶名稱
         - password # 密碼
-        - appkey # 應用程式金鑰
+        - app # 應用程式識別名稱
       properties: # 屬性定義
         username:
           type: string
         password:
           type: string
-        appkey:
+        app:
           type: string
+        expires:
+          type: integer # 令牌有效秒數（選填，不傳則使用服務端預設值）
     response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
       body:
         max_length: 4096 # 成功回應含 PASETO 令牌 + 使用者資訊（id、username、nickname、group、permissions 等）
@@ -239,7 +241,7 @@ routes:
           type: string
     response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
       body:
-        max_length: 1024 # 核實回應僅含 claims（username、appkey、sub、iat、exp），不查詢資料庫，約 200 位元組內
+        max_length: 1024 # 核實回應僅含 claims（username、app、sub、iat、exp），不查詢資料庫，約 200 位元組內
       headers:
         max_count: 1 # Content-Type
         max_key_length: 12
@@ -254,8 +256,8 @@ routes:
           type: boolean # 核實是否成功
         username:
           type: string # 令牌所屬用戶名稱（僅 success=true 時存在）
-        appkey:
-          type: string # 令牌對應的應用程式金鑰（僅 success=true 時存在）
+        app:
+          type: string # 令牌對應的應用程式識別名稱（僅 success=true 時存在）
         sub:
           type: string # 令牌主體（僅 success=true 時存在）
         iat:

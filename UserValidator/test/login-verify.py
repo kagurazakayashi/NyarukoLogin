@@ -230,7 +230,7 @@ def main() -> None:
             print()
             print("令牌核實成功:")
             print(f"  使用者名稱: {verify_data.get('sub') or verify_data.get('username', '(無)')}")
-            print(f"  APPKEY:     {verify_data.get('appkey', '(無)')}")
+            print(f"  APP:        {verify_data.get('app', '(無)')}")
             print(f"  簽發時間:   {verify_data.get('iat', '(無)')}")
             print(f"  到期時間:   {verify_data.get('exp', '(無)')}")
         else:

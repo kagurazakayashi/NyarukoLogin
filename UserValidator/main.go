@@ -113,7 +113,7 @@ func main() {
 			// 按訂閱的主题名直接路由（主题名即等於 HTTP 路徑）
 			switch subj {
 			case "/auth/login":
-				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig, natsClient.Request, dbSubject, dbTimeout)
+				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig, &cfg.TokenClaimsMapping, natsClient.Request, dbSubject, dbTimeout)
 				switch {
 				case result.Success:
 					statusCode = 200

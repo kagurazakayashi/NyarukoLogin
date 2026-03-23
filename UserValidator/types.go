@@ -30,7 +30,7 @@ type verifyRequest struct {
 type verifyResponse struct {
 	Success  bool      `json:"success"`            // 核實是否成功
 	Username string    `json:"username,omitempty"` // 令牌所屬用戶名稱
-	AppKey   string    `json:"appkey,omitempty"`   // 令牌對應的應用程式金鑰
+	AppKey   string    `json:"app,omitempty"`   // 令牌對應的應用程式識別名稱
 	Subject  string    `json:"sub,omitempty"`      // 令牌主體 (subject)
 	IssuedAt string    `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
 	Expires  string    `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)

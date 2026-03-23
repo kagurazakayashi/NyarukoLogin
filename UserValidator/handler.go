@@ -14,9 +14,10 @@ import (
 type natsRequester func(subject string, message string, timeout time.Duration) (string, error)
 
 type loginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	AppKey   string `json:"appkey"`
+	Username  string `json:"username"`   // 使用者名稱
+	Password  string `json:"password"`   // 密碼
+	App       string `json:"app"`       // 應用程式識別名稱
+	Expires   int64  `json:"expires"`  // 令牌有效秒數（選填，0 表示使用設定檔預設值，最大值受限於 max_token_ttl）
 }
 
 type loginResponse struct {
@@ -26,7 +27,7 @@ type loginResponse struct {
 	User    *userInfo `json:"user,omitempty"`
 }
 
-func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
+func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, mapping *tokenClaimsMapping, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
 	var loginReq loginRequest
 	if err := json.Unmarshal([]byte(req.Body), &loginReq); err != nil {
 		return &loginResponse{Success: false, Message: "invalid request body"}
@@ -93,32 +94,103 @@ func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, natsRe
 		return &loginResponse{Success: false, Message: "invalid db response: missing username"}
 	}
 
-	ttl, err := time.ParseDuration(cfg.TokenTTL)
-	if err != nil || ttl <= 0 {
-		ttl = 24 * time.Hour
+	// 解析上游回傳的原始資料為 map，用於 claims 欄位動態映射
+	var userDataMap map[string]interface{}
+	if dbResp.Data != nil || dbResp.Error != "" {
+		// 包裹格式：從 Data 欄位解析
+		if err := json.Unmarshal(dbResp.Data, &userDataMap); err != nil {
+			log.Printf("[TOKEN] 無法解析上游資料為 map (包裹格式): %v", err)
+		}
+	} else {
+		// 原始格式：從整筆回應解析
+		if err := json.Unmarshal([]byte(dbRespStr), &userDataMap); err != nil {
+			log.Printf("[TOKEN] 無法解析上游資料為 map (原始格式): %v", err)
+		}
+	}
+
+	// 解析預設 TTL
+	defaultTTL, err := time.ParseDuration(cfg.TokenTTL)
+	if err != nil || defaultTTL <= 0 {
+		defaultTTL = 24 * time.Hour
+	}
+
+	// 解析 TTL 上限（未設定時以預設 TTL 為上限）
+	maxTTL := defaultTTL
+	if cfg.MaxTokenTTL != "" {
+		if parsed, err := time.ParseDuration(cfg.MaxTokenTTL); err == nil && parsed > 0 {
+			maxTTL = parsed
+		}
+	}
+
+	// 決定最終 TTL：若請求提供了 expires 則以其為準，但不得超過上限
+	var ttl time.Duration
+	if loginReq.Expires > 0 {
+		ttl = time.Duration(loginReq.Expires) * time.Second
+		if ttl > maxTTL {
+			log.Printf("[TOKEN] expires=%d (%s) 超過上限 %s，已裁剪至上限", loginReq.Expires, ttl, maxTTL)
+			ttl = maxTTL
+		}
+	} else {
+		ttl = defaultTTL
 	}
 
 	now := time.Now()
 	claims := paseto.JSONToken{
-		Subject:    loginReq.Username,
 		IssuedAt:   now,
 		Expiration: now.Add(ttl),
 	}
-	claims.Set("username", loginReq.Username)
-	claims.Set("appkey", loginReq.AppKey)
 
-	if cfg.Issuer != "" {
+	// 登入請求的預設自訂 claims（可被上游映射覆蓋）
+	claims.Set("username", loginReq.Username)
+	claims.Set("app", loginReq.App)
+
+	// 預設 sub 來自登入請求的使用者名稱（可被上游映射覆蓋）
+	claims.Subject = loginReq.Username
+
+	// 套用上游資料欄位映射：標準 claims
+	if mapping.Sub != "" {
+		if val, ok := userDataMap[mapping.Sub]; ok {
+			claims.Subject = fmt.Sprintf("%v", val)
+		}
+	}
+	if mapping.Issuer != "" {
+		if val, ok := userDataMap[mapping.Issuer]; ok {
+			claims.Issuer = fmt.Sprintf("%v", val)
+		}
+	}
+	if mapping.Audience != "" {
+		if val, ok := userDataMap[mapping.Audience]; ok {
+			claims.Audience = fmt.Sprintf("%v", val)
+		}
+	}
+	if mapping.Jti != "" {
+		if val, ok := userDataMap[mapping.Jti]; ok {
+			claims.Jti = fmt.Sprintf("%v", val)
+		}
+	}
+
+	// 套用上游資料欄位映射：自訂 claims（會覆蓋登入請求中同名的自訂欄位）
+	for claimName, dbKey := range mapping.Custom {
+		if val, ok := userDataMap[dbKey]; ok {
+			claims.Set(claimName, fmt.Sprintf("%v", val))
+		}
+	}
+
+	// 設定檔中的靜態 claims（僅在未從上游映射時生效）
+	if claims.Issuer == "" && cfg.Issuer != "" {
 		claims.Issuer = cfg.Issuer
 	}
-	if cfg.Audience != "" {
+	if claims.Audience == "" && cfg.Audience != "" {
 		claims.Audience = cfg.Audience
 	}
 
+	// 時間相關 claims
 	if nbfOffset, err := time.ParseDuration(cfg.NotBefore); err == nil && nbfOffset > 0 {
 		claims.NotBefore = now.Add(nbfOffset)
 	}
 
-	if cfg.EnableJTI {
+	// JTI：若未從上游映射，則依設定自動生成
+	if claims.Jti == "" && cfg.EnableJTI {
 		claims.Jti = uuid.New().String()
 	}
 
@@ -184,7 +256,7 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *veri
 	return &verifyResponse{
 		Success:  true,
 		Username: claims.Get("username"),
-		AppKey:   claims.Get("appkey"),
+		AppKey:   claims.Get("app"),
 		Subject:  claims.Subject,
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),

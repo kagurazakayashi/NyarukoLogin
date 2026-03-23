@@ -74,15 +74,24 @@ paseto_config:
   #   - "v2": 推薦使用，使用 XChaCha20-Poly1305，安全性更優
   paseto_version: "v2"
 
-  # 令牌有效時長 (預設: "24h")
+  # 令牌預設有效時長 (預設: "24h")
+  # 當登入請求未提供 expires 時使用此值
   # 格式為 Go duration 字串，範例:
   #   - "15m"   = 15 分鐘
   #   - "1h"    = 1 小時
-  #   - "24h"   = 24 小時 (1 天)
+  #   - "2h"    = 2 小時（生產環境推薦，兼顧安全性與使用者體驗）
+  #   - "24h"   = 24 小時（開發階段適用）
   #   - "168h"  = 168 小時 (7 天)
   #   - "720h"  = 720 小時 (30 天)
   # 若格式無效或值小於等於零，自動回退為 "24h"
   token_ttl: "24h"
+
+  # 令牌最大有效時長上限 (預設: 以 token_ttl 為上限)
+  # 限制登入請求中 expires 參數不得超過此值
+  # 用途: 防止客戶端請求過長的令牌有效期，作為安全性保護
+  # 格式為 Go duration 字串，設為空或不填則以 token_ttl 為上限
+  # 範例: "168h" (客戶端最多可請求 7 天的令牌)
+  max_token_ttl: ""
 
   # 令牌簽發者 (iss claim) (預設: 空，不設定)
   # 建議填寫服務名稱以利於審計，如 "NyarukoLogin-UserValidator"
@@ -110,3 +119,29 @@ paseto_config:
   # 適用於存放公開中繼資料，如金鑰輪替 ID、環境標籤等
   # 注意: Footer 驗證依賴於 PASETO 的整體完整性保護，不可單獨校驗
   footer: ""
+
+# ----------------------------------------------------------
+# 令牌 Claims 與上游資料欄位映射 (token_claims_mapping)
+# 設定令牌中各個 claim 對應到上游服務 (gateway-db) 回傳資料中的哪個欄位
+# 所有欄位皆為選填，空白或未設定時沿用預設行為：
+#   - sub: 預設使用登入請求中的 username
+#   - iss / aud: 預設使用上方 paseto_config 的 issuer / audience
+#   - jti: 預設依 enable_jti 設定自動生成 UUID
+#   - 自訂 claims (username, app): 預設使用登入請求中的值
+# 注意：exp (過期時間)、iat (簽發時間)、nbf (生效時間) 為系統時間類，
+#       總是由系統根據當前時間與 paseto_config 自動計算，無法從上游映射
+# ----------------------------------------------------------
+# token_claims_mapping:
+#   # --- 標準 claims 映射 ---
+#   # sub: "id"           # 上游的 "id" 欄位 → token sub claim
+#   # iss: ""             # 空字串：不從上游映射，使用 paseto_config.issuer
+#   # aud: ""             # 空字串：不從上游映射，使用 paseto_config.audience
+#   # jti: ""             # 空字串：不從上游映射，由 enable_jti 控制
+#
+#   # --- 自訂 claims 映射 ---
+#   # 格式: <token claim 名>: <上游資料欄位名>
+#   # custom:
+#   #   nickname: "nickname"
+#   #   group: "group"
+#   #   permissions: "permissions"
+#   #   id: "id"
