@@ -27,7 +27,7 @@ type loginResponse struct {
 	User    *userInfo `json:"user,omitempty"`
 }
 
-func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, mapping *tokenClaimsMapping, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
+func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, mapping *tokenClaimsMapping, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
 	var loginReq loginRequest
 	if err := json.Unmarshal([]byte(req.Body), &loginReq); err != nil {
 		return &loginResponse{Success: false, Message: "invalid request body"}
@@ -199,7 +199,7 @@ func handleLogin(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig, mappin
 		footer = cfg.Footer
 	}
 
-	token, err := encryptToken(cfg.Version, secretKey, claims, footer)
+	token, err := encryptToken(cfg.Version, keyRing.SigningKey(), claims, footer)
 	if err != nil {
 		return &loginResponse{Success: false, Message: "failed to generate token: " + err.Error()}
 	}
@@ -232,7 +232,8 @@ func encryptToken(version string, key []byte, payload interface{}, footer interf
 }
 
 // handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證，不回傳使用者資訊（不再查詢資料庫）
-func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *verifyResponse {
+// 解密時會遍歷金鑰環中所有金鑰（由新到舊），任一金鑰解密成功即接受
+func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
 	var verifyReq verifyRequest
 	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
 		return &verifyResponse{Success: false, Message: "invalid request body"}
@@ -242,10 +243,19 @@ func handleVerify(req *bridgeRequest, secretKey []byte, cfg *pasetoConfig) *veri
 		return &verifyResponse{Success: false, Message: "token is required"}
 	}
 
-	// 解密令牌並還原 claims
+	// 遍歷金鑰環中所有金鑰進行解密嘗試，由最新金鑰開始
 	var claims paseto.JSONToken
-	if err := decryptToken(cfg.Version, secretKey, verifyReq.Token, &claims, nil); err != nil {
-		return &verifyResponse{Success: false, Message: "token verification failed: " + err.Error()}
+	decrypted := false
+	for _, entry := range keyRing.Keys {
+		err := decryptToken(cfg.Version, entry.Key, verifyReq.Token, &claims, nil)
+		if err == nil {
+			decrypted = true
+			break
+		}
+	}
+
+	if !decrypted {
+		return &verifyResponse{Success: false, Message: "token verification failed: unable to decrypt with any known key"}
 	}
 
 	// 驗證標準 claims（過期、尚未生效等）

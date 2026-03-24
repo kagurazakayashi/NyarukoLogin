@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -48,12 +47,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 解碼 PASETO 密鑰
-	pasetoKey, err := hex.DecodeString(cfg.PasetoSecretKey)
-	if err != nil || len(pasetoKey) != 32 {
-		fmt.Fprintf(errWriter, "[錯誤] PASETO 密鑰無效: 需要 64 個十六進位字元 (32 bytes)\n")
+	// 解析金鑰環（支援單一金鑰或金鑰輪替字典兩種格式）
+	keyRing, err := cfg.PasetoSecretKey.ToKeyRing()
+	if err != nil {
+		fmt.Fprintf(errWriter, "[錯誤] %v\n", err)
 		os.Exit(1)
 	}
+	fmt.Fprintf(outWriter, "[INFO] PASETO 金鑰數量: %d (最新金鑰時間戳: %d)\n", len(keyRing.Keys), keyRing.Keys[0].Timestamp)
 
 	// 解析資料庫請求設定
 	dbSubject := cfg.NatsPublish.DBRequestSubject
@@ -113,7 +113,7 @@ func main() {
 			// 按訂閱的主题名直接路由（主题名即等於 HTTP 路徑）
 			switch subj {
 			case "/auth/login":
-				result := handleLogin(&req, pasetoKey, &cfg.PasetoConfig, &cfg.TokenClaimsMapping, natsClient.Request, dbSubject, dbTimeout)
+				result := handleLogin(&req, keyRing, &cfg.PasetoConfig, &cfg.TokenClaimsMapping, natsClient.Request, dbSubject, dbTimeout)
 				switch {
 				case result.Success:
 					statusCode = 200
@@ -127,7 +127,7 @@ func main() {
 				respBody, _ = json.Marshal(result)
 
 			case "/auth/verify":
-				result := handleVerify(&req, pasetoKey, &cfg.PasetoConfig)
+				result := handleVerify(&req, keyRing, &cfg.PasetoConfig)
 				switch {
 				case result.Success:
 					statusCode = 200

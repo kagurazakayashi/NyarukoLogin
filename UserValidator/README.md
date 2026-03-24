@@ -279,11 +279,28 @@ go build .
 | `nats_subject` | string | 本服務訂閱的 NATS 主題名稱，預設 `user_valid_req`（已棄用，改用 `nats_subjects`） |
 | `nats_subjects` | []string | 本服務訂閱的 NATS 主題列表，主題名稱即為路由路徑，如 `["/auth/login", "/auth/verify"]` |
 
-### `paseto_secret_key` — PASETO 對稱金鑰
+### `paseto_secret_key` — PASETO 對稱金鑰環
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| `paseto_secret_key` | string | 64 字元十六進位字串（32 bytes / 256-bit），用於 PASETO local 令牌加解密 |
+| `paseto_secret_key` | string 或 map | 64 字元十六進位字串（舊格式，單一金鑰），或 `{UNIX時間戳: 金鑰字串}` 字典（新格式，金鑰輪替） |
+
+**舊格式（向後相容）：**
+```yaml
+paseto_secret_key: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
+```
+
+**新格式（金鑰輪替，推薦）：**
+```yaml
+paseto_secret_key:
+  1748736000: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
+  1779840000: "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+```
+
+金鑰輪替行為：
+- **簽發**：永遠使用時間戳最大（最新）的金鑰
+- **驗證**：依時間戳降序遍歷所有金鑰，任一解密成功即接受（舊令牌在輪替後仍可驗證）
+- **清理**：當舊令牌全部過期後，應從設定中移除對應的舊金鑰以縮小攻擊面
 
 ### `paseto_config` — PASETO 令牌參數
 
