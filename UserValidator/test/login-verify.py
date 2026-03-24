@@ -19,16 +19,27 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Us
 
 
 def load_secret_key() -> str:
-    """從同目錄的 UserValidator.yaml 讀取 paseto_secret_key，失敗則回退預設值"""
+    """從同目錄的 UserValidator.yaml 讀取 paseto_secret_key，支援舊格式（單一行）與新格式（字典）
+
+    舊格式：paseto_secret_key: "404142..."
+    新格式：paseto_secret_key:
+              1748736000: "404142..."
+              1779840000: "606162..."
+    """
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            for line in f:
-                if "paseto_secret_key" in line:
-                    m = re.search(r'"([0-9a-fA-F]+)"', line)
-                    if m:
-                        return m.group(1)
+            lines = f.readlines()
     except OSError:
-        pass
+        return DEFAULT_SECRET_KEY_HEX
+
+    active_lines = [line for line in lines if not line.strip().startswith("#")]
+    content = "".join(active_lines)
+
+    # 匹配所有 64 字元的十六進位字串（PASETO 金鑰格式）
+    keys = re.findall(r'"([0-9a-fA-F]{64})"', content)
+    if keys:
+        # 若為字典格式則回傳最後出現的金鑰（對應最新時間戳，位於 YAML 區塊結尾）
+        return keys[-1]
     return DEFAULT_SECRET_KEY_HEX
 
 
@@ -130,6 +141,7 @@ def main() -> None:
     payload = {
         "username": "admin",
         "password": "123456",
+        "app": "login-verify-test",
     }
 
     print("=" * 60)
@@ -168,7 +180,7 @@ def main() -> None:
         if token:
             print()
             print_token_info(token, secret_key_hex)
-        elif data.get("success") and data.get("sub"):
+        elif data.get("success") and (data.get("sub") or data.get("username")):
             # 登入回應直接回傳 claims（無 token 欄位），直接顯示使用者資訊
             print()
             print("=" * 60)
@@ -229,10 +241,11 @@ def main() -> None:
         if verify_data.get("success"):
             print()
             print("令牌核實成功:")
-            print(f"  使用者名稱: {verify_data.get('sub') or verify_data.get('username', '(無)')}")
-            print(f"  APP:        {verify_data.get('app', '(無)')}")
-            print(f"  簽發時間:   {verify_data.get('iat', '(無)')}")
-            print(f"  到期時間:   {verify_data.get('exp', '(無)')}")
+            print(f"  主體 (sub):      {verify_data.get('sub', '(無)')}")
+            print(f"  使用者 (username): {verify_data.get('username', '(無)')}")
+            print(f"  應用 (aud/app):   {verify_data.get('app', '(無)')}")
+            print(f"  簽發時間 (iat):   {verify_data.get('iat', '(無)')}")
+            print(f"  到期時間 (exp):   {verify_data.get('exp', '(無)')}")
         else:
             print()
             print(f"令牌核實失敗: {verify_data.get('message', '(無)')}")

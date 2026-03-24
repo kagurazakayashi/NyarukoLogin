@@ -1,12 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/o1egl/paseto"
 )
 
@@ -88,7 +88,6 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 		}
 	}
 
-
 	// 確認回應中包含必要的使用者名稱
 	if userData.Username == "" {
 		return &loginResponse{Success: false, Message: "invalid db response: missing username"}
@@ -97,12 +96,10 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 	// 解析上游回傳的原始資料為 map，用於 claims 欄位動態映射
 	var userDataMap map[string]interface{}
 	if dbResp.Data != nil || dbResp.Error != "" {
-		// 包裹格式：從 Data 欄位解析
 		if err := json.Unmarshal(dbResp.Data, &userDataMap); err != nil {
 			log.Printf("[TOKEN] 無法解析上游資料為 map (包裹格式): %v", err)
 		}
 	} else {
-		// 原始格式：從整筆回應解析
 		if err := json.Unmarshal([]byte(dbRespStr), &userDataMap); err != nil {
 			log.Printf("[TOKEN] 無法解析上游資料為 map (原始格式): %v", err)
 		}
@@ -135,19 +132,31 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 	}
 
 	now := time.Now()
-	claims := paseto.JSONToken{
-		IssuedAt:   now,
-		Expiration: now.Add(ttl),
+
+	// 產生 32 字元高熵英數字隨機字串作為 jti
+	jti, err := generateJTI(32)
+	if err != nil {
+		return &loginResponse{Success: false, Message: "failed to generate jti: " + err.Error()}
 	}
 
-	// 登入請求的預設自訂 claims（可被上游映射覆蓋）
-	claims.Set("username", loginReq.Username)
-	claims.Set("app", loginReq.App)
+	// 建立標準 claims（預設值來自登入請求）
+	claims := paseto.JSONToken{
+		Issuer:     req.Path,         // iss: 請求路由路徑
+		Subject:    loginReq.Username, // sub: 使用者名稱（可被上游映射覆蓋）
+		Audience:   loginReq.App,     // aud: 應用程式識別名稱（可被上游映射覆蓋）
+		IssuedAt:   now,              // iat: 簽發時間
+		NotBefore:  now,              // nbf: 立即生效
+		Expiration: now.Add(ttl),     // exp: 過期時間
+		Jti:        jti,              // jti: 32 字元高熵隨機字串
+	}
 
-	// 預設 sub 來自登入請求的使用者名稱（可被上游映射覆蓋）
-	claims.Subject = loginReq.Username
+	// kid: 簽發金鑰的時間戳，用於金鑰輪替時識別
+	if entry := keyRing.SigningEntry(); entry != nil {
+		claims.Set("kid", fmt.Sprintf("%d", entry.Timestamp))
+	}
 
-	// 套用上游資料欄位映射：標準 claims
+	// 套用上游資料欄位映射（僅 sub / iss / aud 三個標準 claims 可被上游覆蓋）
+	// iat、nbf、exp、jti、kid 為系統計算，不可透過 mapping 覆蓋
 	if mapping.Sub != "" {
 		if val, ok := userDataMap[mapping.Sub]; ok {
 			claims.Subject = fmt.Sprintf("%v", val)
@@ -163,43 +172,8 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 			claims.Audience = fmt.Sprintf("%v", val)
 		}
 	}
-	if mapping.Jti != "" {
-		if val, ok := userDataMap[mapping.Jti]; ok {
-			claims.Jti = fmt.Sprintf("%v", val)
-		}
-	}
 
-	// 套用上游資料欄位映射：自訂 claims（會覆蓋登入請求中同名的自訂欄位）
-	for claimName, dbKey := range mapping.Custom {
-		if val, ok := userDataMap[dbKey]; ok {
-			claims.Set(claimName, fmt.Sprintf("%v", val))
-		}
-	}
-
-	// 設定檔中的靜態 claims（僅在未從上游映射時生效）
-	if claims.Issuer == "" && cfg.Issuer != "" {
-		claims.Issuer = cfg.Issuer
-	}
-	if claims.Audience == "" && cfg.Audience != "" {
-		claims.Audience = cfg.Audience
-	}
-
-	// 時間相關 claims
-	if nbfOffset, err := time.ParseDuration(cfg.NotBefore); err == nil && nbfOffset > 0 {
-		claims.NotBefore = now.Add(nbfOffset)
-	}
-
-	// JTI：若未從上游映射，則依設定自動生成
-	if claims.Jti == "" && cfg.EnableJTI {
-		claims.Jti = uuid.New().String()
-	}
-
-	var footer interface{}
-	if cfg.Footer != "" {
-		footer = cfg.Footer
-	}
-
-	token, err := encryptToken(cfg.Version, keyRing.SigningKey(), claims, footer)
+	token, err := encryptToken(cfg.Version, keyRing.SigningKey(), claims)
 	if err != nil {
 		return &loginResponse{Success: false, Message: "failed to generate token: " + err.Error()}
 	}
@@ -219,19 +193,34 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 	}
 }
 
+// jtiCharSet 用於產生 jti 的字元集：大小寫英數字（排除易混淆字元 0/O/1/l/I）
+const jtiCharSet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+// generateJTI 產生指定長度的高熵隨機英數字字串
+func generateJTI(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	for i := range bytes {
+		bytes[i] = jtiCharSet[int(bytes[i])%len(jtiCharSet)]
+	}
+	return string(bytes), nil
+}
+
 // encryptToken 依據指定的 PASETO 版本對 claims 進行加密簽發
-func encryptToken(version string, key []byte, payload interface{}, footer interface{}) (string, error) {
+func encryptToken(version string, key []byte, payload interface{}) (string, error) {
 	switch version {
 	case "v1":
-		return paseto.NewV1().Encrypt(key, payload, footer)
+		return paseto.NewV1().Encrypt(key, payload, nil)
 	case "v2", "":
-		return paseto.NewV2().Encrypt(key, payload, footer)
+		return paseto.NewV2().Encrypt(key, payload, nil)
 	default:
 		return "", fmt.Errorf("unsupported PASETO version: %s", version)
 	}
 }
 
-// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證，不回傳使用者資訊（不再查詢資料庫）
+// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證
 // 解密時會遍歷金鑰環中所有金鑰（由新到舊），任一金鑰解密成功即接受
 func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
 	var verifyReq verifyRequest
@@ -247,7 +236,7 @@ func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig)
 	var claims paseto.JSONToken
 	decrypted := false
 	for _, entry := range keyRing.Keys {
-		err := decryptToken(cfg.Version, entry.Key, verifyReq.Token, &claims, nil)
+		err := decryptToken(cfg.Version, entry.Key, verifyReq.Token, &claims)
 		if err == nil {
 			decrypted = true
 			break
@@ -263,10 +252,11 @@ func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig)
 		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
 	}
 
+	// 從標準 claims 提取身分資訊（sub = username, aud = app）
 	return &verifyResponse{
 		Success:  true,
-		Username: claims.Get("username"),
-		AppKey:   claims.Get("app"),
+		Username: claims.Subject,
+		AppKey:   claims.Audience,
 		Subject:  claims.Subject,
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),
@@ -274,12 +264,12 @@ func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig)
 }
 
 // decryptToken 依據指定的 PASETO 版本對令牌進行解密
-func decryptToken(version string, key []byte, token string, payload interface{}, footer interface{}) error {
+func decryptToken(version string, key []byte, token string, payload interface{}) error {
 	switch version {
 	case "v1":
-		return paseto.NewV1().Decrypt(token, key, payload, footer)
+		return paseto.NewV1().Decrypt(token, key, payload, nil)
 	case "v2", "":
-		return paseto.NewV2().Decrypt(token, key, payload, footer)
+		return paseto.NewV2().Decrypt(token, key, payload, nil)
 	default:
 		return fmt.Errorf("unsupported PASETO version: %s", version)
 	}

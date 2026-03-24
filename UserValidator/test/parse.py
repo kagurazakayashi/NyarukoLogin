@@ -48,7 +48,7 @@ Yashi PASETO 令牌解析庫
             "decodable": bool,   # 是否可解碼（public=True, local=有金鑰）
             "note": str|None,    # 補充說明
             "claims": dict|None,      # 全部原始宣告
-            "standard_claims": dict,  # 標準宣告（始終 7 項）
+            "standard_claims": dict,  # 標準宣告（始終 8 項）
             "custom_claims": dict|None,   # 自定義宣告
         },
         "footer": {              # Footer 解析結果
@@ -131,7 +131,7 @@ _ALGORITHMS = {
     },
 }
 
-_STANDARD_CLAIMS = frozenset({"iss", "sub", "aud", "exp", "nbf", "iat", "jti"})
+_STANDARD_CLAIMS = frozenset({"iss", "sub", "aud", "exp", "nbf", "iat", "jti", "kid"})
 
 _CLAIM_LABELS = {
     "iss": "簽發者 (Issuer)",
@@ -141,6 +141,7 @@ _CLAIM_LABELS = {
     "nbf": "生效時間 (Not Before)",
     "iat": "簽發時間 (Issued At)",
     "jti": "令牌唯一 ID (JWT ID)",
+    "kid": "金鑰識別碼 (Key ID)",
 }
 
 # ──────────────────────────────────────────────────────────────────

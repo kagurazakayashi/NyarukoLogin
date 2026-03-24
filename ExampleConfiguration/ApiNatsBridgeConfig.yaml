@@ -1,87 +1,113 @@
-# ============================================================
-# ApiNatsBridge 設定檔 — HTTP 請求轉發至 NATS 微服務
+﻿# ============================================================
+# ApiNatsBridge 配置文件 — HTTP 请求转发至 NATS 微服务
 # ============================================================
 
-# --- HTTP API 伺服器設定 (nyaapiserver.HttpAPIServerConfig) ---
+# 123456789
+# 123 程序号
+# 456 程序的方法
+# 789 方法内的实施
+# 990-999成功
+
+# --- HTTP API 服务器设置 (nyaapiserver.HttpAPIServerConfig) ---
 httpapiserver_config:
-  httpapiserver_host: "127.0.0.1" # HTTP 伺服器監聽的 IP 地址，設為 0.0.0.0 可接受所有介面的連線
-  httpapiserver_port: 9080 # HTTP 伺服器監聽的埠號
+  httpapiserver_host: "0.0.0.0" # HTTP 服务器监听的 IP 地址，设为 0.0.0.0 可接受所有接口的连接
+  httpapiserver_port: 9080 # HTTP 服务器监听的端口号
 
-  # TLS 憑證：兩者皆填時啟用 HTTPS，留空則使用 HTTP
-  httpapiserver_tls_cert_file: "" # TLS 憑證檔案路徑（PEM 格式）
-  httpapiserver_tls_key_file: "" # TLS 私鑰檔案路徑（PEM 格式）
+  # TLS 证书：两者皆填时启用 HTTPS，留空则使用 HTTP
+  httpapiserver_tls_cert_file: "" # TLS 证书文件路径（PEM 格式）
+  httpapiserver_tls_key_file: "" # TLS 私钥文件路径（PEM 格式）
 
-  # 逾時設定 (秒)
-  httpapiserver_read_timeout: 5 # 讀取完整請求的最大等待時間（秒），防止慢速用戶端佔用連線
-  httpapiserver_write_timeout: 30 # 寫入回應的最大等待時間（秒），包含處理時間
-  httpapiserver_idle_timeout: 60 # Keep-Alive 連線的最大閒置時間（秒），超時後自動斷開
+  # 超时设置 (秒)
+  httpapiserver_read_timeout: 5 # 读取完整请求的最大等待时间（秒），防止慢速客户端占用连接
+  httpapiserver_write_timeout: 30 # 写入响应的最大等待时间（秒），包含处理时间
+  httpapiserver_idle_timeout: 60 # Keep-Alive 连接的最大空闲时间（秒），超时后自动断开
 
   # IP 限流
-  httpapiserver_enable_rate_limit: true # 是否啟用基於 IP 的請求限流
-  httpapiserver_limit_requests: 50 # 時間窗口內單個 IP 允許的最大請求次數
-  httpapiserver_limit_window: 1 # 限流時間窗口大小（秒）
-  httpapiserver_block_duration: 600 # 超出限制後封鎖該 IP 的持續時間（秒）
+  httpapiserver_enable_rate_limit: true # 是否启用基于 IP 的请求限流
+  httpapiserver_limit_requests: 50 # 时间窗口内单个 IP 允许的最大请求次数
+  httpapiserver_limit_window: 1 # 限流时间窗口大小（秒）
+  httpapiserver_block_duration: 600 # 超出限制后封锁该 IP 的持续时间（秒）
 
-# --- NATS 用戶端設定 (nyanats.NatsConfig) ---
+# --- NATS 客户端设置 (nyanats.NatsConfig) ---
 nats_config:
-  nats_server_host: 127.0.0.1 # NATS 伺服器的 IP 地址或主機名稱
-  nats_server_port: 4222 # NATS 伺服器的埠號（預設 4222）
+  nats_server_host: 127.0.0.1 # NATS 服务器的 IP 地址或主机名称
+  nats_server_port: 4222 # NATS 服务器的端口号（默认 4222）
 
-  # 連線認證 (留空則不啟用認證)
-  nats_user: webapi # NATS 連線使用的使用者名稱
-  nats_password: Ohr1biolei4aeD3eu7isaeyie9di4uuf # NATS 連線使用的密碼
+  # 连接认证 (留空则不启用认证)
+  nats_user: natsbridge # NATS 连接使用的用户名称
+  nats_password: 4GDrC8gywHEgcnkNpyGBq8sSHwWGdAeV # NATS 连接使用的密码
 
-  nats_client_name: ApiNatsBridgeTest # NATS 用戶端名稱，用於伺服器端識別此連線
+  nats_client_name: ApiNatsBridgeTest # NATS 客户端名称，用于服务器端识别此连接
 
-  # 重連策略
-  nats_max_reconnects: 5 # 與 NATS 伺服器斷線後的最大重連次數，-1 表示無限重連
-  nats_reconnect_wait: 2 # 每次重連嘗試之間的等待時間（秒）
-  nats_connect_timeout: 10 # 初始連線的最大等待時間（秒）
+  # 重连策略
+  nats_max_reconnects: 5 # 与 NATS 服务器断线后的最大重连次数，-1 表示无限重连
+  nats_reconnect_wait: 2 # 每次重连尝试之间的等待时间（秒）
+  nats_connect_timeout: 10 # 初始连接的最大等待时间（秒）
 
-  # AES 對稱加密：長度必須為 16 / 24 / 32 字節（對應 AES-128 / AES-192 / AES-256）
-  # 留空則明文傳輸；可使用 nyanats.GenerateRandomKey() 產生隨機金鑰
-  nats_encryption_key: "GLOBAL_BACKUP_KEY_32_CHARS_LONG!" # 全域加密金鑰，所有未指定專用金鑰的主題皆使用此金鑰
+  # AES 对称加密：长度必须为 16 / 24 / 32 字节（对应 AES-128 / AES-192 / AES-256）
+  # 留空则明文传输；可使用 nyanats.GenerateRandomKey() 产生随机密钥
+  nats_encryption_key: "" # 全局加密密钥，所有未指定专用密钥的主题皆使用此密钥
 
-  # 個別主題專用金鑰（優先於全域金鑰）
-  # 設為 "" 表示該主題明文傳輸
+  # 个别主题专用密钥（优先于全局密钥）
+  # 设为 "" 表示该主题明文传输
   nats_theme_keys:
-    # 與 UserValidator 通訊的主題，需與 UserValidator 設定保持一致
-    # UserValidator 當前設定為明文傳輸（nats_encryption_key 為空），故此處也設為明文
-    "/auth/login": "" # 登入驗證主題：明文傳輸
-    "/auth/verify": "" # 令牌核實主題：明文傳輸
-    # 其他範例主題
-    "theme.dedicated": "DEDICATED_SECRETKEY_32_CHAR_LONG" # 主題 theme.dedicated 使用的專用加密金鑰
-    "theme.plain": "" # 主題 theme.plain 強制使用明文傳輸（不加密）
+    "/auth/login": "GHZ7coaA2TUHW8j3LupM4WfKHdElBa2a"
+    "/auth/verify": "44SonGMeTmkHaGtfVNAg2pF65mhKu7jL"
 
-# --- 橋接層設定 ---
+# --- 桥接层设置 ---
 bridge:
-  # 多國語言設定（可選值：en、zh、zh_Hant、ja）
+  # 多国语言设置（可选值：en、zh、zh_Hant、ja）
   language:
-    log: "zh" # 日誌輸出語言
-    http: "en" # HTTP 回應錯誤訊息語言
-    cli: "zh" # 命令列相關訊息語言
+    log: "zh" # 日志输出语言
+    http: "en" # HTTP 响应错误消息语言
+    cli: "zh" # 命令行相关消息语言
 
-  # 日誌輸出設定
+  # 日志输出设置
   log:
-    stdout: true # 是否同時輸出到控制台，設為 false 則僅寫入檔案
-    debug: true # 是否啟用除錯等級日誌，設為 false 則僅輸出 Info 及以上等級
-    overwrite: true # 是否使用覆蓋模式，設為 true 則啟動時清空現有日誌檔案，設為 false 或不提供則僅追加
-    color: true # 是否使用彩色控制台輸出，設為 true 或不提供則使用彩色，設為 false 則純文字
-    files:
-      # 各模組獨立日誌檔案路徑，可分別設定
-      # 留空或不填則該模組不寫入檔案
-      main: "logs/main.log" # 主流程日誌（啟動、關閉、設定載入等）
-      bridge: "logs/bridge.log" # 橋接路由與轉發日誌（路由匹配、NATS 發送等）
-      http: "logs/http.log" # HTTP 請求日誌（每筆請求的方法、路徑、狀態碼等）
-      nats: "logs/nats.log" # NATS 用戶端事件日誌（連線、斷線、重連等）
-      httpstat: "logs/httpstat.log" # HTTP 伺服器執行統計日誌（定期彙整的效能指標）
-      module: "logs/module.log" # 通用模組日誌（如 /ping 等內建模組輸出）
+    stdout: true # 是否同时输出到控制台，设为 false 则仅写入文件
+    # 调试模式，设为空数组 [] 则仅输出 Info 及以上等级日志
+    # 可选值：
+    #   HTTP  = 输出完整 HTTP 请求与响应通信内容，包括标头、Cookie 等
+    #   NATS  = 输出完整 NATS 通信内容，标明通信方向和主题
+    #   LIMIT = 输出所有被规则拦截的请求的违规资讯与内容
+    debug: ["HTTP", "NATS", "LIMIT"] # 启用的调试模式列表
+    overwrite: true # 是否使用覆盖模式，设为 true 则启动时清除现有日志文件，设为 false 或不提供则仅追加
+    color: true # 是否使用彩色控制台输出，设为 true 或不提供则使用彩色，设为 false 则纯文字
+    # STATUS 状态日志的输出间隔秒数，设为 0 或未设置时默认 60 秒
+    status_interval_seconds: 60 # 状态日志输出间隔秒数
+    files: # 各模块独立日志文件路径
+      # 各模块独立日志文件路径，可分别配置
+      # 留空或不填则该模块不写入文件
+      # 主流程日志（启动、关闭、配置加载等）
+      main: "logs/main.log"
+      # 桥接路由与转发日志（路由匹配、NATS 发送等）
+      bridge: "logs/bridge.log"
+      # HTTP 请求日志（每笔请求的方法、路径、状态码等）
+      http: "logs/http.log"
+      # NATS 客户端事件日志（连接、断线、重连等）
+      nats: "logs/nats.log"
+      # HTTP 服务器和 NATS 状态统计日志（定期汇总的性能指标）
+      status: "logs/status.log"
+      # 通用模块日志（如 /ping 等内置模块输出）
+      module: "logs/module.log"
 
-  # 時區，影響所有日誌時間戳，支援 IANA 時區名稱（如 Asia/Shanghai、America/New_York）或小時偏移（如 8、-5）
-  timezone: "Asia/Shanghai"
+  # 时区，影响所有日志时间戳，支持 IANA 时区名称（如 Asia/Shanghai、America/New_York）或小时偏移（如 8、-5）
+  timezone: "Asia/Shanghai" # 日志时间戳时区
 
-  # CDN 服務商傳遞真實 IP 的專屬標頭清單, 若 CDN 僅使用 X-Forwarded-For，則無需加入
-  cdnheader:
+   # 日志时间日期显示格式
+  # Go 参照时间格式：2006-01-02 15:04:05
+  #   留空：控制台不显示时间日期，但日志文件仍按照默认格式记录
+  #   设置为有效格式：控制台与日志文件均使用该格式
+  #   未设置（省略此字段）：使用默认值 "2006-01-02 15:04:05"（YYYY-MM-DD HH:mm:ss）
+  #   可被路由级别 time_format 覆盖
+  # time_format: ""                    # 空字符串：控制台不显示时间日期
+  time_format: "" # 空字符串：控制台不显示时间日期，日志文件按默认格式记录
+  # time_format: "15:04:05"           # 仅时间：HH:mm:ss
+  # time_format: "01/02 15:04:05"     # 月/日 时:分:秒
+  # time_format: "2006-01-02T15:04:05.000Z07:00" # ISO 8601 格式
+
+  # CDN 服务商传递真实 IP 的专属标头列表, 若 CDN 仅使用 X-Forwarded-For，则无需加入
+  cdnheader: # CDN 传递真实 IP 的专属标头列表
     # - "CF-Connecting-IP" # Cloudflare
     # - "True-Client-IP" # Akamai / Cloudflare Enterprise
     # - "Fastly-Client-IP" # Fastly
@@ -91,178 +117,229 @@ bridge:
     # - "Incap-Client-IP" # Imperva / Incapsula
     # - "X-Sucuri-ClientIP" # Sucuri
     # - "X-SP-Forwarding-IP" # StackPath
-    # - "Ali-Cdn-Real-Ip" # 阿里雲 CDN / DCDN / 全站加速
+    # - "Ali-Cdn-Real-Ip" # 阿里云 CDN / DCDN / 全站加速
     # - "Ar-Real-IP" # ArvanCloud
 
-  # 允許接收錯誤詳細資訊的 IP 白名單（用於開發除錯）
-  error_detail_ips:
-    - "127.0.0.1" # IPv4 本機地址
-    - "::1" # IPv6 本機地址
+  # 允许接收错误详细资讯的 IP 白名单（用于开发调试）
+  error_detail_ips: # 错误详细资讯 IP 白名单
+    - "127.0.0.1" # IPv4 本机地址
+    - "192.168.1.45" # 内部开发 IP
+    - "192.168.1.46" # 内部开发 IP
+    - "::1" # IPv6 本机地址
 
-  # 自動為用戶端 Cookie 寫入 UUID 的鍵名（留空或不填則不啟用）
-  cookie_uuid_key: "" # Cookie 鍵名，首次訪問時自動生成 UUID 並寫入此 Cookie
+  # 响应正文的 JSON Schema 验证全局默认规则（可被路由级别覆盖，留空则不限制）
+  response_schema_body: # 留空则不限制
 
-  # 請求欄位長度限制（全域層級，0 或省略表示不限制，可被路由層級覆蓋）
-  limits:
-    path:
-      max_length: 2048 # 請求路徑最大長度（位元組）
-    headers:
-      max_count: 64 # 請求標頭最大筆數
-      max_key_length: 256 # 請求標頭名稱最大長度（位元組）
-      max_value_length: 4096 # 請求標頭值最大長度（位元組）
-    cookies:
-      max_count: 32 # Cookie 最大筆數
-      max_key_length: 256 # Cookie 名稱最大長度（位元組）
-      max_value_length: 4096 # Cookie 值最大長度（位元組）
-    params:
-      max_count: 64 # URL 查詢參數最大筆數
-      max_key_length: 256 # 參數名稱最大長度（位元組）
-      max_value_length: 4096 # 參數值最大長度（位元組）
-    body:
-      max_length: 1048576 # 請求本文最大長度（位元組，此例為 1MB）
-  response_limits: # 回應欄位長度限制（全域層級，可被路由級別覆蓋）
-    body:
-      max_length: 1048576 # 回應本文最大長度（位元組，此例為 1MB）
-    headers:
-      max_count: 64 # 回應標頭最大筆數
-      max_key_length: 256 # 回應標頭名稱最大長度（位元組）
-      max_value_length: 4096 # 回應標頭值最大長度（位元組）
+  # 错误响应正文的 JSON Schema 验证全局默认规则（当 error_code_key 检测到时优先使用，可被路由级别覆盖）
+  response_error_schema_body: # 留空则不启用
 
-# --- 路由轉發規則 ---
-# 每條路由定義一個 HTTP 路徑如何被驗證並轉發到 NATS Subject
+  # 微服务返回 JSON 中表示 HTTP 状态码的全局默认键名（可被路由级别覆盖，留空则路由未指定时默认 200）
+  http_code_key: "status_code" # HTTP 状态码全局默认键名
+  # 微服务返回 JSON 中表示错误码的全局默认键名（可被路由级别覆盖，留空则不启用）
+  error_code_key: "error_code" # 错误码全局默认键名
+
+  # 微服务错误资讯的显示模式全局默认值（可被路由级别覆盖）
+  #   0 = 不在日志文件中记录（仅保留基本的 [HTTP] 日志）
+  #   1 = 在日志文件中记录并输出
+  #   2 = 在日志文件中记录并输出，内容返回给白名单 IP 用户
+  #   3 = 在日志文件中记录并输出，内容返回给所有用户
+  #   4 = 不记录（仅保留基本的 [HTTP] 日志），内容返回给白名单 IP 用户
+  #   5 = 不记录（仅保留基本的 [HTTP] 日志），内容返回给所有用户
+  error_info_show: 2 # 错误资讯显示模式
+
+  # 请求字段长度限制（全局层级，0 或省略表示不限制，可被路由层级覆盖）
+  limits: # 请求字段长度限制（全局层级）
+    path: # 请求路径限制
+      max_length: 2048 # 请求路径最大长度（字节）
+    headers: # 请求标头限制
+      max_count: 64 # 请求标头最大个数
+      max_key_length: 256 # 请求标头名称最大长度（字节）
+      max_value_length: 4096 # 请求标头值最大长度（字节）
+    cookies: # Cookie 限制
+      max_count: 32 # Cookie 最大个数
+      max_key_length: 256 # Cookie 名称最大长度（字节）
+      max_value_length: 4096 # Cookie 值最大长度（字节）
+    params: # URL 查询参数限制
+      max_count: 64 # URL 查询参数最大个数
+      max_key_length: 256 # 参数名称最大长度（字节）
+      max_value_length: 4096 # 参数值最大长度（字节）
+    body: # 请求本文限制
+      max_length: 1048576 # 请求本文最大长度（字节，此例为 1MB）
+  response_limits: # 响应字段长度限制（全局层级，可被路由级别覆盖）
+    body: # 响应本文限制
+      max_length: 1048576 # 响应本文最大长度（字节，此例为 1MB）
+    headers: # 响应标头限制
+      max_count: 64 # 响应标头最大个数
+      max_key_length: 256 # 响应标头名称最大长度（字节）
+      max_value_length: 4096 # 响应标头值最大长度（字节）
+
+# --- 路由转发规则 ---
+# 每条路由定义一个 HTTP 路径如何被验证并转发到 NATS Subject
 routes:
-  - path: "/auth/login" # HTTP 請求路徑（登入驗證）
-    nats_subject: "/auth/login" # 轉發至 NATS 的 Subject 名稱（與 UserValidator 訂閱的主題一致）
-    methods: ["POST"] # 僅接受 POST 方法
-    content_type: "application/json" # 要求 JSON 請求體
-    timeout: 10 # NATS 等待微服務回應的逾時秒數，UserValidator 內部含 database-db 查詢（逾時 5s）+ 令牌簽發，故設 10s
-    return_fields: # 轉發到 NATS 訊息中包含的欄位清單
-      - method # HTTP 請求方法
-      - path # 請求路徑
-      - headers # 請求標頭（鍵值對 map）
-      - cookies # 請求 Cookie（鍵值對 map）
-      - remote_addr # 遠端位址
-      - ip # 客戶端 IP
-      - params # URL 查詢參數（鍵值對 map）
-      - body # 請求本文（JSON 字串）
-    limits: # 此路由專用的請求限制（覆蓋全域 limits）
-      path:
-        max_length: 11 # "/auth/login" = 11 字元
-      body:
-        max_length: 300 # 登入憑證 JSON 最大長度（username + password + app + expires，約 80-120 位元組）
-      headers:
-        max_count: 16
-        max_key_length: 25
-        max_value_length: 256
-      params:
-        max_count: 0 # 不接收查詢參數
-        max_key_length: 0
-        max_value_length: 0
-      cookies:
-        max_count: 4
-        max_key_length: 8
-        max_value_length: 36 # UUID 長度
-    schema_body: # 請求本文的 JSON Schema 驗證
-      root_type: object # 根類型為物件
-      strict: true # 嚴格模式：不允許未定義欄位
-      required: # 必要欄位
-        - username # 用戶名稱
-        - password # 密碼
-        - app # 應用程式識別名稱
-      properties: # 屬性定義
-        username:
-          type: string
-        password:
-          type: string
-        app:
-          type: string
-        expires:
-          type: integer # 令牌有效秒數（選填，不傳則使用服務端預設值）
-    response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
-      body:
-        max_length: 4096 # 成功回應含 PASETO 令牌 + 使用者資訊（id、username、nickname、group、permissions 等）
-      headers:
-        max_count: 1 # Content-Type
-        max_key_length: 12
-        max_value_length: 31
-    response_schema_body: # 回應本文的 JSON Schema 驗證
-      root_type: object # 根類型為物件
-      strict: false # 非嚴格模式：success/failure 回應欄位不同
-      required: # 必要欄位
-        - success # 必須包含 success 欄位
-      properties: # 屬性定義
+  - path: "/auth/login" # HTTP 请求路径（登录验证）
+    # [100-102] 会话令牌系统
+    nats_subject: "/auth/login" # 转发至 NATS 的 Subject 名称
+    methods: ["POST"] # 仅接受 POST 方法
+    content_type: "application/json" # 要求 JSON 请求体
+    timeout: 10 # 登录需透過 NATS 向 gateway-db 發送 user.login 查詢，設 10s 留有餘量
+    return_fields: # 转发到 NATS 消息中包含的字段列表
+      - method # HTTP 请求方法
+      - path # 请求路径
+      - headers # 请求标头（键值对 map）
+      - cookies # 请求 Cookie（键值对 map）
+      - remote_addr # 远端地址
+      - ip # 客户端 IP
+      - params # URL 查询参数（键值对 map）
+      - body # 请求本文（JSON 字符串）
+    limits: # 此路由专用的请求限制（覆盖全局 limits）
+      path: # 请求路径限制
+        max_length: 11 # "/auth/login" = 11 字符
+      body: # 请求本文限制
+        max_length: 1024 # 登录请求 JSON（username + password + app + expires），含 UTF-8 多位元組字符的實際場景
+      headers: # 请求标头限制
+        max_count: 16 # 标头最大个数
+        max_key_length: 25 # 标头名称最大长度
+        max_value_length: 256 # 标头值最大长度
+      params: # URL 查询参数限制
+        max_count: 0 # 不接收查询参数
+        max_key_length: 0 # 参数名称最大长度（0 表示禁止）
+        max_value_length: 0 # 参数值最大长度（0 表示禁止）
+      cookies: # Cookie 限制
+        max_count: 4 # Cookie 最大个数
+        max_key_length: 8 # Cookie 名称最大长度
+        max_value_length: 36 # UUID 长度
+    schema_body: # 请求本文的 JSON Schema 验证
+      root_type: object # 根类型为对象
+      strict: true # 严格模式：不允许未定义字段
+      required: # 必要字段
+        - username # 用户名称
+        - password # 密码
+        - app # 应用程序识别名称
+      properties: # 属性定义
+        username: # 用户名称
+          type: string # 字符串类型
+        password: # 密码
+          type: string # 字符串类型
+        app: # 应用程序识别名称，寫入 PASETO 令牌的 aud (Audience) claim
+          type: string # 字符串类型
+        expires: # 令牌有效秒数（選填，不傳則使用服務端設定的 token_ttl 預設值，上限受 max_token_ttl 約束）
+          type: integer # 整数类型
+          minimum: 1 # 最小 1 秒
+          maximum: 604800 # 最大 7 天（604800 秒），與服務端 max_token_ttl 上限對齊
+    response_limits: # 此路由专用的响应限制（覆盖全局 response_limits）
+      body: # 响应本文限制
+        max_length: 16384 # 成功響應含 PASETO 令牌 + 使用者完整資訊（id、username、nickname、group、permissions 等）
+      headers: # 响应标头限制
+        max_count: 1 # 僅 Content-Type
+        max_key_length: 12 # "Content-Type" = 12 字符
+        max_value_length: 31 # "application/json; charset=utf-8" = 31 字符
+    response_schema_body: # 响应本文的 JSON Schema 验证（成功時使用）
+      root_type: object # 根类型为对象
+      strict: false # 非严格模式：success=true/false 回應欄位不同
+      required: # 必要字段
+        - success # 必须包含 success 字段
+      properties: # 属性定义
+        success: # 登入是否成功
+          type: boolean # 布尔类型
+        token: # PASETO v2.local 令牌（僅 success=true 時存在）
+          type: string # 字符串类型
+        user: # 使用者資訊物件（僅 success=true 時存在）
+          type: object # 物件類型，包含 id(int)、username(string)、nickname(string)、group、permissions、created_at、updated_at
+        message: # 錯誤訊息（僅 success=false 時存在）
+          type: string # 字符串类型
+    http_code_key: "" # 狀態碼由 bridgeResponse 包裝層提供，無需從 body 提取
+    error_code_key: "" # 微服务返回 JSON 中表示错误码的键名（留空则不启用）
+    response_error_schema_body: # 错误响应的 JSON Schema 验证（error_code_key 檢測到時優先使用，未設置則沿用 response_schema_body）
+      root_type: object
+      strict: false
+      required:
+        - success
+        - message
+      properties:
         success:
-          type: boolean # 驗證是否成功
-        token:
-          type: string # PASETO 令牌（僅 success=true 時存在）
-        user:
-          type: object # 使用者資訊（僅 success=true 時存在，含 id、username、nickname、group、permissions 等）
+          type: boolean
         message:
-          type: string # 錯誤訊息（僅 success=false 時存在）
+          type: string
 
-  - path: "/auth/verify" # HTTP 請求路徑（令牌核實）
-    nats_subject: "/auth/verify" # 轉發至 NATS 的 Subject 名稱（與 UserValidator 訂閱的主題一致，獨立主題）
-    methods: ["POST"] # 僅接受 POST 方法
-    content_type: "application/json" # 要求 JSON 請求體
-    timeout: 5 # NATS 等待微服務回應的逾時秒數，核實僅做本地令牌解密與時效驗證，無外部查詢，設 5s 即可
-    return_fields: # 轉發到 NATS 訊息中包含的欄位清單
-      - method # HTTP 請求方法
-      - path # 請求路徑
-      - headers # 請求標頭（鍵值對 map）
-      - cookies # 請求 Cookie（鍵值對 map）
-      - remote_addr # 遠端位址
-      - ip # 客戶端 IP
-      - params # URL 查詢參數（鍵值對 map）
-      - body # 請求本文（JSON 字串）
-    limits: # 此路由專用的請求限制（覆蓋全域 limits）
-      path:
-        max_length: 12 # "/auth/verify" = 12 字元
-      body:
-        max_length: 512 # PASETO v2 local 令牌約 150-250 位元組，設 512 留有餘量
-      headers:
-        max_count: 16
-        max_key_length: 25
-        max_value_length: 256
-      params:
-        max_count: 0 # 不接收查詢參數
-        max_key_length: 0
-        max_value_length: 0
-      cookies:
-        max_count: 4
-        max_key_length: 8
-        max_value_length: 36 # UUID 長度
-    schema_body: # 請求本文的 JSON Schema 驗證
-      root_type: object # 根類型為物件
-      strict: true # 嚴格模式：不允許未定義欄位
-      required: # 必要欄位
-        - token # 待核實的 PASETO 令牌
-      properties: # 屬性定義
-        token:
-          type: string
-    response_limits: # 此路由專用的回應限制（覆蓋全域 response_limits）
-      body:
-        max_length: 1024 # 核實回應僅含 claims（username、app、sub、iat、exp），不查詢資料庫，約 200 位元組內
-      headers:
+  - path: "/auth/verify" # HTTP 请求路径（令牌核实）
+    # [100-102] 会话令牌系统
+    nats_subject: "/auth/verify" # 转发至 NATS 的 Subject 名称
+    methods: ["POST"] # 仅接受 POST 方法
+    content_type: "application/json" # 要求 JSON 请求体
+    timeout: 3 # 核实僅做本地令牌解密與時效驗證（無網路查詢），設 3s 即有充足餘量
+    return_fields: # 转发到 NATS 消息中包含的字段列表
+      - method # HTTP 请求方法
+      - path # 请求路径
+      - headers # 请求标头（键值对 map）
+      - cookies # 请求 Cookie（键值对 map）
+      - remote_addr # 远端地址
+      - ip # 客户端 IP
+      - params # URL 查询参数（键值对 map）
+      - body # 请求本文（JSON 字符串）
+    limits: # 此路由专用的请求限制（覆盖全局 limits）
+      path: # 请求路径限制
+        max_length: 12 # "/auth/verify" = 12 字符
+      body: # 请求本文限制
+        max_length: 1024 # PASETO v2.local 令牌含完整 claims 時約 150-400 字節，設 1024 留有充足餘量
+      headers: # 请求标头限制
+        max_count: 16 # 标头最大个数
+        max_key_length: 25 # 标头名称最大长度
+        max_value_length: 256 # 标头值最大长度
+      params: # URL 查询参数限制
+        max_count: 0 # 不接收查询参数
+        max_key_length: 0 # 参数名称最大长度（0 表示禁止）
+        max_value_length: 0 # 参数值最大长度（0 表示禁止）
+      cookies: # Cookie 限制
+        max_count: 4 # Cookie 最大个数
+        max_key_length: 8 # Cookie 名称最大长度
+        max_value_length: 36 # UUID 长度
+    schema_body: # 请求本文的 JSON Schema 验证
+      root_type: object # 根类型为对象
+      strict: true # 严格模式：不允许未定义字段
+      required: # 必要字段
+        - token # 待核实的 PASETO 令牌
+      properties: # 属性定义
+        token: # 待核实的令牌
+          type: string # 字符串类型
+          minLength: 10 # PASETO 令牌最短也有 60+ 字節
+          maxLength: 512 # PASETO v2.local 令牌含完整 claims 不超過 400 字節
+    response_limits: # 此路由专用的响应限制（覆盖全局 response_limits）
+      body: # 响应本文限制
+        max_length: 4096 # 核實回應含 claims（username、app、sub、iat、exp）；預留 user 物件未來可能返回
+      headers: # 响应标头限制
         max_count: 1 # Content-Type
-        max_key_length: 12
-        max_value_length: 31
-    response_schema_body: # 回應本文的 JSON Schema 驗證
-      root_type: object # 根類型為物件
-      strict: false # 非嚴格模式：success/failure 回應欄位不同
-      required: # 必要欄位
-        - success # 必須包含 success 欄位
-      properties: # 屬性定義
+        max_key_length: 12 # "Content-Type" = 12 字符
+        max_value_length: 31 # "application/json; charset=utf-8" = 31 字符
+    response_schema_body: # 响应本文的 JSON Schema 验证（成功時使用）
+      root_type: object # 根类型为对象
+      strict: false # 非严格模式：success=true/false 回應欄位不同
+      required: # 必要字段
+        - success # 必须包含 success 字段
+      properties: # 属性定义
+        success: # 核实是否成功
+          type: boolean # 布尔类型
+        username: # 令牌所属用户名称（僅 success=true 時存在，來自 token 的 sub claim）
+          type: string # 字符串类型
+        app: # 令牌对应的应用程序识别名称（僅 success=true 時存在，來自 token 的 aud claim）
+          type: string # 字符串类型
+        sub: # 令牌主体（僅 success=true 時存在，與 username 相同，來自 token 的 sub claim）
+          type: string # 字符串类型
+        iat: # 令牌签发时间 ISO 8601 / RFC 3339（僅 success=true 時存在）
+          type: string # 字符串类型
+        exp: # 令牌到期时间 ISO 8601 / RFC 3339（僅 success=true 時存在）
+          type: string # 字符串类型
+        message: # 错误消息（僅 success=false 時存在）
+          type: string # 字符串类型
+    http_code_key: "" # 狀態碼由 bridgeResponse 包裝層提供，無需從 body 提取
+    error_code_key: "" # 微服务返回 JSON 中表示错误码的键名（留空则不启用）
+    response_error_schema_body: # 错误响应的 JSON Schema 验证（error_code_key 檢測到時優先使用，未設置則沿用 response_schema_body）
+      root_type: object
+      strict: false
+      required:
+        - success
+        - message
+      properties:
         success:
-          type: boolean # 核實是否成功
-        username:
-          type: string # 令牌所屬用戶名稱（僅 success=true 時存在）
-        app:
-          type: string # 令牌對應的應用程式識別名稱（僅 success=true 時存在）
-        sub:
-          type: string # 令牌主體（僅 success=true 時存在）
-        iat:
-          type: string # 令牌簽發時間（僅 success=true 時存在）
-        exp:
-          type: string # 令牌到期時間（僅 success=true 時存在）
+          type: boolean
         message:
-          type: string # 錯誤訊息（僅 success=false 時存在）
+          type: string

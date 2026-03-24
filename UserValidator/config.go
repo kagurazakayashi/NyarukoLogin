@@ -82,6 +82,15 @@ func (r *pasetoKeyRing) SigningKey() []byte {
 	return r.Keys[0].Key
 }
 
+// SigningEntry 取得簽發新令牌用的金鑰條目（含金鑰與 kid 時間戳）
+// 若金鑰環為空則回傳 nil
+func (r *pasetoKeyRing) SigningEntry() *pasetoKeyEntry {
+	if len(r.Keys) == 0 {
+		return nil
+	}
+	return &r.Keys[0]
+}
+
 // ToKeyRing 將 YAML 設定中的金鑰字典轉換為已排序的金鑰環
 // 每個金鑰均需為 64 個十六進位字元（解碼後 32 bytes），否則回傳錯誤
 func (p *pasetoSecretKeyConfig) ToKeyRing() (*pasetoKeyRing, error) {
@@ -133,24 +142,15 @@ type pasetoConfig struct {
 	Version     string `json:"paseto_version" yaml:"paseto_version"` // PASETO 協定版本 (v1/v2)
 	TokenTTL    string `json:"token_ttl" yaml:"token_ttl"`           // 令牌有效時長（預設值），如 "24h"、"2h"、"30m"
 	MaxTokenTTL string `json:"max_token_ttl" yaml:"max_token_ttl"`   // 令牌有效時長上限（選填），限制登入請求中的 expires 不得超過此值；未設定時以 token_ttl 為上限
-	Issuer      string `json:"issuer" yaml:"issuer"`                 // 簽發者 (iss claim)，選填
-	Audience    string `json:"audience" yaml:"audience"`             // 受眾 (aud claim)，選填
-	NotBefore   string `json:"not_before" yaml:"not_before"`         // 生效時間偏移，如 "0s" 為立即生效、"5m" 為五分鐘後生效
-	EnableJTI   bool   `json:"enable_jti" yaml:"enable_jti"`         // 是否為每個令牌產生唯一識別碼 (jti claim)
-	Footer      string `json:"footer" yaml:"footer"`                 // 自訂 Footer 明文，選填
 }
 
 // tokenClaimsMapping 令牌 claims 與上游服務回傳資料欄位的對應關係
-// 每個欄位設定對應的上游資料鍵名，若為空字串則不從上游映射
-// 標準 claims (sub/iss/aud/jti) 若未設定映射則沿用既有邏輯（登入請求、設定檔、自動生成）
-// 自訂 claims 僅在設定了映射時才會從上游資料取值
-// 注意：exp、iat、nbf 為系統時間類 claim，總是由系統自動計算，不在此處映射
+// 只有 sub、iss、aud 三個 claims 可被上游資料覆蓋
+// iat、nbf、exp、jti、kid 為系統自動計算，不可透過上游資料對應
 type tokenClaimsMapping struct {
-	Sub      string            `json:"sub" yaml:"sub"`       // sub (Subject) 對應的上游資料欄位名
-	Issuer   string            `json:"iss" yaml:"iss"`       // iss (Issuer) 對應的上游資料欄位名
-	Audience string            `json:"aud" yaml:"aud"`       // aud (Audience) 對應的上游資料欄位名
-	Jti      string            `json:"jti" yaml:"jti"`       // jti (JWT ID) 對應的上游資料欄位名
-	Custom   map[string]string `json:"custom" yaml:"custom"` // 自訂 claims 與上游資料欄位名的對應關係 (claim 名: 上游欄位名)
+	Sub      string `json:"sub" yaml:"sub"` // sub (Subject) 對應的上游資料欄位名
+	Issuer   string `json:"iss" yaml:"iss"` // iss (Issuer) 對應的上游資料欄位名
+	Audience string `json:"aud" yaml:"aud"` // aud (Audience) 對應的上游資料欄位名
 }
 
 // loadConfig 載入 YAML 設定檔

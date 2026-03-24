@@ -32,8 +32,8 @@ nats_config:
   #   - 若匹配則優先使用，無匹配時回退至全域金鑰 (nats_encryption_key)
   #   - 值設為空字串 "" 則該主題以明文傳輸
   nats_theme_keys:
-    "/auth/login": ""
-    "/auth/verify": ""
+    "/auth/login": "GHZ7coaA2TUHW8j3LupM4WfKHdElBa2a"
+    "/auth/verify": "44SonGMeTmkHaGtfVNAg2pF65mhKu7jL"
 
 # ----------------------------------------------------------
 # NATS 訂閱主題列表 (nats_subjects)
@@ -77,7 +77,7 @@ nats_publish:
 #   -join ((1..32) | ForEach-Object { '{0:X2}' -f (Get-Random -Max 256) })
 # ----------------------------------------------------------
 paseto_secret_key:
-  1748736000: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
+  1748736000: "C7B7494CA3BDFBD01F55ACC24B7B0BA759D114D76E30FA898424BA0ADF0713BA"
   # 1779840000: "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
 
 # ----------------------------------------------------------
@@ -110,55 +110,18 @@ paseto_config:
   # 範例: "168h" (客戶端最多可請求 7 天的令牌)
   max_token_ttl: ""
 
-  # 令牌簽發者 (iss claim) (預設: 空，不設定)
-  # 建議填寫服務名稱以利於審計，如 "NyarukoLogin-UserValidator"
-  issuer: ""
-
-  # 令牌受眾 (aud claim) (預設: 空，不設定)
-  # 用於限制令牌使用範圍，如指定接收服務的名稱
-  audience: ""
-
-  # 令牌生效時間偏移 (預設: "0s")
-  # 控制令牌從簽發後多久才開始生效
-  # 格式為 Go duration 字串，範例:
-  #   - "0s"   = 立即生效 (不設定 NotBefore)
-  #   - "5m"   = 簽發後 5 分鐘才生效
-  #   - "1h"   = 簽發後 1 小時才生效
-  not_before: "0s"
-
-  # 是否為每個令牌產生唯一識別碼 (jti claim) (預設: false)
-  # 用途: 用於令牌撤銷、審計追蹤、防止重放攻擊
-  # 啟用後每個令牌會附加一個 UUID v4 的 jti 欄位
-  enable_jti: true
-
-  # 自訂 Footer 明文字串 (預設: 空，不附加)
-  # Footer 內容為明文（不加密），可在不解密令牌的情況下讀取
-  # 適用於存放公開中繼資料，如金鑰輪替 ID、環境標籤等
-  # 注意: Footer 驗證依賴於 PASETO 的整體完整性保護，不可單獨校驗
-  footer: ""
-
 # ----------------------------------------------------------
 # 令牌 Claims 與上游資料欄位映射 (token_claims_mapping)
 # 設定令牌中各個 claim 對應到上游服務 (gateway-db) 回傳資料中的哪個欄位
 # 所有欄位皆為選填，空白或未設定時沿用預設行為：
 #   - sub: 預設使用登入請求中的 username
-#   - iss / aud: 預設使用上方 paseto_config 的 issuer / audience
-#   - jti: 預設依 enable_jti 設定自動生成 UUID
-#   - 自訂 claims (username, app): 預設使用登入請求中的值
-# 注意：exp (過期時間)、iat (簽發時間)、nbf (生效時間) 為系統時間類，
-#       總是由系統根據當前時間與 paseto_config 自動計算，無法從上游映射
+#   - iss: 預設使用請求路徑 (如 "/auth/login")
+#   - aud: 預設使用登入請求中的 app
+#
+# 注意：僅 sub / iss / aud 三個 claims 可透過上游資料覆蓋
+#       iat、nbf、exp、jti、kid 為系統自動計算，不可映射
 # ----------------------------------------------------------
 # token_claims_mapping:
-#   # --- 標準 claims 映射 ---
-#   # sub: "id"           # 上游的 "id" 欄位 → token sub claim
-#   # iss: ""             # 空字串：不從上游映射，使用 paseto_config.issuer
-#   # aud: ""             # 空字串：不從上游映射，使用 paseto_config.audience
-#   # jti: ""             # 空字串：不從上游映射，由 enable_jti 控制
-#
-#   # --- 自訂 claims 映射 ---
-#   # 格式: <token claim 名>: <上游資料欄位名>
-#   # custom:
-#   #   nickname: "nickname"
-#   #   group: "group"
-#   #   permissions: "permissions"
-#   #   id: "id"
+#   sub: "id"           # 上游的 "id" 欄位 → token sub claim
+#   iss: ""             # 空字串：不從上游映射，使用請求路徑
+#   aud: ""             # 空字串：不從上游映射，使用登入請求的 app

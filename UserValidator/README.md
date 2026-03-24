@@ -311,44 +311,36 @@ paseto_secret_key:
 | 協定版本 | `paseto_version` | string | `v2` | PASETO 協定版本（`v1` / `v2`） |
 | 有效時長 | `token_ttl` | string | `24h` | 令牌預設存活時間（Go duration 格式），生產環境推薦 `"2h"` |
 | 時長上限 | `max_token_ttl` | string | (以 token_ttl 為上限) | 令牌最大允許時長，限制登入請求中的 `expires` 不得超過此值 |
-| 簽發者 | `issuer` | string | (空) | 令牌簽發者（iss claim） |
-| 受眾 | `audience` | string | (空) | 令牌受眾（aud claim） |
-| 生效偏移 | `not_before` | string | `0s` | 令牌生效時間偏移（Go duration 格式） |
-| 唯一識別碼 | `enable_jti` | bool | `false` | 是否產生 jti claim（UUID v4） |
-| 自訂 Footer | `footer` | string | (空) | 附加於令牌 Footer 的明文字串 |
+
+已移除的廢棄欄位：`issuer`、`audience`、`not_before`、`enable_jti`、`footer`。
+這些值現在由登入請求或系統自動決定。
 
 ### `token_claims_mapping` — 令牌 Claims 與上游欄位映射
 
-設定令牌中各個 claim 對應到上游服務（gateway-db）回傳資料中的哪個欄位。
+設定令牌中標準 claims 對應到上游服務（gateway-db）回傳資料中的哪個欄位。
 所有欄位皆為選填，未設定或設為空字串時沿用預設行為。
 
 | 欄位 | YAML 鍵 | 型別 | 預設行為 | 說明 |
 |------|---------|------|----------|------|
 | 主體 | `sub` | string | 使用登入請求 username | sub claim 對應的上游資料欄位名 |
-| 簽發者 | `iss` | string | 使用 `paseto_config.issuer` | iss claim 對應的上游資料欄位名 |
-| 受眾 | `aud` | string | 使用 `paseto_config.audience` | aud claim 對應的上游資料欄位名 |
-| 唯一識別碼 | `jti` | string | 依 `enable_jti` 自動生成 UUID | jti claim 對應的上游資料欄位名 |
-| 自訂映射 | `custom` | map | 僅映射 username / app | 自訂 claims 與上游欄位名的對應關係，格式：`<claim 名>: <上游欄位名>` |
+| 簽發者 | `iss` | string | 使用請求路徑（如 `/auth/login`） | iss claim 對應的上游資料欄位名 |
+| 受眾 | `aud` | string | 使用登入請求 app | aud claim 對應的上游資料欄位名 |
 
-**映射優先級：** 若某 claim 同時有多個來源，生效順序為：
-1. `token_claims_mapping` 上游資料映射（最高優先）
-2. `paseto_config` 設定檔靜態值
-3. 登入請求中的值（`username`、`app`）
+**僅 sub / iss / aud 三個 claims 可透過上游資料覆蓋。** 以下欄位為系統自動計算，不可映射：
+- `iat`（簽發時間）- 系統時間
+- `nbf`（生效時間）- 系統時間
+- `exp`（過期時間）- 系統時間 + TTL
+- `jti`（唯一識別碼）- 永遠自動生成 32 字元高熵英數字隨機字串
+- `kid`（金鑰識別碼）- 永遠為簽發金鑰的 UNIX 時間戳
 
-**注意：** `exp`（過期時間）、`iat`（簽發時間）、`nbf`（生效時間）為系統時間類 claim，總是由系統自動計算，無法從上游映射。
+**已移除：** 自訂 claims（`custom`）不再支援，所有自訂 claims 已從令牌中移除。
 
 設定範例：
 ```yaml
 token_claims_mapping:
   sub: "id"                          # 上游的 "id" 欄位 → token sub claim
-  iss: ""                            # 空字串：不從上游映射，使用 paseto_config.issuer
-  aud: ""                            # 空字串：不從上游映射，使用 paseto_config.audience
-  jti: ""                            # 空字串：自動生成 UUID（若 enable_jti 為 true）
-  custom:
-    nickname: "nickname"             # token claim "nickname" ← 上游 "nickname" 欄位
-    group: "group"                   # token claim "group" ← 上游 "group" 欄位
-    permissions: "permissions"       # token claim "permissions" ← 上游 "permissions" 欄位
-    id: "id"                         # token claim "id" ← 上游 "id" 欄位
+  iss: ""                            # 空字串：不從上游映射，使用請求路徑
+  aud: ""                            # 空字串：不從上游映射，使用登入請求的 app
 ```
 
 ### `nats_publish` — 對外發布訊息設定
@@ -638,39 +630,26 @@ curl -X POST http://127.0.0.1:9080/auth/verify \
 
 ### 令牌 Claims 完整對照表
 
-以下列出令牌簽發時所有可能包含的 Claim，依資料來源優先級排序（**上游資料映射 > 設定檔靜態值 > 登入請求值**）：
+以下列出令牌簽發時所有包含的 Claim，依資料來源排序：
 
 #### 標準 Claims
 
-| Claim | 類型 | 來源 (優先級 1) | 來源 (優先級 2) | 來源 (優先級 3) | 功能說明 |
-|-------|------|-----------------|-----------------|-----------------|----------|
-| `iat` | 標準 | — | 系統時間 (`time.Now()`) | — | 令牌簽發時間（Issued At），用於審計與判斷令牌年齡 |
-| `exp` | 標準 | — | 系統時間 + 有效時長（預設 `token_ttl`，可經登入請求 `expires` 參數覆蓋，上限受 `max_token_ttl` 限制） | — | 令牌過期時間（Expiration），超過後令牌即失效 |
-| `nbf` | 標準 | — | 系統時間 + `not_before` 偏移¹ | — | 令牌生效時間（Not Before），在此之前令牌不可用 |
-| `sub` | 標準 | `token_claims_mapping.sub` → 上游欄位 | 登入請求 `username` | — | 令牌主體（Subject），識別令牌所屬的使用者 |
-| `iss` | 標準 | `token_claims_mapping.iss` → 上游欄位 | `paseto_config.issuer` | — | 令牌簽發者（Issuer），標識簽發此令牌的服務 |
-| `aud` | 標準 | `token_claims_mapping.aud` → 上游欄位 | `paseto_config.audience` | — | 令牌受眾（Audience），限制哪些服務接受此令牌 |
-| `jti` | 標準 | `token_claims_mapping.jti` → 上游欄位 | UUID v4² | — | 令牌唯一識別碼（JWT ID），用於防重放攻擊與令牌撤銷 |
+| Claim | 來源 | 說明 |
+|-------|------|------|
+| `iss` | 請求路徑 (如 `/auth/login`)，可由上游映射覆蓋 | 簽發者（Issuer），標識簽發此令牌的路由端點 |
+| `sub` | 登入請求 `username`，可由上游映射覆蓋 | 主體（Subject），識別令牌所屬的使用者 |
+| `aud` | 登入請求 `app`，可由上游映射覆蓋 | 受眾（Audience），標識應用程式名稱 |
+| `iat` | 系統時間 (`now`) | 簽發時間（Issued At） |
+| `nbf` | 系統時間 (`now`) | 生效時間（Not Before），立即生效 |
+| `exp` | 系統時間 + 有效時長 | 過期時間（Expiration） |
+| `jti` | 32 字元高熵英數字隨機字串 | 唯一識別碼（JWT ID），用於防重放攻擊與撤銷 |
+| `kid` | 簽發金鑰的 UNIX 時間戳 | 金鑰識別碼（Key ID），用於金鑰輪替時定位正確解密金鑰 |
 
-> ¹ `nbf` 僅在 `not_before` 偏移 > 0 時才寫入令牌
-> ² UUID v4 僅在 `enable_jti: true` 且未從上游映射時自動產生
+> **覆蓋規則：** 僅 `iss`、`sub`、`aud` 可透過 `token_claims_mapping` 從上游資料覆蓋。`iat`、`nbf`、`exp`、`jti`、`kid` 為系統計算，不可覆蓋。
 
 #### 自訂 Claims
 
-| Claim | 類型 | 來源 (優先級 1) | 來源 (優先級 2) | 功能說明 |
-|-------|------|-----------------|-----------------|----------|
-| `username` | 自訂 | `token_claims_mapping.custom` 映射³ | 登入請求 `username` | 目前登入的使用者名稱 |
-| `app` | 自訂 | `token_claims_mapping.custom` 映射³ | 登入請求 `app` | 應用程式/用戶端識別碼，區分不同接入端 |
-| *任意名* | 自訂 | `token_claims_mapping.custom` 映射⁴ | — | 可將上游資料中任意欄位（如 `nickname`、`group`、`permissions`）映射為令牌 claim |
-
-> ³ 若 `token_claims_mapping.custom` 中設定了同名的 key（如 `username: "db_user_name"`），則以此上游值覆蓋登入請求值
-> ⁴ 格式為 `<claim 名>: <上游欄位名>`，例如 `nickname: "nickname"` 表示將上游資料的 `nickname` 欄位值寫入令牌的 `nickname` claim
-
-#### Footer
-
-| 項目 | 來源 | 功能說明 |
-|------|------|----------|
-| Footer | `paseto_config.footer` | 明文（不加密）附加資料，可在不解密令牌時讀取，適用於金鑰輪替 ID、環境標籤等公開中繼資料 |
+（已全部移除，不再包含任何自訂 claims）
 
 令牌格式範例：
 
