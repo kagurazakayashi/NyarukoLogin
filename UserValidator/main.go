@@ -76,6 +76,14 @@ func main() {
 		os.Exit(1)
 	}
 	for _, s := range subjects {
+		fmt.Fprintf(outWriter, "[INFO] 訂閱主题: %s\n", s)
+	}
+
+	directSubjects := cfg.getDirectSubjects()
+	for _, s := range directSubjects {
+		fmt.Fprintf(outWriter, "[INFO] 直接 NATS 訂閱主题: %s\n", s)
+	}
+	for _, s := range subjects {
 		fmt.Fprintf(outWriter, "[INFO] 訂閱主題: %s\n", s)
 	}
 
@@ -155,6 +163,29 @@ func main() {
 
 		if err != nil {
 			fmt.Fprintf(errWriter, "[錯誤] 訂閱主題 %s 失敗: %v\n", subj, err)
+			os.Exit(1)
+		}
+	}
+
+	// 為每個直接 NATS 主题建立訂閱（非 HTTP 橋接，訊息格式為純 JSON）
+	for _, subject := range directSubjects {
+		subj := subject // 閉包捕獲
+		err := natsClient.Subscribe(subj, func(m string) string {
+			fmt.Fprintf(outWriter, "[INFO] 收到直接 NATS 請求: %s\n", subj)
+
+			switch subj {
+			case "auth.token.verify":
+				return handleTokenVerifyDirect(m, keyRing, &cfg.PasetoConfig)
+
+			default:
+				result := &verifyResponse{Success: false, Message: "unknown subject"}
+				respBody, _ := json.Marshal(result)
+				return string(respBody)
+			}
+		})
+
+		if err != nil {
+			fmt.Fprintf(errWriter, "[錯誤] 訂閱直接 NATS 主题 %s 失敗: %v\n", subj, err)
 			os.Exit(1)
 		}
 	}

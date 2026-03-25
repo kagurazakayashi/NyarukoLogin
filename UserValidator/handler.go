@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/o1egl/paseto"
@@ -220,23 +221,14 @@ func encryptToken(version string, key []byte, payload interface{}) (string, erro
 	}
 }
 
-// handleVerify 核實 PASETO 令牌的有效性，解密後進行時效與身分驗證
+// verifyPasetoToken 核心令牌驗證邏輯，供 handleVerify 與 handleTokenVerifyDirect 共用
 // 解密時會遍歷金鑰環中所有金鑰（由新到舊），任一金鑰解密成功即接受
-func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
-	var verifyReq verifyRequest
-	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
-		return &verifyResponse{Success: false, Message: "invalid request body"}
-	}
-
-	if verifyReq.Token == "" {
-		return &verifyResponse{Success: false, Message: "token is required"}
-	}
-
+func verifyPasetoToken(token string, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
 	// 遍歷金鑰環中所有金鑰進行解密嘗試，由最新金鑰開始
 	var claims paseto.JSONToken
 	decrypted := false
 	for _, entry := range keyRing.Keys {
-		err := decryptToken(cfg.Version, entry.Key, verifyReq.Token, &claims)
+		err := decryptToken(cfg.Version, entry.Key, token, &claims)
 		if err == nil {
 			decrypted = true
 			break
@@ -261,6 +253,95 @@ func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig)
 		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
 		Expires:  claims.Expiration.Format(time.RFC3339),
 	}
+}
+
+// handleVerify 核實 PASETO 令牌的有效性（HTTP 橋接層介面）
+// 從 bridgeRequest.Body 中解析令牌後，呼叫 verifyPasetoToken 進行驗證
+func handleVerify(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
+	var verifyReq verifyRequest
+	if err := json.Unmarshal([]byte(req.Body), &verifyReq); err != nil {
+		return &verifyResponse{Success: false, Message: "invalid request body"}
+	}
+
+	if verifyReq.Token == "" {
+		return &verifyResponse{Success: false, Message: "token is required"}
+	}
+
+	return verifyPasetoToken(verifyReq.Token, keyRing, cfg)
+}
+
+// 令牌核實錯誤代碼（直接 NATS 簡單模式回傳值）
+const (
+	errCodeTokenValid    = 0 // 令牌有效
+	errCodeInvalidReq    = 1 // 請求格式無效
+	errCodeEmptyToken    = 2 // 令牌為空
+	errCodeTokenDecrypt  = 3 // 令牌無法解密（金鑰不符、格式錯誤、被竄改）
+	errCodeTokenValidate = 4 // 令牌時效驗證失敗（過期、尚未生效）
+)
+
+// handleTokenVerifyDirect 直接 NATS 介面的令牌核實處理
+// 支援兩種模式與選填 tag：
+//
+//	發送格式：  [tag]?令牌  → 詳細模式（回傳完整 JSON）
+//	           [tag]!令牌  → 精簡模式（回傳整數錯誤代碼）
+//
+// 回覆格式：若提供 tag，則以 "tag|資料" 格式前綴回覆；無 tag 則直接回覆資料
+//
+// 其他微服務可根據需求選擇模式與是否附加 tag 以匹配請求
+func handleTokenVerifyDirect(message string, keyRing *pasetoKeyRing, cfg *pasetoConfig) string {
+	var tag string
+	detailed := false
+	token := message
+	found := false
+
+	// 從右側向前掃描尋找模式標記（? 或 !）
+	// 因 PASETO 令牌僅含 base64url 字元（不含 ? 和 !），
+	// 最後出現的 ? 或 ! 即為模式標記，其前所有字元為 tag，其後為令牌
+	for i := len(message) - 1; i >= 0; i-- {
+		if message[i] == '?' || message[i] == '!' {
+			tag = message[:i]
+			detailed = message[i] == '?'
+			token = message[i+1:]
+			found = true
+			break
+		}
+	}
+
+	// 未找到模式標記或令牌為空
+	if !found || token == "" {
+		errResp := &verifyResponse{Success: false, Message: "token is required"}
+		if detailed {
+			resp, _ := json.Marshal(errResp)
+			return formatTagResponse(tag, string(resp))
+		}
+		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeEmptyToken))
+	}
+
+	// 核心驗證邏輯
+	result := verifyPasetoToken(token, keyRing, cfg)
+
+	// 詳細模式：回傳完整 JSON 核實結果
+	if detailed {
+		resp, _ := json.Marshal(result)
+		return formatTagResponse(tag, string(resp))
+	}
+
+	// 精簡模式：根據核實結果回傳對應的整數錯誤代碼
+	if result.Success {
+		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenValid))
+	}
+	if strings.HasPrefix(result.Message, "token verification failed") {
+		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenDecrypt))
+	}
+	return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenValidate))
+}
+
+// formatTagResponse 若 tag 非空則加上 "tag|" 前綴，否則直接回傳內容
+func formatTagResponse(tag, body string) string {
+	if tag != "" {
+		return tag + "|" + body
+	}
+	return body
 }
 
 // decryptToken 依據指定的 PASETO 版本對令牌進行解密

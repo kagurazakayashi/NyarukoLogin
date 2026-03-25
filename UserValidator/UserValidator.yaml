@@ -34,6 +34,7 @@ nats_config:
   nats_theme_keys:
     "/auth/login": "GHZ7coaA2TUHW8j3LupM4WfKHdElBa2a"
     "/auth/verify": "44SonGMeTmkHaGtfVNAg2pF65mhKu7jL"
+    "auth.token.verify": "bN4cF6dG0aMXk9mP2wQ7vR3nL8jH5tY1"
 
 # ----------------------------------------------------------
 # NATS 訂閱主題列表 (nats_subjects)
@@ -42,6 +43,14 @@ nats_config:
 nats_subjects:
   - "/auth/login"
   - "/auth/verify"
+
+# ----------------------------------------------------------
+# 直接 NATS 訂閱主题列表 (nats_subjects_direct)
+# 這些主题不經 HTTP 橋接層，其他微服務可直接透過 NATS Request 發送純 JSON 訊息
+# 與 nats_subjects 不同，訊息格式為請求本身，而非包在 bridgeRequest 內
+# ----------------------------------------------------------
+nats_subjects_direct:
+  - "auth.token.verify"
 
 # ----------------------------------------------------------
 # 對外發布訊息設定 (nats_publish)
@@ -77,7 +86,7 @@ nats_publish:
 #   -join ((1..32) | ForEach-Object { '{0:X2}' -f (Get-Random -Max 256) })
 # ----------------------------------------------------------
 paseto_secret_key:
-  1748736000: "C7B7494CA3BDFBD01F55ACC24B7B0BA759D114D76E30FA898424BA0ADF0713BA"
+  1748736000: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
   # 1779840000: "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
 
 # ----------------------------------------------------------

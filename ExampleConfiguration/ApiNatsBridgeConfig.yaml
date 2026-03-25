@@ -173,6 +173,29 @@ bridge:
       max_key_length: 256 # 响应标头名称最大长度（字节）
       max_value_length: 4096 # 响应标头值最大长度（字节）
 
+# --- 令牌验证配置（可选，若省略则不启用令牌验证） ---
+token:
+  # 验证令牌用的 NATS 主题
+  nats_subject: "auth.token.verify"
+  # 不需要检查令牌的 HTTP 路径白名单
+  path_whitelist:
+    - "/ping"
+    - "/auth/login"
+  # 令牌所在 HTTP 标头名称
+  header_name: "Authorization"
+  # 令牌的最小长度
+  min_length: 10
+  # 令牌的最大长度
+  max_length: 4096
+  # tag 部分的分隔符
+  tag_separator: "|"
+  # 令牌验证成功时的回传值
+  success_value: "0"
+  # 等待令牌验证回应的超时秒数
+  timeout: 5
+  # 令牌验证结果快取的最大笔数（默认值，达上限时清空快取）
+  cache_max_entries: 1000
+
 # --- 路由转发规则 ---
 # 每条路由定义一个 HTTP 路径如何被验证并转发到 NATS Subject
 routes:

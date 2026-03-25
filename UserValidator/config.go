@@ -118,8 +118,9 @@ func (p *pasetoSecretKeyConfig) ToKeyRing() (*pasetoKeyRing, error) {
 // serviceConfig 服務設定結構
 type serviceConfig struct {
 	NatsConfig          nyanats.NatsConfig    `json:"nats_config" yaml:"nats_config"`
-	NatsSubjects        []string              `json:"nats_subjects" yaml:"nats_subjects"`                 // NATS 訂閱主题列表（每個主题對應一個 HTTP 路徑）
+	NatsSubjects        []string              `json:"nats_subjects" yaml:"nats_subjects"`                 // NATS 訂閱主题列表（每個主题對應一個 HTTP 路徑，訊息格式為橋接層格式）
 	NatsSubject         string                `json:"nats_subject" yaml:"nats_subject"`                   // 單一訂閱主题（向後相容，已棄用）
+	NatsSubjectsDirect  []string              `json:"nats_subjects_direct" yaml:"nats_subjects_direct"`   // 直接 NATS 訂閱主题列表（訊息格式為純 JSON，不經 HTTP 橋接層）
 	PasetoSecretKey     pasetoSecretKeyConfig `json:"paseto_secret_key" yaml:"paseto_secret_key"`         // PASETO 對稱金鑰設定（支援單一金鑰或金鑰輪替字典）
 	PasetoConfig        pasetoConfig          `json:"paseto_config" yaml:"paseto_config"`
 	NatsPublish         natsPublishConfig     `json:"nats_publish" yaml:"nats_publish"`                   // 對外發布訊息設定
@@ -151,6 +152,11 @@ type tokenClaimsMapping struct {
 	Sub      string `json:"sub" yaml:"sub"` // sub (Subject) 對應的上游資料欄位名
 	Issuer   string `json:"iss" yaml:"iss"` // iss (Issuer) 對應的上游資料欄位名
 	Audience string `json:"aud" yaml:"aud"` // aud (Audience) 對應的上游資料欄位名
+}
+
+// getDirectSubjects 回傳直接 NATS 訂閱主题列表（非 HTTP 橋接層）
+func (c *serviceConfig) getDirectSubjects() []string {
+	return c.NatsSubjectsDirect
 }
 
 // loadConfig 載入 YAML 設定檔
