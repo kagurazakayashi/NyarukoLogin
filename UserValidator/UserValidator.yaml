@@ -62,6 +62,10 @@ nats_publish:
   db_request_subject: "db_request"
   # 資料庫請求逾時時間，格式為 Go duration 字串 (預設: "5s")
   db_request_timeout: "5s"
+  # 附加到資料庫請求頂層的額外欄位（鍵值對字典，選填）
+  # 此處設定的每個鍵值對會直接合併到發送給 gateway-db 的 JSON 請求頂層
+  # db_request_extra:
+  #   app_id: "user-validator"
 
 # ----------------------------------------------------------
 # PASETO 密鑰環 (paseto_secret_key)

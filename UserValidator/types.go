@@ -38,12 +38,6 @@ type verifyResponse struct {
 	User     *userInfo `json:"user,omitempty"`     // 使用者資訊（核實成功時）
 }
 
-// dbGatewayRequest 發送給 gateway-db 資料控制微服務的請求結構
-type dbGatewayRequest struct {
-	Method string      `json:"method"` // 操作方法，如 "user.login"
-	Data   interface{} `json:"data"`   // 請求資料承載
-}
-
 // dbGatewayResponse gateway-db 回應識別（同時相容包裹與原始格式）
 // 包裹成功：{"success":true,"data":{"id":1,"username":"admin",...}}
 // 包裹失敗：{"success":false,"error":"..."}

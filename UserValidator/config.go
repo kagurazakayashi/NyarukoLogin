@@ -14,8 +14,9 @@ import (
 
 // natsPublishConfig 對外發布訊息的設定（發送給 gateway-db 等微服務）
 type natsPublishConfig struct {
-	DBRequestSubject string `json:"db_request_subject" yaml:"db_request_subject"` // 資料庫請求的 NATS 主题
-	DBRequestTimeout string `json:"db_request_timeout" yaml:"db_request_timeout"` // 資料庫請求逾時時間，格式如 "5s"
+	DBRequestSubject string            `json:"db_request_subject" yaml:"db_request_subject"` // 資料庫請求的 NATS 主题
+	DBRequestTimeout string            `json:"db_request_timeout" yaml:"db_request_timeout"` // 資料庫請求逾時時間，格式如 "5s"
+	DBRequestExtra   map[string]string `json:"db_request_extra" yaml:"db_request_extra"`     // 附加到資料庫請求頂層的額外欄位（鍵值對，如 app_id），選填
 }
 
 // pasetoSecretKeyConfig 用於解碼 paseto_secret_key 設定欄位，支援兩種格式：

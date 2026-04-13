@@ -28,21 +28,25 @@ type loginResponse struct {
 	User    *userInfo `json:"user,omitempty"`
 }
 
-func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, mapping *tokenClaimsMapping, natsReq natsRequester, dbSubject string, dbTimeout time.Duration) *loginResponse {
+func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, mapping *tokenClaimsMapping, natsReq natsRequester, dbSubject string, dbTimeout time.Duration, extraFields map[string]string) *loginResponse {
 	var loginReq loginRequest
 	if err := json.Unmarshal([]byte(req.Body), &loginReq); err != nil {
 		return &loginResponse{Success: false, Message: "invalid request body"}
 	}
 
 	// 向 gateway-db 資料控制微服務發送驗證請求
-	dbReq := dbGatewayRequest{
-		Method: "user.login",
-		Data: map[string]string{
+	// 使用 map 建構以支援附加任意額外欄位（由設定檔 db_request_extra 指定）
+	dbReqMap := map[string]interface{}{
+		"method": "user.login",
+		"data": map[string]string{
 			"username": loginReq.Username,
 			"password": loginReq.Password,
 		},
 	}
-	dbReqJSON, err := json.Marshal(dbReq)
+	for k, v := range extraFields {
+		dbReqMap[k] = v
+	}
+	dbReqJSON, err := json.Marshal(dbReqMap)
 	if err != nil {
 		return &loginResponse{Success: false, Message: "failed to marshal db request"}
 	}

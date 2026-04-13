@@ -66,7 +66,13 @@ func main() {
 		dbTimeout = 5 * time.Second
 	}
 
+	// 取得附加到資料庫請求的額外欄位
+	dbRequestExtra := cfg.NatsPublish.DBRequestExtra
+
 	fmt.Fprintf(outWriter, "[INFO] 資料庫請求主题: %s (逾時: %s)\n", dbSubject, dbTimeout)
+	if len(dbRequestExtra) > 0 {
+		fmt.Fprintf(outWriter, "[INFO] 資料庫請求額外欄位: %v\n", dbRequestExtra)
+	}
 
 	fmt.Fprintf(outWriter, "[INFO] NATS 伺服器: %s:%d\n", cfg.NatsConfig.NatsServerHost, cfg.NatsConfig.NatsServerPort)
 
@@ -121,7 +127,7 @@ func main() {
 			// 按訂閱的主题名直接路由（主题名即等於 HTTP 路徑）
 			switch subj {
 			case "/auth/login":
-				result := handleLogin(&req, keyRing, &cfg.PasetoConfig, &cfg.TokenClaimsMapping, natsClient.Request, dbSubject, dbTimeout)
+				result := handleLogin(&req, keyRing, &cfg.PasetoConfig, &cfg.TokenClaimsMapping, natsClient.Request, dbSubject, dbTimeout, dbRequestExtra)
 				switch {
 				case result.Success:
 					statusCode = 200
