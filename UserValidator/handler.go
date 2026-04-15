@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -284,60 +285,136 @@ const (
 )
 
 // handleTokenVerifyDirect 直接 NATS 介面的令牌核實處理
-// 支援兩種模式與選填 tag：
+// 支援四種資訊層級與選填 tag：
 //
-//	發送格式：  [tag]?令牌  → 詳細模式（回傳完整 JSON）
-//	           [tag]!令牌  → 精簡模式（回傳整數錯誤代碼）
+//	發送格式：  [tag|]level|令牌
+//	  level=0 → 精簡模式（回傳整數錯誤代碼，等同舊版 ! 模式）
+//	  level=1 → 系統層級（僅回傳 success 與 message）
+//	  level=2 → 系統 + token claims（success、message、username、app、sub、iat、exp）
+//	  level=3 → 完整模式（回傳完整 verifyResponse JSON，等同舊版 ? 模式）
 //
 // 回覆格式：若提供 tag，則以 "tag|資料" 格式前綴回覆；無 tag 則直接回覆資料
 //
-// 其他微服務可根據需求選擇模式與是否附加 tag 以匹配請求
+// 層級選擇指南：
+//
+//	0 — 僅需判斷有效／無效，最小傳輸量
+//	1 — 需要知道驗證是否成功即可
+//	2 — 需要令牌中的使用者身分與時效資訊
+//	3 — 需要所有資訊（含上游資料庫的使用者詳細資料）
 func handleTokenVerifyDirect(message string, keyRing *pasetoKeyRing, cfg *pasetoConfig) string {
-	var tag string
-	detailed := false
-	token := message
-	found := false
+	var tag, token string
+	var level int
 
-	// 從右側向前掃描尋找模式標記（? 或 !）
-	// 因 PASETO 令牌僅含 base64url 字元（不含 ? 和 !），
-	// 最後出現的 ? 或 ! 即為模式標記，其前所有字元為 tag，其後為令牌
-	for i := len(message) - 1; i >= 0; i-- {
-		if message[i] == '?' || message[i] == '!' {
-			tag = message[:i]
-			detailed = message[i] == '?'
-			token = message[i+1:]
-			found = true
-			break
-		}
+	// 從右側尋找最後一個 | 以分隔 token 與前綴
+	lastPipe := strings.LastIndex(message, "|")
+	if lastPipe == -1 {
+		errResp := &verifyResponse{Success: false, Message: "invalid request format: missing level separator"}
+		resp, _ := json.Marshal(errResp)
+		return string(resp)
 	}
 
-	// 未找到模式標記或令牌為空
-	if !found || token == "" {
-		errResp := &verifyResponse{Success: false, Message: "token is required"}
-		if detailed {
-			resp, _ := json.Marshal(errResp)
-			return formatTagResponse(tag, string(resp))
+	token = message[lastPipe+1:]
+	prefix := message[:lastPipe]
+
+	// 在前綴中尋找層級分隔符：tag|level 或僅 level
+	levelPipe := strings.LastIndex(prefix, "|")
+	var levelStr string
+	if levelPipe == -1 {
+		// 格式：level|token（無 tag）
+		levelStr = prefix
+	} else {
+		// 格式：tag|level|token
+		tag = prefix[:levelPipe]
+		levelStr = prefix[levelPipe+1:]
+	}
+
+	// 解析層級（必須為 0-3 的整數）
+	parsedLevel, err := strconv.Atoi(levelStr)
+	if err != nil || parsedLevel < 0 || parsedLevel > 3 {
+		errResp := &verifyResponse{Success: false, Message: "invalid level: " + levelStr}
+		resp, _ := json.Marshal(errResp)
+		return formatTagResponse(tag, string(resp))
+	}
+	level = parsedLevel
+
+	// 令牌不得為空
+	if token == "" {
+		if level == 0 {
+			return formatTagResponse(tag, fmt.Sprintf("%d", errCodeEmptyToken))
 		}
-		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeEmptyToken))
+		return buildLevelResponse(level, tag, &verifyResponse{Success: false, Message: "token is required"})
 	}
 
 	// 核心驗證邏輯
 	result := verifyPasetoToken(token, keyRing, cfg)
 
-	// 詳細模式：回傳完整 JSON 核實結果
-	if detailed {
-		resp, _ := json.Marshal(result)
-		return formatTagResponse(tag, string(resp))
-	}
+	return buildLevelResponse(level, tag, result)
+}
 
-	// 精簡模式：根據核實結果回傳對應的整數錯誤代碼
+// buildLevelResponse 依指定層級與驗證結果建構回覆內容
+func buildLevelResponse(level int, tag string, result *verifyResponse) string {
+	switch level {
+	case 0:
+		return buildLevel0Response(tag, result)
+	case 1:
+		return buildLevel1Response(tag, result)
+	case 2:
+		return buildLevel2Response(tag, result)
+	case 3:
+		return buildLevel3Response(tag, result)
+	default:
+		return buildLevel0Response(tag, result)
+	}
+}
+
+// buildLevel0Response 精簡模式：僅回傳整數錯誤代碼（等同舊版 ! 模式）
+func buildLevel0Response(tag string, result *verifyResponse) string {
 	if result.Success {
 		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenValid))
 	}
 	if strings.HasPrefix(result.Message, "token verification failed") {
 		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenDecrypt))
 	}
-	return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenValidate))
+	if strings.HasPrefix(result.Message, "token validation failed") {
+		return formatTagResponse(tag, fmt.Sprintf("%d", errCodeTokenValidate))
+	}
+	return formatTagResponse(tag, fmt.Sprintf("%d", errCodeInvalidReq))
+}
+
+// buildLevel1Response 系統層級：僅回傳 success 與 message
+func buildLevel1Response(tag string, result *verifyResponse) string {
+	resp := map[string]interface{}{
+		"success": result.Success,
+	}
+	if !result.Success {
+		resp["message"] = result.Message
+	}
+	data, _ := json.Marshal(resp)
+	return formatTagResponse(tag, string(data))
+}
+
+// buildLevel2Response 系統 + token claims：回傳 success、message、username、app、sub、iat、exp
+func buildLevel2Response(tag string, result *verifyResponse) string {
+	resp := map[string]interface{}{
+		"success": result.Success,
+	}
+	if !result.Success {
+		resp["message"] = result.Message
+	} else {
+		resp["username"] = result.Username
+		resp["app"] = result.AppKey
+		resp["sub"] = result.Subject
+		resp["iat"] = result.IssuedAt
+		resp["exp"] = result.Expires
+	}
+	data, _ := json.Marshal(resp)
+	return formatTagResponse(tag, string(data))
+}
+
+// buildLevel3Response 完整模式：回傳完整 verifyResponse JSON（等同舊版 ? 模式，含 user 物件）
+func buildLevel3Response(tag string, result *verifyResponse) string {
+	data, _ := json.Marshal(result)
+	return formatTagResponse(tag, string(data))
 }
 
 // formatTagResponse 若 tag 非空則加上 "tag|" 前綴，否則直接回傳內容
