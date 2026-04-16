@@ -32,10 +32,13 @@ type verifyResponse struct {
 	Username string    `json:"username,omitempty"` // 令牌所屬用戶名稱
 	AppKey   string    `json:"app,omitempty"`   // 令牌對應的應用程式識別名稱
 	Subject  string    `json:"sub,omitempty"`      // 令牌主體 (subject)
+	Issuer   string    `json:"iss,omitempty"`      // 簽發者 (issuer)
 	IssuedAt string    `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
+	NotBefore string   `json:"nbf,omitempty"`      // 令牌生效時間 (ISO 8601)
 	Expires  string    `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
+	Jti      string    `json:"jti,omitempty"`      // 令牌唯一識別碼 (JWT ID)
 	Message  string    `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
-	User     *userInfo `json:"user,omitempty"`     // 使用者資訊（核實成功時）
+	User     *userInfo `json:"user,omitempty"`     // 使用者資訊（核實成功時，層級 3）
 }
 
 // dbGatewayResponse gateway-db 回應識別（同時相容包裹與原始格式）

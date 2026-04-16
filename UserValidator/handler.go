@@ -249,14 +249,17 @@ func verifyPasetoToken(token string, keyRing *pasetoKeyRing, cfg *pasetoConfig) 
 		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
 	}
 
-	// 從標準 claims 提取身分資訊（sub = username, aud = app）
+	// 從標準 claims 提取全部標準欄位
 	return &verifyResponse{
-		Success:  true,
-		Username: claims.Subject,
-		AppKey:   claims.Audience,
-		Subject:  claims.Subject,
-		IssuedAt: claims.IssuedAt.Format(time.RFC3339),
-		Expires:  claims.Expiration.Format(time.RFC3339),
+		Success:   true,
+		Username:  claims.Subject,
+		AppKey:    claims.Audience,
+		Subject:   claims.Subject,
+		Issuer:    claims.Issuer,
+		IssuedAt:  claims.IssuedAt.Format(time.RFC3339),
+		NotBefore: claims.NotBefore.Format(time.RFC3339),
+		Expires:   claims.Expiration.Format(time.RFC3339),
+		Jti:       claims.Jti,
 	}
 }
 
@@ -393,7 +396,7 @@ func buildLevel1Response(tag string, result *verifyResponse) string {
 	return formatTagResponse(tag, string(data))
 }
 
-// buildLevel2Response 系統 + token claims：回傳 success、message、username、app、sub、iat、exp
+// buildLevel2Response 系統 + token claims：回傳全部標準 claims（success、message、username、app、sub、iss、iat、nbf、exp、jti）
 func buildLevel2Response(tag string, result *verifyResponse) string {
 	resp := map[string]interface{}{
 		"success": result.Success,
@@ -404,8 +407,11 @@ func buildLevel2Response(tag string, result *verifyResponse) string {
 		resp["username"] = result.Username
 		resp["app"] = result.AppKey
 		resp["sub"] = result.Subject
+		resp["iss"] = result.Issuer
 		resp["iat"] = result.IssuedAt
+		resp["nbf"] = result.NotBefore
 		resp["exp"] = result.Expires
+		resp["jti"] = result.Jti
 	}
 	data, _ := json.Marshal(resp)
 	return formatTagResponse(tag, string(data))
