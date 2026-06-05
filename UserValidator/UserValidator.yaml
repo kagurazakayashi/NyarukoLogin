@@ -51,6 +51,7 @@ nats_subjects:
 # ----------------------------------------------------------
 nats_subjects_direct:
   - "auth.token.verify"
+  - "perm.changed"
 
 # ----------------------------------------------------------
 # 對外發布訊息設定 (nats_publish)
@@ -133,8 +134,22 @@ paseto_config:
 #
 # 注意：僅 sub / iss / aud 三個 claims 可透過上游資料覆蓋
 #       iat、nbf、exp、jti、kid 為系統自動計算，不可映射
+#
+# custom_claims：將上游資料的任意欄位寫入令牌加密 payload
+#   鍵為令牌中的加密 claim 名稱，值為上游資料的對應欄位名
+#   典型用途：將 UUID 寫入令牌，供 ApiNatsBridge 等服務在驗證令牌後
+#   提取並轉發給其他微服務以識別使用者身分
+#
+# gateway-db v1.6.2+ 以 UUID 作為使用者主鍵，
+# 建議將 sub 映射至 "uuid" 以取得不變的唯一識別碼
 # ----------------------------------------------------------
-# token_claims_mapping:
-#   sub: "id"           # 上游的 "id" 欄位 → token sub claim
-#   iss: ""             # 空字串：不從上游映射，使用請求路徑
-#   aud: ""             # 空字串：不從上游映射，使用登入請求的 app
+token_claims_mapping:
+  sub: "uuid"              # 上游的 "uuid" 欄位 → token sub claim（已在 PASETO 加密區域中）
+  # iss: ""                # 空字串：不從上游映射，使用請求路徑
+  # aud: ""                # 空字串：不從上游映射，使用登入請求的 app
+  # custom_claims:           # 自訂加密 claims：寫入令牌 payload 的額外欄位（非標準，需要時取消註解）
+    # uuid: "uuid"           # 上游 "uuid" → 令牌加密 claim "uuid"（注意：uuid 已由系統自動寫入，無需設定）
+    # id: "id"             # 上游 "id" → 令牌加密 claim "id"（向後相容）
+  # 系統自動寫入的 claims（不在此處設定，始終存在）：
+  #   - "perm"：使用者權限碼 JSON 陣列（如 ["d_add","d_list","u_read"]）
+  #   - "uuid"：用於撤銷檢查的使用者 UUID

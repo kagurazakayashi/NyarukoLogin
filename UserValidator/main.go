@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,6 +18,11 @@ import (
 var (
 	outWriter io.Writer = os.Stdout
 	errWriter io.Writer = os.Stderr
+
+	// revokedMap 儲存已撤銷權限的使用者 UUID 及其撤銷時間戳
+	// key: UUID 字串, value: Unix 時間戳 (int64)
+	// 令牌的 iat 若小於此時間戳，表示該令牌在權限變動前簽發，應被撤銷
+	revokedMap sync.Map
 )
 
 func main() {
@@ -182,6 +188,19 @@ func main() {
 			switch subj {
 			case "auth.token.verify":
 				return handleTokenVerifyDirect(m, keyRing, &cfg.PasetoConfig)
+
+			case "perm.changed":
+				// 接收權限變更通知：記錄撤銷時間戳，使舊令牌失效
+				var msg struct {
+					UUID string `json:"uuid"` // 權限被變更的使用者 UUID
+				}
+				if err := json.Unmarshal([]byte(m), &msg); err != nil || msg.UUID == "" {
+					return `{"success":false,"message":"invalid message format: uuid required"}`
+				}
+				revokedAt := time.Now().Unix()
+				revokedMap.Store(msg.UUID, revokedAt)
+				fmt.Fprintf(outWriter, "[INFO] 使用者 %s 權限已變更，舊令牌撤銷時間戳: %d\n", msg.UUID, revokedAt)
+				return fmt.Sprintf(`{"success":true,"uuid":"%s","revoked_since":%d}`, msg.UUID, revokedAt)
 
 			default:
 				result := &verifyResponse{Success: false, Message: "unknown subject"}

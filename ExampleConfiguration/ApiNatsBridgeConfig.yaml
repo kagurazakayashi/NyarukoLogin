@@ -195,9 +195,24 @@ token:
   timeout: 5
   # 令牌验证结果快取的最大笔数（默认值，达上限时清空快取）
   cache_max_entries: 1000
+  # PASETO 本地解密金鑰（選填，支援與 UserValidator 相同的格式）
+  # 若設定，ApiNatsBridge 可本地解密令牌以提取自訂 claims
+  # 格式：單一十六進位字串或 {時間戳: 金鑰} 字典
+  # paseto_secret_key:
+  #   1748736000: "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
 
 # --- 路由转发规则 ---
 # 每条路由定义一个 HTTP 路径如何被验证并转发到 NATS Subject
+#
+# token_fields（選填）：指定要從令牌驗證回覆中提取並以 "_token" 物件
+# 注入 BridgeRequest 的欄位清單。僅對不在 token.path_whitelist 中的路由生效。
+# 支援的欄位取決於 UserValidator 層級 2 回覆內容：
+#   標準 claims：username、app、sub、iss、iat、nbf、exp、jti
+#   自訂 claims：透過 UserValidator 的 token_claims_mapping.custom_claims 寫入的欄位（如 uuid）
+# 範例：
+#   token_fields: ["sub", "username"]
+#   轉發給下游微服務的 BridgeRequest 將包含：
+#   { "_token": {"uuid": "xxx-xxx", "username": "admin"}, "method": "...", ... }
 routes:
   - path: "/auth/login" # HTTP 请求路径（登录验证）
     # [100-102] 会话令牌系统

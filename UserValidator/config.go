@@ -149,10 +149,13 @@ type pasetoConfig struct {
 // tokenClaimsMapping 令牌 claims 與上游服務回傳資料欄位的對應關係
 // 只有 sub、iss、aud 三個 claims 可被上游資料覆蓋
 // iat、nbf、exp、jti、kid 為系統自動計算，不可透過上游資料對應
+// CustomClaims 用於將上游資料的任意欄位（如 uuid）寫入令牌的加密自訂 claims
+// 鍵為令牌中的 claim 名稱，值為上游回傳資料中的對應欄位名
 type tokenClaimsMapping struct {
-	Sub      string `json:"sub" yaml:"sub"` // sub (Subject) 對應的上游資料欄位名
-	Issuer   string `json:"iss" yaml:"iss"` // iss (Issuer) 對應的上游資料欄位名
-	Audience string `json:"aud" yaml:"aud"` // aud (Audience) 對應的上游資料欄位名
+	Sub          string            `json:"sub" yaml:"sub"`                       // sub (Subject) 對應的上游資料欄位名
+	Issuer       string            `json:"iss" yaml:"iss"`                       // iss (Issuer) 對應的上游資料欄位名
+	Audience     string            `json:"aud" yaml:"aud"`                       // aud (Audience) 對應的上游資料欄位名
+	CustomClaims map[string]string `json:"custom_claims" yaml:"custom_claims"`   // 自訂 claims 映射：令牌 claim 名 → 上游資料欄位名
 }
 
 // getDirectSubjects 回傳直接 NATS 訂閱主题列表（非 HTTP 橋接層）

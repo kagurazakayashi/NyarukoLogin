@@ -106,7 +106,7 @@ ApiNatsBridge 與 UserValidator 之間的請求/回應採用固定 JSON 結構�
   │                             │                           │  NATS Reply             │
   │                             │                           │  {"success":true,       │
   │                             │                           │   "data":{              │
-  │                             │                           │    "id":1,              │
+  │                             │                           │    "uuid":"a1b2c3d4...",              │
   │                             │                           │    "username":"user",   │
   │                             │                           │    "nickname":"User"}}  │
   │                             │                           │◄────────────────────────│
@@ -145,10 +145,16 @@ ApiNatsBridge 與 UserValidator 之間的請求/回應採用固定 JSON 結構�
 {"method":"user.login","data":{"username":"admin","password":"123"}}
 ```
 
-**gateway-db 回應範例（包裹成功）：**
+**gateway-db 回應範例（包裹成功，gateway-db v1.6.2+ 以 UUID 作為主鍵）：**
 
 ```json
-{"success":true,"data":{"id":1,"username":"admin","nickname":"管理員","group":null,"permissions":[],"created_at":"2026-01-01","updated_at":"2026-01-01"}}
+{"success":true,"data":{"uuid":"a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6","username":"admin","nickname":"管理員","group":null,"permissions":[],"created_at":"2026-01-01","updated_at":"2026-01-01"}}
+```
+
+**gateway-db 回應範例（舊版，以 id 作為主鍵，向後相容）：**
+
+```json
+{"success":true,"data":{"uuid":"a1b2c3d4...", "username":"admin","nickname":"管理員","group":null,"permissions":[],"created_at":"2026-01-01","updated_at":"2026-01-01"}}
 ```
 
 **gateway-db 回應範例（包裹失敗）：**
@@ -331,7 +337,7 @@ ApiNatsBridge 與 UserValidator 之間的請求/回應採用固定 JSON 結構�
 **回覆 — 核實成功：**
 
 ```json
-{"success":true,"username":"user","app":"app","sub":"user","iat":"...","exp":"...","user":{"id":1,"username":"user",...}}
+{"success":true,"username":"user","app":"app","sub":"user","iat":"...","exp":"...","user":{"uuid":"a1b2c3d4...", "username":"user",...}}
 ```
 
 **回覆 — 核實失敗：**
@@ -431,7 +437,7 @@ async def main():
 | `nbf` | — | — | 成功時 | 成功時 | 令牌生效時間（ISO 8601） |
 | `exp` | — | — | 成功時 | 成功時 | 令牌到期時間（ISO 8601） |
 | `jti` | — | — | 成功時 | 成功時 | 令牌唯一識別碼（JWT ID） |
-| `user` | — | — | — | 成功時 | 使用者詳細資料（含 id、nickname、group、permissions 等） |
+| `user` | — | — | — | 成功時 | 使用者詳細資料（含 uuid、id、nickname、group、permissions 等） |
 
 ---
 
@@ -553,7 +559,7 @@ paseto_secret_key:
 
 ### `token_claims_mapping` — 令牌 Claims 與上游欄位映射
 
-設定令牌中標準 claims 對應到上游服務（gateway-db）回傳資料中的哪個欄位。
+設定令牌中 claims 對應到上游服務（gateway-db）回傳資料中的哪個欄位。
 所有欄位皆為選填，未設定或設為空字串時沿用預設行為。
 
 | 欄位 | YAML 鍵 | 型別 | 預設行為 | 說明 |
@@ -561,6 +567,7 @@ paseto_secret_key:
 | 主體 | `sub` | string | 使用登入請求 username | sub claim 對應的上游資料欄位名 |
 | 簽發者 | `iss` | string | 使用請求路徑（如 `/auth/login`） | iss claim 對應的上游資料欄位名 |
 | 受眾 | `aud` | string | 使用登入請求 app | aud claim 對應的上游資料欄位名 |
+| 自訂 claims | `custom_claims` | map[string]string | 無 | 令牌 claim 名 → 上游資料欄位名的映射，寫入令牌加密 payload |
 
 **僅 sub / iss / aud 三個 claims 可透過上游資料覆蓋。** 以下欄位為系統自動計算，不可映射：
 - `iat`（簽發時間）- 系統時間
@@ -569,14 +576,17 @@ paseto_secret_key:
 - `jti`（唯一識別碼）- 永遠自動生成 32 字元高熵英數字隨機字串
 - `kid`（金鑰識別碼）- 永遠為簽發金鑰的 UNIX 時間戳
 
-**已移除：** 自訂 claims（`custom`）不再支援，所有自訂 claims 已從令牌中移除。
+**`custom_claims`** 可將上游資料的任意欄位（如 `uuid`）寫入令牌的加密 payload。
+這些自訂 claims 會在令牌核實時一併回傳（層級 2 / 3），供 ApiNatsBridge 等中介服務提取並轉發。
 
 設定範例：
 ```yaml
 token_claims_mapping:
-  sub: "id"                          # 上游的 "id" 欄位 → token sub claim
+  sub: "uuid"                       # 上游的 "uuid" 欄位 → token sub claim（推薦）
   iss: ""                            # 空字串：不從上游映射，使用請求路徑
   aud: ""                            # 空字串：不從上游映射，使用登入請求的 app
+  custom_claims:                     # 自訂加密 claims
+    uuid: "uuid"                     # 上游 "uuid" → 令牌中的 uuid claim
 ```
 
 ### `nats_publish` — 對外發布訊息設定
@@ -844,7 +854,7 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求發布至對應主題，本服務�
 
 #### 層級 3（完整）— 回傳 JSON 含使用者詳細資料
 
-回傳完整 `verifyResponse` JSON，包含 `user` 物件（id、nickname、group、permissions 等）。
+回傳完整 `verifyResponse` JSON，包含 `user` 物件（uuid、nickname、group、permissions 等）。
 
 **請求 (NATS Request)**
 
@@ -855,7 +865,7 @@ ApiNatsBridge 依 `path` 欄位將 HTTP 請求發布至對應主題，本服務�
 **回覆 — 核實成功**
 
 ```json
-{"success":true,"username":"user","app":"app","sub":"user","iat":"...","exp":"...","user":{"id":1,"username":"user","nickname":"...",...}}
+{"success":true,"username":"user","app":"app","sub":"user","iat":"...","exp":"...","user":{"uuid":"a1b2c3d4...", "username":"user","nickname":"...",...}}
 ```
 
 **回覆 — 核實失敗**
@@ -1060,11 +1070,37 @@ curl -X POST http://127.0.0.1:9080/auth/verify \
 | `jti` | 32 字元高熵英數字隨機字串 | 唯一識別碼（JWT ID），用於防重放攻擊與撤銷 |
 | `kid` | 簽發金鑰的 UNIX 時間戳 | 金鑰識別碼（Key ID），用於金鑰輪替時定位正確解密金鑰 |
 
-> **覆蓋規則：** 僅 `iss`、`sub`、`aud` 可透過 `token_claims_mapping` 從上游資料覆蓋。`iat`、`nbf`、`exp`、`jti`、`kid` 為系統計算，不可覆蓋。
+> **覆蓋規則：** `iss`、`sub`、`aud` 可透過 `token_claims_mapping` 從上游資料覆蓋。`iat`、`nbf`、`exp`、`jti`、`kid` 為系統計算，不可覆蓋。自訂 claims 透過 `custom_claims` 映射寫入加密 payload。
 
 #### 自訂 Claims
 
-（已全部移除，不再包含任何自訂 claims）
+透過 `token_claims_mapping.custom_claims` 可將上游資料（gateway-db）的任意欄位寫入令牌的加密 payload，作為自訂 claims。這些自訂 claims 會在令牌核實時一併回傳（層級 2 / 3）。
+
+**典型用途：** 將使用者 UUID 寫入令牌加密欄位，供 ApiNatsBridge 等中介服務在驗證令牌後提取 UUID，並透過 `token_fields` 設定轉發給其他微服務以識別使用者身分。
+
+設定範例：
+```yaml
+token_claims_mapping:
+  custom_claims:
+    uuid: "uuid"    # 上游的 uuid 欄位 → 令牌中的 uuid claim（加密）
+    id: "id"        # 上游的 id 欄位 → 令牌中的 id claim（加密）
+```
+
+核實回應（層級 2）範例：
+```json
+{
+  "success": true,
+  "username": "admin",
+  "app": "myapp",
+  "sub": "uuid-xxx-xxx",
+  "iat": "2025-01-01T00:00:00Z",
+  "exp": "2025-01-02T00:00:00Z",
+  "jti": "abc...xyz",
+  "uuid": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+自訂 claims 名稱不可與標準 claims（`iss`、`sub`、`aud`、`iat`、`nbf`、`exp`、`jti`、`kid`）重名。
 
 令牌格式範例：
 

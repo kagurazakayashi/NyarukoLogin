@@ -179,15 +179,51 @@ func handleLogin(req *bridgeRequest, keyRing *pasetoKeyRing, cfg *pasetoConfig, 
 		}
 	}
 
+	// 套用自訂 claims 映射：將上游資料任意欄位寫入令牌的加密自訂 claims
+	// 鍵為令牌中的 claim 名稱，值為上游回傳資料的欄位名
+	// 典型用途：將 UUID 寫入令牌加密 payload，供其他微服務驗證後還原使用者身分
+	// 注意：paseto.JSONToken.Set 僅接受 string 型別，複雜型別需先以 JSON 字串儲存
+	for claimName, upstreamField := range mapping.CustomClaims {
+		if val, ok := userDataMap[upstreamField]; ok {
+			switch v := val.(type) {
+			case string:
+				claims.Set(claimName, v)
+			default:
+				// 複雜類型（陣列、物件等）以 JSON 字串形式存入
+				if jsonBytes, err := json.Marshal(v); err == nil {
+					claims.Set(claimName, string(jsonBytes))
+				} else {
+					claims.Set(claimName, fmt.Sprintf("%v", val))
+				}
+			}
+		}
+	}
+
+	// 權限置入令牌：將使用者權限碼列表 JSON 序列化後寫入令牌
+	// 供 ApiNatsBridge 在每次請求時進行本地權限檢查，無需查詢資料庫
+	if len(userData.Permissions) > 0 {
+		if jsonBytes, err := json.Marshal(userData.Permissions); err == nil {
+			claims.Set("perm", string(jsonBytes))
+		}
+	}
+
+	// UUID 置入令牌：確保撤銷檢查時始終可取得使用者 UUID
+	// 不受 token_claims_mapping.sub 設定影響（sub 可能被映射為其他欄位）
+	if userData.UUID != "" {
+		claims.Set("uuid", userData.UUID)
+	}
+
 	token, err := encryptToken(cfg.Version, keyRing.SigningKey(), claims)
 	if err != nil {
 		return &loginResponse{Success: false, Message: "failed to generate token: " + err.Error()}
 	}
 
+	// 建構使用者資訊，UUID 優先（gateway-db v1.6.2+），ID 為向後相容欄位
 	return &loginResponse{
 		Success: true,
 		Token:   token,
 		User: &userInfo{
+			UUID:        userData.UUID,
 			ID:          userData.ID,
 			Username:    userData.Username,
 			Nickname:    userData.Nickname,
@@ -228,15 +264,21 @@ func encryptToken(version string, key []byte, payload interface{}) (string, erro
 
 // verifyPasetoToken 核心令牌驗證邏輯，供 handleVerify 與 handleTokenVerifyDirect 共用
 // 解密時會遍歷金鑰環中所有金鑰（由新到舊），任一金鑰解密成功即接受
+// 回傳的 verifyResponse.Extra 包含令牌中所有非標準 claims（即自訂 claims，如 uuid）
 func verifyPasetoToken(token string, keyRing *pasetoKeyRing, cfg *pasetoConfig) *verifyResponse {
 	// 遍歷金鑰環中所有金鑰進行解密嘗試，由最新金鑰開始
 	var claims paseto.JSONToken
+	var rawClaims map[string]interface{} // 用於捕獲所有 claims（含自訂 claims）
 	decrypted := false
 	for _, entry := range keyRing.Keys {
-		err := decryptToken(cfg.Version, entry.Key, token, &claims)
+		rawClaims = make(map[string]interface{})
+		err := decryptToken(cfg.Version, entry.Key, token, &rawClaims)
 		if err == nil {
-			decrypted = true
-			break
+			// 同時填入 JSONToken 以便後續使用標準欄位與 Validate()
+			if err2 := decryptToken(cfg.Version, entry.Key, token, &claims); err2 == nil {
+				decrypted = true
+				break
+			}
 		}
 	}
 
@@ -247,6 +289,19 @@ func verifyPasetoToken(token string, keyRing *pasetoKeyRing, cfg *pasetoConfig) 
 	// 驗證標準 claims（過期、尚未生效等）
 	if err := claims.Validate(); err != nil {
 		return &verifyResponse{Success: false, Message: "token validation failed: " + err.Error()}
+	}
+
+	// 從 rawClaims 中提取自訂 claims（排除標準 claims 與系統欄位）
+	standardKeys := map[string]bool{
+		"iss": true, "sub": true, "aud": true,
+		"iat": true, "nbf": true, "exp": true,
+		"jti": true, "kid": true,
+	}
+	extra := make(map[string]interface{})
+	for k, v := range rawClaims {
+		if !standardKeys[k] {
+			extra[k] = v
+		}
 	}
 
 	// 從標準 claims 提取全部標準欄位
@@ -260,6 +315,7 @@ func verifyPasetoToken(token string, keyRing *pasetoKeyRing, cfg *pasetoConfig) 
 		NotBefore: claims.NotBefore.Format(time.RFC3339),
 		Expires:   claims.Expiration.Format(time.RFC3339),
 		Jti:       claims.Jti,
+		Extra:     extra,
 	}
 }
 
@@ -351,6 +407,23 @@ func handleTokenVerifyDirect(message string, keyRing *pasetoKeyRing, cfg *paseto
 	// 核心驗證邏輯
 	result := verifyPasetoToken(token, keyRing, cfg)
 
+	// 撤銷檢查：令牌解密成功後檢查該使用者是否有待撤銷記錄
+	// 若 token.iat < revokedSince，表示令牌在權限變動前簽發，應失效
+	if result.Success {
+		uuidStr := extractUUID(result)
+		if uuidStr != "" {
+			if revokedAt, found := revokedMap.Load(uuidStr); found {
+				iatTime, err := time.Parse(time.RFC3339, result.IssuedAt)
+				if err == nil && iatTime.Unix() < revokedAt.(int64) {
+					result = &verifyResponse{
+						Success: false,
+						Message: "token revoked: user permissions have changed, please re-login",
+					}
+				}
+			}
+		}
+	}
+
 	return buildLevelResponse(level, tag, result)
 }
 
@@ -396,7 +469,7 @@ func buildLevel1Response(tag string, result *verifyResponse) string {
 	return formatTagResponse(tag, string(data))
 }
 
-// buildLevel2Response 系統 + token claims：回傳全部標準 claims（success、message、username、app、sub、iss、iat、nbf、exp、jti）
+// buildLevel2Response 系統 + token claims：回傳全部標準 claims 與自訂 claims（success、message、username、app、sub、iss、iat、nbf、exp、jti，以及所有 extra 自訂 claims）
 func buildLevel2Response(tag string, result *verifyResponse) string {
 	resp := map[string]interface{}{
 		"success": result.Success,
@@ -412,6 +485,10 @@ func buildLevel2Response(tag string, result *verifyResponse) string {
 		resp["nbf"] = result.NotBefore
 		resp["exp"] = result.Expires
 		resp["jti"] = result.Jti
+		// 合併自訂 claims（如 uuid），供呼叫方按設定提取
+		for k, v := range result.Extra {
+			resp[k] = v
+		}
 	}
 	data, _ := json.Marshal(resp)
 	return formatTagResponse(tag, string(data))
@@ -429,6 +506,18 @@ func formatTagResponse(tag, body string) string {
 		return tag + "|" + body
 	}
 	return body
+}
+
+// extractUUID 從驗證結果中提取使用者 UUID
+// 優先從 Extra 自訂 claims 中取得 uuid，其次使用 Subject（sub claim）
+func extractUUID(result *verifyResponse) string {
+	if uuidVal, ok := result.Extra["uuid"]; ok {
+		return fmt.Sprintf("%v", uuidVal)
+	}
+	if result.Subject != "" {
+		return result.Subject
+	}
+	return ""
 }
 
 // decryptToken 依據指定的 PASETO 版本對令牌進行解密

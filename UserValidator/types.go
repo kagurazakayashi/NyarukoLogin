@@ -28,17 +28,18 @@ type verifyRequest struct {
 
 // verifyResponse 令牌核實回應結構，回傳核實結果、令牌內容與使用者資訊
 type verifyResponse struct {
-	Success  bool      `json:"success"`            // 核實是否成功
-	Username string    `json:"username,omitempty"` // 令牌所屬用戶名稱
-	AppKey   string    `json:"app,omitempty"`   // 令牌對應的應用程式識別名稱
-	Subject  string    `json:"sub,omitempty"`      // 令牌主體 (subject)
-	Issuer   string    `json:"iss,omitempty"`      // 簽發者 (issuer)
-	IssuedAt string    `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
-	NotBefore string   `json:"nbf,omitempty"`      // 令牌生效時間 (ISO 8601)
-	Expires  string    `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
-	Jti      string    `json:"jti,omitempty"`      // 令牌唯一識別碼 (JWT ID)
-	Message  string    `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
-	User     *userInfo `json:"user,omitempty"`     // 使用者資訊（核實成功時，層級 3）
+	Success   bool                   `json:"success"`            // 核實是否成功
+	Username  string                 `json:"username,omitempty"` // 令牌所屬用戶名稱
+	AppKey    string                 `json:"app,omitempty"`      // 令牌對應的應用程式識別名稱
+	Subject   string                 `json:"sub,omitempty"`      // 令牌主體 (subject)
+	Issuer    string                 `json:"iss,omitempty"`      // 簽發者 (issuer)
+	IssuedAt  string                 `json:"iat,omitempty"`      // 令牌簽發時間 (ISO 8601)
+	NotBefore string                 `json:"nbf,omitempty"`      // 令牌生效時間 (ISO 8601)
+	Expires   string                 `json:"exp,omitempty"`      // 令牌到期時間 (ISO 8601)
+	Jti       string                 `json:"jti,omitempty"`      // 令牌唯一識別碼 (JWT ID)
+	Message   string                 `json:"message,omitempty"`  // 錯誤訊息（僅核實失敗時存在）
+	User      *userInfo              `json:"user,omitempty"`     // 使用者資訊（核實成功時，層級 3）
+	Extra     map[string]interface{} `json:"extra,omitempty"`    // 自訂 claims（從令牌解密後提取，僅核實成功且有自訂 claims 時存在）
 }
 
 // dbGatewayResponse gateway-db 回應識別（同時相容包裹與原始格式）
@@ -55,8 +56,11 @@ type dbGatewayResponse struct {
 
 // dbGatewayUserData 由 gateway-db user.login 成功時回傳的使用者資料
 // 此資料位於 dbGatewayResponse.Data 內部，非頂層回應
+// gateway-db v1.6.2+ 以 UUID (VARCHAR(32)) 作為使用者主鍵，
+// 回傳時以 "uuid" 取代舊版 "id" 欄位；本結構同時相容兩者
 type dbGatewayUserData struct {
-	ID          int           `json:"id"`          // 使用者內部 ID
+	UUID        string        `json:"uuid"`        // 使用者唯一識別碼（UUID，gateway-db v1.6.2+ 優先使用）
+	ID          int           `json:"id"`          // 使用者內部 ID（舊版 gateway-db，向後相容）
 	Username    string        `json:"username"`    // 使用者名稱
 	Nickname    string        `json:"nickname"`    // 顯示暱稱
 	Group       interface{}   `json:"group"`       // 所屬群組資訊
@@ -66,8 +70,10 @@ type dbGatewayUserData struct {
 }
 
 // userInfo 提供給前端的使用者資訊，含群組與權限
+// UUID 為優先識別碼（gateway-db v1.6.2+），ID 為向後相容欄位
 type userInfo struct {
-	ID          int           `json:"id"`                    // 使用者內部 ID
+	UUID        string        `json:"uuid"`                  // 使用者唯一識別碼（UUID，優先使用）
+	ID          int           `json:"id"`                    // 使用者內部 ID（舊版 gateway-db，向後相容）
 	Username    string        `json:"username"`              // 使用者名稱
 	Nickname    string        `json:"nickname,omitempty"`    // 顯示暱稱
 	Group       interface{}   `json:"group,omitempty"`       // 所屬群組資訊
